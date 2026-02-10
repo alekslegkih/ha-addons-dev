@@ -1,0 +1,11 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+# ==============================================================================
+# Home Assistant App: Backup Sync to USB"
+# Runs backup_sync script
+# ==============================================================================
+
+bashio::log.info "Backup Sync to USB addon starting"
+
+exec /usr/bin/backup_sync.sh

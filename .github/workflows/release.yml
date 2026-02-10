@@ -1,0 +1,27 @@
+---
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check version matches tag
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          VERSION=$(yq '.version' backup_sync/config.yaml)
+
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "Tag ($TAG) != config.yaml version ($VERSION)"
+            exit 1
+          fi
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2

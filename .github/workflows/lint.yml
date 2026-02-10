@@ -1,0 +1,33 @@
+name: Lint
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install linters
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck yamllint
+          npm install -g markdownlint-cli
+
+      - name: Shellcheck
+        run: |
+          files=$(find . -name "*.sh")
+          if [ -n "$files" ]; then
+            shellcheck -x -S error $files
+          else
+            echo "No shell scripts found"
+          fi
+
+      - name: Yamllint
+        run: yamllint .
+
+      - name: Markdownlint
+        run: markdownlint .
