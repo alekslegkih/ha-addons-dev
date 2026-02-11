@@ -89,7 +89,7 @@ state_set() {
 
 state_dump() {
   log_info "State summary:"
-  log_info "  Started at        : $(date -d "@${START_TIME}" 2>/dev/null || echo "${START_TIME}")"
+  log_info "  Started at        : $(date -d "@${START_TIME}" 2>/dev/null || echo ${START_TIME})"
   log_info "  Backups found     : ${TOTAL_FOUND}"
   log_info "  Backups copied    : ${TOTAL_COPIED}"
   log_info "  Copy failures     : ${TOTAL_FAILED}"

@@ -14,7 +14,7 @@ _is_debug() { [ -f "${DEBUG_FLAG}" ]; }
 
 detect_devices() {
 
-  log "Scanning available storage devices..."
+  log "Available storage devices"
 
   lsblk -pn -o NAME,TYPE,FSTYPE,SIZE \
     | while read -r name type fstype size; do

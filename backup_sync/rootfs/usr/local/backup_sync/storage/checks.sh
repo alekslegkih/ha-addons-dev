@@ -4,7 +4,7 @@ set -euo pipefail
 
 DEBUG_FLAG="/config/debug.flag"
 
-
+source "${BASE_DIR}/storage/detect.sh"
 
 _is_debug() { [ -f "${DEBUG_FLAG}" ]; }
 
@@ -18,11 +18,14 @@ check_storage() {
   local device="/dev/${USB_DEVICE}"
 
   # 1. Device exists
-  log "Connecting the selected disk..."
+  log "Connecting selected disk..."
 
   if [ -z "${USB_DEVICE}" ]; then
-    log_error "USB device is not configured"
-    log "Please select one of the detected disks in addon settings."
+    log_error "No USB device configured"
+
+    detect_devices
+
+    log "Please set parameter: usb_device"
     log_warn "Example: usb_device: sdb1"
     return 1
   fi

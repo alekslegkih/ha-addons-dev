@@ -3,9 +3,22 @@
 
 exit_code="$1"
 
-if [[ "$exit_code" -ne 0 ]]; then
-    bashio::log.fatal "Addon failed, halting"
-    exec /run/s6/basedir/bin/halt
-fi
+# bashio::log.info "Exit code: $exit_code"
 
-bashio::log.info "Addon stopped normally"
+case "$exit_code" in
+
+  256)
+    bashio::log.info "Addon stopped"
+    ;;
+
+  1)
+    bashio::log.fatal "Startup error — halting container"
+    exec /run/s6/basedir/bin/halt
+    ;;
+
+  *)
+    bashio::log.fatal "Addon crashed, halting container"
+    exec /run/s6/basedir/bin/halt
+    ;;
+
+esac

@@ -1,187 +1,183 @@
 #!/usr/bin/env bash
 set -uo pipefail
 
-# =========================================================
-# Copier worker (single processing engine)
-# =========================================================
-
-
+BASE_DIR="/usr/local/backup_sync"
 QUEUE_FILE="/tmp/backup_sync.queue"
-
-SOURCE_DIR="/backup"
 TARGET_DIR="/media/${MOUNT_POINT}"
 
-BASE_DIR="/usr/local/backup_sync"
 source "${BASE_DIR}/core/logger.sh"
-
-TMP_SUFFIX=".partial"
-
-STABLE_CHECK_INTERVAL=2
-STABLE_CHECK_COUNT=3
-MAX_RETRIES=3
-
+source "${BASE_DIR}/core/notify.sh"
 
 # ---------------------------------------------------------
-# Helpers
+# helpers
 # ---------------------------------------------------------
 
-wait_for_stable() {
-  local file="$1"
+now() {
+  date +%s
+}
 
-  local last_size=0
-  local same_count=0
+human_size() {
+  numfmt --to=iec --suffix=B "$1" 2>/dev/null || echo "$1"
+}
 
-  log_debug "Waiting for file stabilization: $(basename "${file}")"
+queue_pop() {
+  [ -s "${QUEUE_FILE}" ] || return 1
+  IFS= read -r line < "${QUEUE_FILE}" || return 1
+  sed -i '1d' "${QUEUE_FILE}"
+  echo "${line}"
+}
 
-  while true; do
+wait_stable() {
+  local f="$1"
+  local s1 s2 stable=0
 
-    [ -f "${file}" ] || return 1
+  while [ $stable -lt 3 ]; do
+    s1=$(stat -c %s "$f" 2>/dev/null || echo 0)
+    sleep 2
+    s2=$(stat -c %s "$f" 2>/dev/null || echo 0)
 
-    local size
-    size="$(stat -c %s "${file}")"
-
-    if [ "${size}" -eq "${last_size}" ]; then
-      same_count=$((same_count + 1))
+    if [ "$s1" -eq "$s2" ]; then
+      stable=$((stable + 1))
     else
-      same_count=0
-      last_size="${size}"
+      stable=0
     fi
-
-    if [ "${same_count}" -ge "${STABLE_CHECK_COUNT}" ]; then
-      return 0
-    fi
-
-    sleep "${STABLE_CHECK_INTERVAL}"
   done
 }
 
+cleanup_old() {
+  [ "${MAX_COPIES}" -le 0 ] && return 0
 
-# ---------------------------------------------------------
-# Copy one backup
-# ---------------------------------------------------------
+  local count
+  count=$(ls -1t "${TARGET_DIR}"/*.tar* 2>/dev/null | wc -l || echo 0)
 
-human_size() {
-  numfmt --to=iec --suffix=B "$1"
+  while [ "${count}" -gt "${MAX_COPIES}" ]; do
+    old=$(ls -1t "${TARGET_DIR}"/*.tar* | tail -n 1)
+    log_warn "  • Removing old backup: $(basename "$old")"
+    rm -f "$old"
+    count=$((count - 1))
+  done
 }
 
+# ---------------------------------------------------------
+# copy logic
+# ---------------------------------------------------------
 
 copy_one() {
 
   local src="$1"
-  local name
-  name="$(basename "${src}")"
+  local name tmp size
+  local wait_start wait_end wait_sec
+  local copy_start copy_end copy_sec speed
 
-  local tmp="${TARGET_DIR}/${name}${TMP_SUFFIX}"
-  local dst="${TARGET_DIR}/${name}"
+  name="$(basename "$src")"
+  tmp="${TARGET_DIR}/.${name}.tmp"
 
-  local size
-  size="$(stat -c %s "${src}")"
+  log "Backup detected: ${name}"
 
-  log "Processing backup: ${name} ($(human_size ${size}))"
+  # -------------------------
+  # stabilization
+  # -------------------------
 
-  local start_ts
-  start_ts=$(date +%s)
+  wait_start=$(now)
+  wait_stable "$src"
+  wait_end=$(now)
 
-  if ! wait_for_stable "${src}"; then
-    log_error "Source disappeared: ${name}"
+  wait_sec=$((wait_end - wait_start))
+
+  size=$(stat -c %s "$src" 2>/dev/null || echo 0)
+
+  log "  • File stabilized (${wait_sec}s)"
+
+  # -------------------------
+  # copy
+  # -------------------------
+
+  log "  • Copying..."
+
+  copy_start=$(now)
+
+  if ! cp "$src" "$tmp"; then
+    log_error "  ✗ Copy failed"
+    rm -f "$tmp"
     return 1
   fi
 
-  for attempt in $(seq 1 "${MAX_RETRIES}"); do
+  mv "$tmp" "${TARGET_DIR}/${name}"
 
-    log_debug "Copy attempt ${attempt}/${MAX_RETRIES}"
+  copy_end=$(now)
+  copy_sec=$((copy_end - copy_start))
+  [ "$copy_sec" -le 0 ] && copy_sec=1
 
-    if cp "${src}" "${tmp}"; then
-      mv "${tmp}" "${dst}"
+  speed=$((size / copy_sec))
 
-      local end_ts
-      end_ts=$(date +%s)
+  log_ok "  ✓ Done ($(human_size "$size")) in ${copy_sec}s ($(human_size "$speed")/s)"
 
-      local duration=$((end_ts - start_ts))
-      [ "${duration}" -eq 0 ] && duration=1
+  cleanup_old
 
-      local speed=$((size / duration))
-
-      log_ok "Copied ${name} in ${duration}s ($(human_size ${speed})/s)"
-
-      return 0
-    fi
-
-    log_warn "Retrying copy (${attempt})"
-    sleep 2
-  done
-
-  rm -f "${tmp}"
-  log_error "Failed to copy ${name}"
-
-  return 1
+  return 0
 }
 
-
 # ---------------------------------------------------------
-# Retention cleanup (INLINE — no external module)
-# ---------------------------------------------------------
-
-cleanup_retention() {
-
-  mapfile -t files < <(ls -1t "${TARGET_DIR}"/*.tar* 2>/dev/null || true)
-
-  local total="${#files[@]}"
-
-  if [ "${total}" -le "${MAX_COPIES}" ]; then
-    log_debug "Retention: nothing to cleanup"
-    return
-  fi
-
-  local removed=0
-
-  for ((i=MAX_COPIES; i<total; i++)); do
-    rm -f "${files[$i]}"
-    ((removed++))
-  done
-
-  log "Retention: removed ${removed} old backup(s)"
-}
-
-
-
-# ---------------------------------------------------------
-# Queue helpers
+# initial sync state
 # ---------------------------------------------------------
 
-queue_pop() {
+INITIAL_MODE=false
+INITIAL_COPIED=0
+INITIAL_FAILED=0
 
-  [ -s "${QUEUE_FILE}" ] || return 1
-
-  read -r line < "${QUEUE_FILE}" || return 1
-  sed -i '1d' "${QUEUE_FILE}"
-
-  echo "${line}"
-}
-
+if [ "${SYNC_EXIST_START}" = "true" ]; then
+  INITIAL_MODE=true
+fi
 
 # ---------------------------------------------------------
-# Main loop
+# main loop
 # ---------------------------------------------------------
 
-log_section "Copier worker started"
+log_ok "Copier worker started"
 
 while true; do
 
-  src="$(queue_pop || true)"
+  file=$(queue_pop || true)
 
-  if [ -z "${src:-}" ]; then
+  # -------------------------------------------------------
+  # queue empty
+  # -------------------------------------------------------
+
+  if [ -z "${file:-}" ]; then
+
+    # initial batch finished → send ONE summary
+    if ${INITIAL_MODE} && [ $((INITIAL_COPIED + INITIAL_FAILED)) -gt 0 ]; then
+      notify "Sync completed" \
+"Copied: ${INITIAL_COPIED}
+Failed: ${INITIAL_FAILED}"
+
+      INITIAL_MODE=false
+    fi
+
     sleep 2
     continue
   fi
 
-  log_debug "Queue size: $(wc -l < "${QUEUE_FILE}" 2>/dev/null || echo 0)"
+  # -------------------------------------------------------
+  # process file
+  # -------------------------------------------------------
 
-  if copy_one "${src}"; then
-    cleanup_retention
+  if copy_one "$file"; then
+
+    if ${INITIAL_MODE}; then
+      INITIAL_COPIED=$((INITIAL_COPIED + 1))
+    else
+      notify "✓ Backup saved" "$(basename "$file")"
+    fi
+
   else
-    log_error "Processing failed: ${src}"
+
+    if ${INITIAL_MODE}; then
+      INITIAL_FAILED=$((INITIAL_FAILED + 1))
+    else
+      notify "✗ Backup failed" "$(basename "$file")"
+    fi
+
   fi
 
 done
-

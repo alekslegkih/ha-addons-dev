@@ -1,14 +1,6 @@
-#!/usr/bin/env bash
+#!/command/with-contenv bashio
+# shellcheck shell=bash
 
-# =========================================================
-# Addon configuration loader
-# core/config.sh
-#
-# Responsibilities:
-#   - load options.json
-#   - set global config variables
-#   - validate config format (not logic)
-# =========================================================
 
 set -euo pipefail
 
@@ -42,21 +34,39 @@ NOTIFY_SERVICE=""
 load_config() {
 
   if [ ! -f "${CONFIG_FILE}" ]; then
-    _config_fail "Config file ${CONFIG_FILE} not found"
+    _config_fail "Config file ${CONFIG_FILE} not found" 
   fi
 
+  log_section "Configuration"
   log "Loading config from ${CONFIG_FILE}..."
 
   USB_DEVICE="$(jq -r '.usb_device // ""' "${CONFIG_FILE}")"
   MOUNT_POINT="$(jq -r '.mount_point // ""' "${CONFIG_FILE}")"
   MAX_COPIES="$(jq -r '.max_copies // 0' "${CONFIG_FILE}")"
-  SYNC_EXIST_START="$(jq -r '.sync_exis_start // false' "${CONFIG_FILE}")"
+  SYNC_EXIST_START="$(jq -r '.sync_exist_start // false' "${CONFIG_FILE}")"
   NOTIFY_SERVICE="$(jq -r '.notify_service // ""' "${CONFIG_FILE}")"
 
-  _validate_config
+  _validate_config 
+  
+  log "-----------------------------------------------------------"
+  log "  USB device        : ${USB_DEVICE:-not set}"
+  log "  Mount point       : ${MOUNT_POINT}"
+  log "  Max backups       : ${MAX_COPIES}"
 
-  log_ok "Config loaded successfully"
-  log_ok "------------------------------------------------"
+  [ "${SYNC_EXIST_START}" = "true" ] && sync_state="enabled" || sync_state="disabled"
+  log "  Initial sync      : ${sync_state}"
+
+  if [ -z "${NOTIFY_SERVICE}" ]; then
+    log_warn "  Notifications disabled (notify_service not configured)"
+  else
+    log "  Channel notify    : ${NOTIFY_SERVICE}"
+  fi
+  log "-----------------------------------------------------------"
+
+  log_ok "Configuration loaded"
+
+
+
 }
 
 # ---------------------------------------------------------
@@ -74,7 +84,7 @@ _validate_config() {
 
   # mount_point must be a name, not a path
   if [[ "${MOUNT_POINT}" == /* ]]; then
-    _config_fail "mount_point must not start with '/' (use name only, e.g. baskups)"
+    _config_fail "mount_point must not start with '/' (use name only, e.g. baсkups)"
   fi
 
   # max_copies must be positive integer

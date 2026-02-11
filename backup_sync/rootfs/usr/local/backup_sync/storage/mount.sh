@@ -14,8 +14,8 @@ mount_usb() {
   local target="/media/${MOUNT_POINT}"
 
   log "Mounting the target directory on the selected disk..."
-  log " - Device: ${USB_DEVICE}"
-  log " - Target: ${target}"
+  log " Device: ${USB_DEVICE}"
+  log " Target: ${target}"
 
   log_debug "mount_usb() start"
   log_debug "device=${USB_DEVICE}"

@@ -1,6 +1,6 @@
 name: "Backup Sync to USB"
 description: "Automatically copies Home Assistant backups to connected USB storage"
-version: "0.1.1"
+version: "0.1.2"
 slug: "backup_sync"
 
 arch:
@@ -57,15 +57,15 @@ map:
 
 options:
   usb_device: ""
-  mount_point: "baskups"
-  max_copies: 5
-  sync_exis_start: false
+  mount_point: "backups"
+  max_copies: 7
+  sync_exist_start: false
   notify_service: ""
 
 schema:
   usb_device: "str"
   mount_point: "str"
   max_copies: "int"
-  sync_exis_start: "bool"
+  sync_exist_start: "bool"
   notify_service: "str"
 
