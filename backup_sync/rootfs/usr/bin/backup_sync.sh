@@ -1,7 +1,7 @@
 #!/command/with-contenv bashio
 # shellcheck shell=bash
 
-set -uo pipefail 
+set -uo pipefail
 
 BASE_DIR="/usr/local/backup_sync"
 DEBUG_FLAG="/config/debug.flag"
@@ -32,7 +32,6 @@ fail_and_stop() {
   if _is_debug; then
     log_warn "Debug mode enabled — staying alive for investigation"
   else
-    notify "Backup Sync stopped" "$1"
     exit 1
   fi
 }
