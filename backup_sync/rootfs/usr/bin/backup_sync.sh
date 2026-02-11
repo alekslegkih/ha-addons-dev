@@ -8,7 +8,6 @@ DEBUG_FLAG="/config/debug.flag"
 
 source "${BASE_DIR}/core/logger.sh"
 source "${BASE_DIR}/core/config.sh"
-source "${BASE_DIR}/core/notify.sh"
 
 source "${BASE_DIR}/storage/checks.sh"
 source "${BASE_DIR}/storage/mount.sh"

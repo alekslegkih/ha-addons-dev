@@ -24,8 +24,6 @@ USB_DEVICE=""
 MOUNT_POINT=""
 MAX_COPIES=0
 SYNC_EXIST_START=false
-NOTIFY_SERVICE=""
-
 
 # ---------------------------------------------------------
 # Load config
@@ -44,7 +42,6 @@ load_config() {
   MOUNT_POINT="$(jq -r '.mount_point // ""' "${CONFIG_FILE}")"
   MAX_COPIES="$(jq -r '.max_copies // 0' "${CONFIG_FILE}")"
   SYNC_EXIST_START="$(jq -r '.sync_exist_start // false' "${CONFIG_FILE}")"
-  NOTIFY_SERVICE="$(jq -r '.notify_service // ""' "${CONFIG_FILE}")"
 
   _validate_config 
   
@@ -55,12 +52,6 @@ load_config() {
 
   [ "${SYNC_EXIST_START}" = "true" ] && sync_state="enabled" || sync_state="disabled"
   log "  Initial sync      : ${sync_state}"
-
-  if [ -z "${NOTIFY_SERVICE}" ]; then
-    log_warn "  Notifications disabled (notify_service not configured)"
-  else
-    log "  Channel notify    : ${NOTIFY_SERVICE}"
-  fi
   log "-----------------------------------------------------------"
 
   log_ok "Configuration loaded"
