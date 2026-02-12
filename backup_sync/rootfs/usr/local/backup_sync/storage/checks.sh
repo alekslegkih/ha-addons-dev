@@ -2,8 +2,6 @@
 
 set -euo pipefail
 
-DEBUG_FLAG="/config/debug.flag"
-
 source "${BASE_DIR}/storage/detect.sh"
 
 _is_debug() { [ -f "${DEBUG_FLAG}" ]; }
@@ -22,6 +20,8 @@ check_storage() {
 
   if [ -z "${USB_DEVICE}" ]; then
     log_error "No USB device configured"
+    emit storage_failed '{"reason":"no_device_configured", "message": "USB device is not configured"}'
+    emit error '{"reason":"no_device_configured"}'
 
     detect_devices
 
@@ -35,6 +35,7 @@ check_storage() {
 
   if [ ! -b "${device}" ]; then
     log_error "Device ${device} is not a block device"
+    emit storage_failed '{"reason":"not_block_device"}'
     return 1
   fi
 
@@ -42,6 +43,7 @@ check_storage() {
   case "${USB_DEVICE}" in
     sda*|mmcblk0*|nvme0n1*)
       log_error "Refusing to use system device: ${USB_DEVICE}"
+      emit storage_failed '{"reason":"system_device_blocked"}'
       return 1
       ;;
   esac
@@ -56,6 +58,7 @@ check_storage() {
 
   if [ -z "${fstype}" ]; then
     log_error "Filesystem not detected on ${device}"
+    emit storage_failed '{"reason":"no_filesystem"}'
     return 1
   fi
 
@@ -76,6 +79,7 @@ check_storage() {
 
   if [ ! -d "/backup" ]; then
     log_error "Source directory /backup does not exist"
+    emit storage_failed '{"reason":"source_missing"}'
     return 1
   fi
   log_ok "Source directory /backup: found"
@@ -97,18 +101,18 @@ check_target() {
   # 1. Exists
   if [ ! -d "${target}" ]; then
     log_error "Target directory ${target} does not exist"
+    emit storage_failed '{"reason":"target_missing"}'
     return 1
   fi
-
 
   # 2. Is mountpoint
   log_debug "Running findmnt --target ${target}"
 
   if ! findmnt --target "${target}" >/dev/null 2>&1; then
     log_error "Target ${target} is not a mountpoint"
+    emit storage_failed '{"reason":"target_not_mounted"}'
     return 1
   fi
-
 
   # 3. Writable test
   local testfile="${target}/.write_test"
@@ -116,6 +120,7 @@ check_target() {
 
   if ! touch "${testfile}" 2>/dev/null; then
     log_error "Target ${target} is not writable"
+    emit storage_failed '{"reason":"target_not_writable"}'
     return 1
   fi
 

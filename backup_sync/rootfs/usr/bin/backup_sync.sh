@@ -3,8 +3,12 @@
 
 set -uo pipefail
 
+# =========================================================
+# Bootstrap only
+# =========================================================
+
 BASE_DIR="/usr/local/backup_sync"
-DEBUG_FLAG="/config/debug.flag"
+export BASE_DIR
 
 source "${BASE_DIR}/core/logger.sh"
 source "${BASE_DIR}/core/config.sh"
@@ -13,17 +17,18 @@ source "${BASE_DIR}/storage/checks.sh"
 source "${BASE_DIR}/storage/mount.sh"
 
 
-WATCHER_BIN="${BASE_DIR}/sync/watcher.py"
-SCANNER_BIN="${BASE_DIR}/sync/scanner.py"
-COPIER_BIN="${BASE_DIR}/sync/copier.sh"
+# =========================================================
+# emit helper
+# =========================================================
 
-# ---------------------------------------------------------
-# helpers
-# ---------------------------------------------------------
-
-_is_debug() {
-  [ -f "${DEBUG_FLAG}" ]
+emit() {
+  python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || true
 }
+
+
+# =========================================================
+# debug & exit
+# =========================================================
 
 fail_and_stop() {
   log_error "$1"
@@ -35,18 +40,37 @@ fail_and_stop() {
   fi
 }
 
-# ---------------------------------------------------------
-load_config      || fail_and_stop "Config load failed"
 
-export MOUNT_POINT MAX_COPIES USB_DEVICE SYNC_EXIST_START NOTIFY_SERVICE
+# =========================================================
+# Load config 
+# =========================================================
+
+load_config || fail_and_stop "Config load failed"
+
+
+# =========================================================
+# Binaries
+# =========================================================
+
+WATCHER_BIN="${BASE_DIR}/sync/watcher.py"
+SCANNER_BIN="${BASE_DIR}/sync/scanner.py"
+COPIER_BIN="${BASE_DIR}/sync/copier.sh"
+
+
+# =========================================================
+# Storage layer
+# =========================================================
 
 log_section "Processing the storage layer"
 
-check_storage    || fail_and_stop "Storage connection failed"
-mount_usb        || fail_and_stop "Mount sysytem failed"
-check_target     || fail_and_stop "Target checks failed"
+check_storage || fail_and_stop "Storage connection failed"
+mount_usb     || fail_and_stop "Mount system failed"
+check_target  || fail_and_stop "Target checks failed"
 
-# -----------------------------------------------------------
+
+# =========================================================
+# Sync layer
+# =========================================================
 
 log_section "Sync layer starting"
 
@@ -59,11 +83,9 @@ COPIER_PID=$!
 log_ok "Copier started"
 
 if [ "${SYNC_EXIST_START}" = "true" ]; then
-  echo
   python3 "${SCANNER_BIN}" || true
 fi
 
-echo
 log_ok "System ready"
 
 wait "${COPIER_PID}"

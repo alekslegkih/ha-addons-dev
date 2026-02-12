@@ -9,7 +9,10 @@
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Рабочие файлы
 struct.txt
+events.md
 
 # файлы для проекта
 debug.flag

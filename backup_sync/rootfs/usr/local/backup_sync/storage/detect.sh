@@ -8,7 +8,6 @@
 set -euo pipefail
 
 SYSTEM_DISKS_REGEX="^(sda|mmcblk0|zram)"
-DEBUG_FLAG="/config/debug.flag"
 
 _is_debug() { [ -f "${DEBUG_FLAG}" ]; }
 

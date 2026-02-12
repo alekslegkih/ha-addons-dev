@@ -11,11 +11,11 @@ set -euo pipefail
 mount_usb() {
 
   local device="/dev/${USB_DEVICE}"
-  local target="/media/${MOUNT_POINT}"
+  local target="/${TARGET_ROOT}/${MOUNT_POINT}"
 
   log "Mounting the target directory on the selected disk..."
-  log " Device: ${USB_DEVICE}"
-  log " Target: ${target}"
+  log "  Device : ${USB_DEVICE}"
+  log "  Target : ${target}"
 
   log_debug "mount_usb() start"
   log_debug "device=${USB_DEVICE}"
@@ -32,6 +32,7 @@ mount_usb() {
 
     mkdir -p "${target}" || {
       log_error "Failed to create target directory ${target}"
+      emit storage_failed '{"reason":"target_create_failed"}'
       return 1
     }
   fi
@@ -68,6 +69,7 @@ mount_usb() {
       return 0
     else
       log_error "Bind-mount failed"
+      emit storage_failed '{"reason":"bind_mount_failed"}'
       return 1
     fi
   fi
@@ -86,5 +88,6 @@ mount_usb() {
   fi
 
   log_error "Failed to mount ${USB_DEVICE} to ${target}"
+  emit storage_failed '{"reason":"mount_failed"}'
   return 1
 }

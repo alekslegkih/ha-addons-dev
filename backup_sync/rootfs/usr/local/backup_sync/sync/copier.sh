@@ -2,11 +2,14 @@
 
 set -uo pipefail
 
-BASE_DIR="/usr/local/backup_sync"
-QUEUE_FILE="/tmp/backup_sync.queue"
-TARGET_DIR="/media/${MOUNT_POINT}"
+TARGET_DIR="/${TARGET_ROOT}/${MOUNT_POINT}"
 
 source "${BASE_DIR}/core/logger.sh"
+
+emit() {
+  python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || true
+}
+
 
 # ---------------------------------------------------------
 # helpers
@@ -75,6 +78,8 @@ copy_one() {
     # -------------------------
     # stabilization phase
     # -------------------------
+    log " • Waiting for file stabilization..."
+    
     wait_start=$(now)
     wait_stable "$src"
     wait_end=$(now)
@@ -82,6 +87,7 @@ copy_one() {
 
     size=$(stat -c %s "$src" 2>/dev/null || echo 0)
     log " • File stabilized (${wait_sec}s)"
+    emit copy_started "{\"filename\":\"${name}\",\"size_bytes\":${size}}"
 
     # -------------------------
     # copy phase
@@ -93,6 +99,7 @@ copy_one() {
     if ! cp "$src" "$tmp"; then
         log_error " ✗ Copy failed"
         rm -f "$tmp"
+        emit error "{\"filename\":\"${name}\",\"reason\":\"copy_failed\"}"
         return 1
     fi
 
@@ -105,6 +112,7 @@ copy_one() {
     speed=$((size / copy_sec))
 
     log_ok " ✓ Done ($(human_size "$size")) in ${copy_sec}s ($(human_size "$speed")/s)"
+    emit copy_completed "{\"filename\":\"${name}\",\"size_bytes\":${size},\"seconds\":${copy_sec},\"speed_bps\":${speed}}"
 
     cleanup_old
     return 0

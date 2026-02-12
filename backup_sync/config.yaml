@@ -57,7 +57,7 @@ map:
 
 options:
   usb_device: ""
-  mount_point: "backups"
+  mount_point: "backup"
   max_copies: 7
   sync_exist_start: false
 

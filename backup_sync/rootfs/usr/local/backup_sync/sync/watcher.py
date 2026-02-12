@@ -1,16 +1,25 @@
 #!/usr/bin/env python3
 
 import sys
-import time
 from pathlib import Path
+
+# ---------------------------------------------------------
+# добавить корень проекта в sys.path
+# ---------------------------------------------------------
+
+BASE = Path(__file__).resolve().parent.parent
+sys.path.append(str(BASE))
+
+# ---------------------------------------------------------
+# обычные импорты
+# ---------------------------------------------------------
+
+import time
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-BACKUP_DIR = Path("/backup")
-QUEUE_FILE = Path("/tmp/backup_sync.queue")
-DEBUG_FLAG = Path("/config/debug.flag")
-
-VALID_SUFFIXES = (".tar", ".tar.gz")
+from ha.events import emit
+from core import config   # <-- ВОТ ОНО
 
 
 # ---------------------------------------------------------
@@ -18,7 +27,7 @@ VALID_SUFFIXES = (".tar", ".tar.gz")
 # ---------------------------------------------------------
 
 def debug(msg: str):
-    if DEBUG_FLAG.exists():
+    if config.DEBUG_FLAG.exists():
         print(f"[DEBUG][watcher] {msg}", flush=True)
 
 
@@ -35,14 +44,14 @@ class BackupHandler(FileSystemEventHandler):
 
         path = Path(event.src_path)
 
-        if not path.name.endswith(VALID_SUFFIXES):
+        if not path.name.endswith(config.VALID_SUFFIXES):
             return
 
         if not path.exists():
             return
 
         try:
-            with QUEUE_FILE.open("a") as q:
+            with config.QUEUE_FILE.open("a") as q:
                 q.write(str(path) + "\n")
 
             debug(f"queued: {path.name}")
@@ -59,15 +68,15 @@ class BackupHandler(FileSystemEventHandler):
 def main():
 
     debug("boot")
-    debug(f"watch dir={BACKUP_DIR}")
-    debug(f"queue={QUEUE_FILE}")
+    debug(f"watch dir={config.BACKUP_DIR}")
+    debug(f"queue={config.QUEUE_FILE}")
 
-    if not BACKUP_DIR.exists():
+    if not config.BACKUP_DIR.exists():
         print("[watcher] backup directory missing", flush=True)
         return 1
 
     observer = Observer()
-    observer.schedule(BackupHandler(), str(BACKUP_DIR), recursive=False)
+    observer.schedule(BackupHandler(), str(config.BACKUP_DIR), recursive=False)
     observer.start()
 
     debug("started")
