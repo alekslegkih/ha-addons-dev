@@ -42,7 +42,7 @@ fail_and_stop() {
 
 
 # =========================================================
-# Load config 
+# Load config
 # =========================================================
 
 load_config || fail_and_stop "Config load failed"
@@ -87,5 +87,6 @@ if [ "${SYNC_EXIST_START}" = "true" ]; then
 fi
 
 log_ok "System ready"
+emit ready '{}'
 
 wait "${COPIER_PID}"
