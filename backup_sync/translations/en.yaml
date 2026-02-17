@@ -1,0 +1,25 @@
+configuration:
+  usb_device:
+    name: USB device
+    description: >
+      Select the USB partition to store backups (for example: sdb1).
+      Leave empty to detect available devices.
+
+  mount_point:
+    name: Mount point
+    description: >
+      Target folder name under /media where the USB device
+      will be mounted.
+
+  max_copies:
+    name: Maximum number of backups
+    description: >
+      Number of backup files to keep on the USB drive.
+      Older backups will be removed automatically.
+
+  sync_exist_start:
+    name: Sync existing backups on startup
+    description: >
+      If enabled, existing backups in /backup will be checked
+      and copied to the USB drive when the addon starts.
+
