@@ -1,8 +1,16 @@
 extends: default
 
+ignore: |
+  .github/
+  node_modules/
+  dist/
+  build/
+
 rules:
   document-start: disable
+
   line-length: disable
+
   truthy: disable
 
   empty-lines:
@@ -13,7 +21,27 @@ rules:
   indentation:
     spaces: 2
     indent-sequences: consistent
+    check-multi-line-strings: false
 
   trailing-spaces: enable
   new-line-at-end-of-file: enable
   key-duplicates: enable
+
+  comments:
+    min-spaces-from-content: 1
+
+  colons:
+    max-spaces-before: 0
+    max-spaces-after: 1
+
+  commas:
+    max-spaces-before: 0
+    min-spaces-after: 1
+
+  braces:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
+
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 1
