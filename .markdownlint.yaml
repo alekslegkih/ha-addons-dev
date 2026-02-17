@@ -1,22 +1,18 @@
 ---
 default: true
 
-# Разрешить определённые HTML-теги
 MD033:
-  allowed_elements: ["kbd", "br"]
+  allowed_elements: ["kbd"]
 
-# Длина строки
 MD013:
   line_length: 120
   tables: false
   code_blocks: false
 
-# Не требовать H1 в первой строке (часто README начинается с бейджа)
 MD041: false
-
-# Разрешить одинаковые заголовки
 MD024: false
 
-# Полезные проверки (оставляем строгими)
-MD009: true   # trailing spaces
-MD012: true   # multiple blank lines
+MD009:
+  br_spaces: 2
+
+MD012: true

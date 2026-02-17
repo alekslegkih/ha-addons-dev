@@ -23,7 +23,10 @@ rules:
     indent-sequences: consistent
     check-multi-line-strings: false
 
-  trailing-spaces: enable
+  trailing-spaces:
+    level: error
+    ignore: |
+      *.md
   new-line-at-end-of-file: enable
   key-duplicates: enable
 
