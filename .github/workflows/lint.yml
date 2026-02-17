@@ -16,8 +16,28 @@ jobs:
       - name: Detect changed addons
         id: changes
         run: |
-          CHANGED=$(git diff --name-only origin/main...HEAD | cut -d/ -f1 | sort -u)
-          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
+          echo "Detecting changed files..."
+
+          # Для PR сравниваем с base branch
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE=${{ github.event.pull_request.base.ref }}
+            git fetch origin $BASE
+            DIFF_FILES=$(git diff --name-only origin/$BASE...HEAD)
+          else
+            # Для push сравниваем с предыдущим коммитом
+            DIFF_FILES=$(git diff --name-only HEAD~1...HEAD)
+          fi
+
+          echo "Changed files:"
+          echo "$DIFF_FILES"
+
+          # Получаем уникальные папки верхнего уровня
+          CHANGED_ADDONS=$(echo "$DIFF_FILES" | cut -d/ -f1 | sort -u)
+
+          echo "Changed top-level directories:"
+          echo "$CHANGED_ADDONS"
+
+          echo "addons=$CHANGED_ADDONS" >> $GITHUB_OUTPUT
 
       - name: Install linters
         run: |
@@ -27,13 +47,23 @@ jobs:
 
       - name: Run linters on changed addons
         run: |
-          for addon in ${{ steps.changes.outputs.changed }}
+          FOUND=false
+
+          for addon in ${{ steps.changes.outputs.addons }}
           do
             if [ -d "$addon" ] && [ -f "$addon/config.yaml" ]; then
-              echo "Linting $addon"
+              echo ""
+              echo "Linting addon: $addon"
+              echo "--------------------------------"
 
               find "$addon" -name "*.sh" -exec shellcheck -x -S error {} +
               yamllint "$addon"
               markdownlint "$addon"
+
+              FOUND=true
             fi
           done
+
+          if [ "$FOUND" = false ]; then
+            echo "No addon changes detected — skipping lint."
+          fi
