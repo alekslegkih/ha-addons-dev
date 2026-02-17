@@ -10,6 +10,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changed addons
+        id: changes
+        run: |
+          CHANGED=$(git diff --name-only origin/main...HEAD | cut -d/ -f1 | sort -u)
+          echo "changed=$CHANGED" >> $GITHUB_OUTPUT
 
       - name: Install linters
         run: |
@@ -17,17 +25,15 @@ jobs:
           sudo apt-get install -y shellcheck yamllint
           npm install -g markdownlint-cli
 
-      - name: Shellcheck
+      - name: Run linters on changed addons
         run: |
-          files=$(find . -name "*.sh")
-          if [ -n "$files" ]; then
-            shellcheck -x -S error $files
-          else
-            echo "No shell scripts found"
-          fi
+          for addon in ${{ steps.changes.outputs.changed }}
+          do
+            if [ -d "$addon" ] && [ -f "$addon/config.yaml" ]; then
+              echo "Linting $addon"
 
-      - name: Yamllint
-        run: yamllint .
-
-      - name: Markdownlint
-        run: markdownlint .
+              find "$addon" -name "*.sh" -exec shellcheck -x -S error {} +
+              yamllint "$addon"
+              markdownlint "$addon"
+            fi
+          done
