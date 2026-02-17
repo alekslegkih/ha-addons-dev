@@ -13,6 +13,7 @@ desktop.ini
 # Рабочие файлы
 struct.txt
 events.md
+release.ps1
 
 # файлы для проекта
 debug.flag
