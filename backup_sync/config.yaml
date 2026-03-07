@@ -1,20 +1,16 @@
 name: "Backup Sync to USB"
 description: "Automatically copies Home Assistant backups to connected USB storage"
-version: "0.1.6"
+version: "0.4.3"
 slug: "backup_sync"
-
 arch:
   - aarch64
   - amd64
-
 startup: application
 boot: auto
 init: false
-
 privileged:
   - SYS_ADMIN
   - DAC_READ_SEARCH
-
 devices:
   - /dev/sdb1
   - /dev/sdc1
@@ -44,26 +40,21 @@ devices:
   - /dev/ttyUSB0
   - /dev/ttyUSB1
   - /dev/fuse
-
 host_dbus: true
 hassio_api: true
 homeassistant_api: true
 hassio_role: homeassistant
-
 map:
   - backup:ro
   - addon_config:rw
   - media:rw
-
 options:
   usb_device: ""
   mount_point: "backups"
   max_copies: 7
   sync_exist_start: false
-
 schema:
   usb_device: "str"
   mount_point: "str"
   max_copies: "int"
   sync_exist_start: "bool"
-

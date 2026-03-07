@@ -1,49 +1,69 @@
-#!/usr/bin/env bash
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
 
 set -euo pipefail
 
-source "${BASE_DIR}/storage/detect.sh"
-
 _is_debug() { [ -f "${DEBUG_FLAG}" ]; }
 
-# ---------------------------------------------------------
-# Source + device checks
-# ---------------------------------------------------------
+# =========================================================
+# Device resolving
+# =========================================================
+
+resolve_device() {
+  local input="$1"
+  local path
+
+  log_debug "Resolving device for: ${input}"
+
+  for path in \
+    "/dev/${input}" \
+    "/dev/disk/by-label/${input}" \
+    "/dev/disk/by-uuid/${input}"
+  do
+    if [ -b "$path" ]; then
+      printf '%s\n' "$path"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+
+# =========================================================
+# Storage validation
+# =========================================================
 
 check_storage() {
 
   log_debug "USB_DEVICE=${USB_DEVICE}"
-  local device="/dev/${USB_DEVICE}"
+  log "Connecting to configured USB device..."
 
-  # 1. Device exists
-  log "Connecting selected disk..."
-
+  # 1. Device configured?
   if [ -z "${USB_DEVICE}" ]; then
     log_error "No USB device configured"
-    emit storage_failed '{"reason":"no_device_configured", "message": "USB device is not configured"}'
-    emit error '{"reason":"no_device_configured"}'
+    emit storage_failed '{"reason":"no_device_configured"}'
 
-    detect_devices
-
-    log "Please set parameter: usb_device"
-    log_warn "Example: usb_device: sdb1"
     return 1
   fi
 
-  # 2 Must be block device
-  log_debug "Check: block device"
-
-  if [ ! -b "${device}" ]; then
-    log_error "Device ${device} is not a block device"
+  # 2. Resolve device path
+  local device
+  device="$(resolve_device "${USB_DEVICE}")" || {
+    log_error "Device ${USB_DEVICE} not found or not a block device"
     emit storage_failed '{"reason":"not_block_device"}'
+
     return 1
-  fi
+  }
+
+  log_debug "Resolved device=${device}"
 
   # 3. Protect system disks
-  case "${USB_DEVICE}" in
-    sda*|mmcblk0*|nvme0n1*)
-      log_error "Refusing to use system device: ${USB_DEVICE}"
+  case "${device}" in
+    /dev/sda*|/dev/mmcblk0*|/dev/nvme0n1*)
+      log_error "Refusing to use system device: ${device}"
       emit storage_failed '{"reason":"system_device_blocked"}'
+
       return 1
       ;;
   esac
@@ -62,19 +82,17 @@ check_storage() {
     return 1
   fi
 
-  log_debug "Device ${device} filesystem: ${fstype}"
+  log_ok "Connection successful."
+  return 0
+}
 
-  log_debug "Check: device path=${device}"
 
-  if [ ! -e "${device}" ]; then
-    log_error "Device ${USB_DEVICE} not found"
-    log_warn "Make sure the disk name is correct."
-    return 1
-  fi
+check_target() {
 
-  log_ok "Device ${USB_DEVICE} detected and connected."
+# =========================================================
+# Source check (/backup)
+# =========================================================
 
-  # 5. Source directory (/backup)
   log "Checking the source directory..."
 
   if [ ! -d "/backup" ]; then
@@ -82,17 +100,12 @@ check_storage() {
     emit storage_failed '{"reason":"source_missing"}'
     return 1
   fi
-  log_ok "Source directory /backup: found"
 
-  return 0
-}
+  log_ok "Source directory /backup found"
 
-
-# ---------------------------------------------------------
+# =========================================================
 # Target checks
-# ---------------------------------------------------------
-
-check_target() {
+# =========================================================
 
   local target="/media/${MOUNT_POINT}"
 

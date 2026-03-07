@@ -2,7 +2,9 @@ configuration:
   usb_device:
     name: USB device
     description: >
-      Select the USB partition to store backups (for example: sdb1).
+      Select the USB partition to store backups.
+      You can specify the partition name (e.g., sdb1), label (e.g., backups),
+      or UUID (e.g., 7589979c-3104-462c-b08f-a3ce44034334).
       Leave empty to detect available devices.
 
   mount_point:

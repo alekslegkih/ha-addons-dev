@@ -1,4 +1,5 @@
-#!/usr/bin/env bash
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
 
 # =========================================================
 # Storage device mount
@@ -10,16 +11,23 @@ set -euo pipefail
 
 mount_usb() {
 
-  local device="/dev/${USB_DEVICE}"
-  local target="/${TARGET_ROOT}/${MOUNT_POINT}"
+  local device
+  device="$(resolve_device "${USB_DEVICE}")" || {
+    log_error "Device ${USB_DEVICE} not found"
+    emit storage_failed '{"reason":"not_block_device"}'
+    return 1
+  }
 
-  log "Mounting the target directory on the selected disk..."
+  local target="${TARGET_ROOT}/${MOUNT_POINT}"
+
+  log "Mounting target directory..."
   log "  Device : ${USB_DEVICE}"
-  log "  Target : ${target}"
+  log "  Target : ${MOUNT_POINT}"
 
-  log_debug "mount_usb() start"
-  log_debug "device=${USB_DEVICE}"
+  log_debug "device=${device}"
   log_debug "target=${target}"
+
+  log_debug "Resolved device path: ${device}"
 
 
   # -------------------------------------------------------
@@ -41,11 +49,11 @@ mount_usb() {
   # -------------------------------------------------------
   # 1. Target already mounted
   # -------------------------------------------------------
-  log "Checking the target folder..."
+  log "Checking the target directory..."
   log_debug "Check: findmnt --target ${target}"
 
   if findmnt --target "${target}" >/dev/null 2>&1; then
-    log_ok "Target ${target} is already mounted"
+    log_ok "Target directory ${target} is mounted"
     return 0
   fi
 
@@ -82,12 +90,12 @@ mount_usb() {
   log "Device not mounted, mounting directly"
   log_debug "Running: mount ${device} ${target}"
 
-  if mount "${USB_DEVICE}" "${target}"; then
+  if mount "${device}" "${target}"; then
     log_ok "Direct mount successful"
     return 0
   fi
 
-  log_error "Failed to mount ${USB_DEVICE} to ${target}"
+  log_error "Failed to mount ${device} to ${target}"
   emit storage_failed '{"reason":"mount_failed"}'
   return 1
 }

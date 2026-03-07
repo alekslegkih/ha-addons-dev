@@ -1,7 +1,7 @@
-#!/command/with-contenv bashio
+#!/usr/bin/with-contenv bashio
 # shellcheck shell=bash
 
-set -uo pipefail
+set -euo pipefail
 
 # =========================================================
 # Bootstrap only
@@ -12,10 +12,13 @@ export BASE_DIR
 
 source "${BASE_DIR}/core/logger.sh"
 source "${BASE_DIR}/core/config.sh"
-
 source "${BASE_DIR}/storage/checks.sh"
+source "${BASE_DIR}/storage/detect.sh"
 source "${BASE_DIR}/storage/mount.sh"
 
+# Exit code
+trap 'exit_code=$?; log_debug "REAL EXIT CODE: $exit_code"' EXIT
+# trap 'echo "REAL EXIT CODE: $?"' EXIT
 
 # =========================================================
 # emit helper
@@ -31,15 +34,24 @@ emit() {
 # =========================================================
 
 fail_and_stop() {
-  log_error "$1"
+  local caller="${FUNCNAME[1]}"
+  local message="$1"
+
+  log_error "${message}"
+  log_debug "[${caller}] ${message}"
+
 
   if _is_debug; then
     log_warn "Debug mode enabled — staying alive for investigation"
-  else
-    exit 1
+    sleep infinity
   fi
+
+  exit 1
 }
 
+
+
+# trap 'shutdown 0' SIGTERM SIGINT
 
 # =========================================================
 # Load config
@@ -61,9 +73,15 @@ COPIER_BIN="${BASE_DIR}/sync/copier.sh"
 # Storage layer
 # =========================================================
 
-log_section "Processing the storage layer"
+log_section "Storage layer"
 
-check_storage || fail_and_stop "Storage connection failed"
+if ! check_storage; then
+    detect_devices
+    log "Please set parameter: usb_device"
+    log_warn "Example: usb_device: sdb1 | label | UUID"
+    fail_and_stop "Storage connection failed"
+fi
+
 mount_usb     || fail_and_stop "Mount system failed"
 check_target  || fail_and_stop "Target checks failed"
 
@@ -72,15 +90,15 @@ check_target  || fail_and_stop "Target checks failed"
 # Sync layer
 # =========================================================
 
-log_section "Sync layer starting"
+log_section "Sync layer"
 
 python3 "${WATCHER_BIN}" &
 WATCHER_PID=$!
-log_ok "Watcher started"
+log_ok "Starting file watcher..."
 
 "${COPIER_BIN}" &
 COPIER_PID=$!
-log_ok "Copier started"
+log_ok "Starting copy worker..."
 
 if [ "${SYNC_EXIST_START}" = "true" ]; then
   python3 "${SCANNER_BIN}" || true

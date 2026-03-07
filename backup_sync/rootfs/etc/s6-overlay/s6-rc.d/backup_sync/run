@@ -1,0 +1,7 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+bashio::log.info "Backup Sync to USB addon starting"
+
+# Start main application
+exec /usr/bin/backup_sync.sh

@@ -64,71 +64,92 @@ cleanup_old() {
 }
 
 copy_one() {
-    local src="$1"
-    local name tmp size
-    local wait_start wait_end wait_sec
-    local copy_start copy_end copy_sec speed
 
-    name="$(basename "$src")"
-    tmp="${TARGET_DIR}/.${name}.tmp"
+  local src="$1"
+  local name tmp size size_mb
+  local wait_start wait_end wait_sec
+  local copy_start copy_end copy_sec speed
+  local COPY_TIMEOUT
 
-    log_section "Backup copy processing"
-    log "Backup detected: ${name}"
+  name="$(basename "$src")"
+  tmp="${TARGET_DIR}/.${name}.tmp"
 
-    # -------------------------
-    # stabilization phase
-    # -------------------------
-    log " • Waiting for file stabilization..."
-    
-    wait_start=$(now)
-    wait_stable "$src"
-    wait_end=$(now)
-    wait_sec=$((wait_end - wait_start))
+  log_section "Backup copy processing"
+  log "Backup detected: ${name}"
 
-    size=$(stat -c %s "$src" 2>/dev/null || echo 0)
-    log " • File stabilized (${wait_sec}s)"
-    emit copy_started "{\"filename\":\"${name}\",\"size_bytes\":${size}}"
+  # -------------------------
+  # stabilization phase
+  # -------------------------
 
-    # -------------------------
-    # copy phase
-    # -------------------------
-    log " • Copying..."
+  log "  • Waiting for file stabilization..."
 
-    copy_start=$(now)
+  wait_start=$(now)
+  wait_stable "$src"
+  wait_end=$(now)
 
-    if ! cp "$src" "$tmp"; then
-        log_error " ✗ Copy failed"
-        rm -f "$tmp"
-        emit error "{\"filename\":\"${name}\",\"reason\":\"copy_failed\"}"
-        return 1
+  wait_sec=$((wait_end - wait_start))
+
+  size=$(stat -c %s "$src" 2>/dev/null || echo 0)
+  size_mb=$((size / 1048576))
+
+  log "  • File stabilized (${wait_sec}s)"
+
+  emit copy_started "{\"filename\":\"${name}\",\"size_bytes\":${size}}"
+
+  # -------------------------
+  # copy phase
+  # -------------------------
+
+  log "  • Copying..."
+
+  # Минимальная допустимая скорость ~1MB/s
+  # +120 секунд запас
+  COPY_TIMEOUT=$(( size_mb + 120 ))
+
+  copy_start=$(now)
+
+  if ! timeout --kill-after=10 "${COPY_TIMEOUT}" cp "$src" "$tmp"; then
+
+    log_error "  ✗ Copy failed or stalled"
+    rm -f "$tmp"
+
+    # Проверяем, не пропал ли диск
+    if ! mountpoint -q "${TARGET_DIR}"; then
+      log_error "  ✗ Target storage not mounted"
+      emit storage_failed '{"reason":"device_disconnected","message":"Target storage is not mounted"}'
+      exit 1
     fi
 
-    mv "$tmp" "${TARGET_DIR}/${name}"
+    emit error "{\"filename\":\"${name}\",\"reason\":\"copy_failed_or_timeout\"}"
+    return 1
+  fi
 
-    copy_end=$(now)
-    copy_sec=$((copy_end - copy_start))
-    [ "$copy_sec" -le 0 ] && copy_sec=1
+  mv "$tmp" "${TARGET_DIR}/${name}"
 
-    speed=$((size / copy_sec))
+  copy_end=$(now)
+  copy_sec=$((copy_end - copy_start))
+  [ "$copy_sec" -le 0 ] && copy_sec=1
 
-    log_ok " ✓ Done ($(human_size "$size")) in ${copy_sec}s ($(human_size "$speed")/s)"
-    emit copy_completed "{\"filename\":\"${name}\",\"size_bytes\":${size},\"seconds\":${copy_sec},\"speed_bps\":${speed}}"
+  speed=$((size / copy_sec))
 
-    cleanup_old
-    return 0
+  log_ok "  ✓ Done ($(human_size "$size")) in ${copy_sec}s ($(human_size "$speed")/s)"
+
+  emit copy_completed "{\"filename\":\"${name}\",\"size_bytes\":${size},\"seconds\":${copy_sec},\"speed_bps\":${speed}}"
+
+  cleanup_old
+
+  return 0
 }
 
 # ---------------------------------------------------------
 # main loop
 # ---------------------------------------------------------
 
-log_ok "Copier worker started"
-
 while true; do
     file=$(queue_pop || true)
 
     if [ -z "${file:-}" ]; then
-        sleep 2
+        sleep 5
         continue
     fi
 

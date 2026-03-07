@@ -1,0 +1,16 @@
+#!/usr/bin/with-contenv bashio
+set -euo pipefail
+
+RUNTIME_ENV="/run/simple-dlna/runtime.env"
+WEB_APP="/usr/local/simple-dlna/web/filemanager.py"
+READY_FILE="/run/simple-dlna/service.ready"
+
+while [ ! -f "$READY_FILE" ]; do
+    sleep 1
+done
+
+set -a
+source "$RUNTIME_ENV"
+set +a
+
+exec python3 "$WEB_APP"

@@ -1,4 +1,4 @@
-#!/command/with-contenv bashio
+#!/usr/bin/with-contenv bashio
 # shellcheck shell=bash
 
 set -euo pipefail
@@ -55,11 +55,24 @@ load_config() {
   _validate_config
 
   log "-----------------------------------------------------------"
-  log "  USB device        : ${USB_DEVICE:-not set}"
-  log "  Mount point       : ${MOUNT_POINT}"
-  log "  Max backups       : ${MAX_COPIES}"
-  [ "${SYNC_EXIST_START}" = "true" ] && sync_state="enabled" || sync_state="disabled"
+  if [ -z "${USB_DEVICE}" ]; then
+    usb_value="${YELLOW}not set${NC}"
+  else
+    usb_value="${BLUE}${USB_DEVICE}${NC}"
+  fi
+  log "  USB device        : ${usb_value}"
+
+  log "  Mount point       : ${BLUE}${MOUNT_POINT}${NC}"
+  log "  Max backups       : ${BLUE}${MAX_COPIES}${NC}"
+
+  if [ "${SYNC_EXIST_START}" = "true" ]; then
+    sync_state="${GREEN}enabled${NC}"
+  else
+    sync_state="${YELLOW}disabled${NC}"
+  fi
+
   log "  Initial sync      : ${sync_state}"
+
   log "-----------------------------------------------------------"
 
   log_ok "Configuration loaded"

@@ -1,0 +1,5 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+rm -f /run/simple-dlna/service.ready
+exec /usr/bin/simple-dlna-service.sh
