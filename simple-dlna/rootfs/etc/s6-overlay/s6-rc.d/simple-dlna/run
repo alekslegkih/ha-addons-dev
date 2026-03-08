@@ -1,7 +1,0 @@
-#!/command/with-contenv bashio
-# shellcheck shell=bash
-
-bashio::log.info "Backup Sync to USB addon starting"
-
-# Start main application
-exec /etc/simple-dlna/simple-dlna.sh

@@ -1,12 +1,12 @@
-name: "Backup Sync to USB"
-description: "Automatically copies Home Assistant backups to connected USB storage"
-version: "0.1.3"
-slug: "backup-sync"
+name: Simple DLNA
+description: "Lightweight DLNA server based on ReadyMedia"
+version: "0.2.14"
+slug: simple_dlna
 url: "https://github.com/alekslegkih/ha-addons"
 arch:
   - amd64
   - aarch64
-image: ghcr.io/alekslegkih/backup-sync-{arch}
+image: ghcr.io/alekslegkih/simple_dlna-{arch}
 startup: application
 boot: auto
 init: false
@@ -43,21 +43,27 @@ devices:
 hassio_api: true
 homeassistant_api: true
 hassio_role: homeassistant
+host_network: true
 map:
-  - backup:ro
   - addon_config:rw
+  - media:rw
 options:
-  usb_device: ""
-  mount_point: "backups"
-  max_copies: 7
-  sync_exist_start: false
+  device: ""
+  media_dir: "dlna"
+  friendly_name: "Simple DLNA"
+  log_level: "error"
 schema:
-  usb_device: "str"
-  mount_point: "str"
-  max_copies: "int"
-  sync_exist_start: "bool"
-panel_icon:  mdi:cloud-upload-outline
-panel_title: "Backup browser"
+  device: "str"
+  media_dir: str
+  friendly_name: str
+  log_level: list(off|fatal|error|warn|info|debug)
+panel_icon: mdi:dlna
+panel_title: "DLNA browser"
+ports:
+  8200/tcp: 8200
+ports_description:
+  8200/tcp: Static server
 ingress: true
 ingress_stream: true
 ingress_port: 8899
+
