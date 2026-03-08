@@ -55,7 +55,9 @@ jobs:
               OLD=$(git show $BASE:$addon/config.yaml 2>/dev/null | grep '^version:' | awk '{print $2}')
               NEW=$(grep '^version:' $addon/config.yaml | awk '{print $2}')
 
-              if [ "$OLD" != "$NEW" ]; then
+              echo "addon=$addon OLD=$OLD NEW=$NEW"
+
+              if [ -n "$OLD" ] && [ "$OLD" != "$NEW" ]; then
                 RESULT=$(jq -c ". + [\"$addon\"]" <<< "$RESULT")
               fi
 
