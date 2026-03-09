@@ -8,7 +8,7 @@ quick deployment of a DLNA server in the Home Assistant OS environment.
 The add-on provides a basic DLNA server for streaming video, audio, and images
 from connected USB storage devices.
 
-> WARNING  
+> [WARNING]  
 > This add-on does not modify the behavior of ReadyMedia (minidlna), does not add custom APIs,
 > and does not manage internal DLNA mechanisms.  
 > The server behavior fully follows the standard ReadyMedia implementation.
