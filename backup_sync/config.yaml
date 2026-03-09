@@ -6,7 +6,7 @@ url: "https://github.com/alekslegkih/ha-addons"
 arch:
   - amd64
   - aarch64
-build_from: ghcr.io/hassio-addons/base:20.0.1
+image: ghcr.io/alekslegkih/backup_sync-{arch}
 startup: application
 boot: auto
 init: false

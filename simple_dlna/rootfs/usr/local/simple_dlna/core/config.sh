@@ -17,29 +17,30 @@ LOG_LEVEL="info"
 # Load config
 # ------------------------------------------------------------------
 
+# ------------------------------------------------------------------
+# Load config
+# ------------------------------------------------------------------
+
 load_config() {
 
     log_debug "load_config(): start"
 
-    OPTION_FILE="/data/options.json"
-    log_debug "Options file=${OPTION_FILE}"
-
-    if [ ! -f "${OPTION_FILE}" ]; then
-        log_error "Config file ${OPTION_FILE} not found"
-    fi
-
     bashio::log "Loading config..."
 
-    DEVICE="$(jq -r '.device // empty' "${OPTION_FILE}")"
-    MEDIA_DIR="$(jq -r '.media_dir // empty' "${OPTION_FILE}")"
-    FRIENDLY_NAME="$(jq -r '.friendly_name // empty' "${OPTION_FILE}")"
-    LOG_LEVEL="$(jq -r '.log_level // empty' "${OPTION_FILE}")"
+    DEVICE=$(bashio::config 'device')
+    MOUNT_POINT=$(bashio::config 'mount_point')
+    MAX_COPIES=$(bashio::config 'max_copies')
+
+    if bashio::config.true 'sync_exist_start'; then
+        SYNC_EXIST_START=true
+    fi
 
     log_debug "Raw config values:"
     log_debug "  DEVICE=${DEVICE:-empty}"
-    log_debug "  MEDIA_DIR=${MEDIA_DIR:-empty}"
-    log_debug "  FRIENDLY_NAME=${FRIENDLY_NAME:-empty}"
-    log_debug "  LOG_LEVEL=${LOG_LEVEL:-empty}"
+    log_debug "  MOUNT_POINT=${MOUNT_POINT:-empty}"
+    log_debug "  MAX_COPIES=${MAX_COPIES:-empty}"
+    log_debug "  SYNC_EXIST_START=${SYNC_EXIST_START:-empty}"
+
 
     # ------------------------------------------------------------------
     # Information output
