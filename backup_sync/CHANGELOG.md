@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.3.1
+
+- Fixed code
+
 ## v0.3.0
 
 - Changed completely redesigned USB mounting logic
