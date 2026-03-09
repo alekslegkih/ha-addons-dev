@@ -3,95 +3,91 @@
 
 set -euo pipefail
 
-# =========================================================
-# Static paths
-# =========================================================
-
-CONFIG_FILE="/data/options.json"
-BACKUP_DIR="/backup"
-QUEUE_FILE="/tmp/backup_sync.queue"
-DEBUG_FLAG="/config/debug.flag"
-TARGET_ROOT="/media"
-
-
-
-# =========================================================
-# Debug
-# =========================================================
-
-_is_debug() {
-  [ -f "${DEBUG_FLAG}" ]
-}
-
-
-# =========================================================
+# ------------------------------------------------------------------
 # Runtime defaults
-# =========================================================
+# ------------------------------------------------------------------
 
-USB_DEVICE=""
-MOUNT_POINT=""
+DEVICE=""
+TARGET_DIR=""
 MAX_COPIES=0
 SYNC_EXIST_START=false
 
-
-# =========================================================
+# ------------------------------------------------------------------
 # Load config
-# =========================================================
+# ------------------------------------------------------------------
 
 load_config() {
 
-  if [ ! -f "${CONFIG_FILE}" ]; then
-    _config_fail "Config file ${CONFIG_FILE} not found"
-  fi
+  log_debug "load_config(): start"
 
-  log_section "Configuration"
-  log "Loading config from ${CONFIG_FILE}..."
+  bashio::log "Loading config..."
 
-  USB_DEVICE="$(jq -r '.usb_device // ""' "${CONFIG_FILE}")"
-  MOUNT_POINT="$(jq -r '.mount_point // ""' "${CONFIG_FILE}")"
-  MAX_COPIES="$(jq -r '.max_copies // 0' "${CONFIG_FILE}")"
-  SYNC_EXIST_START="$(jq -r '.sync_exist_start // false' "${CONFIG_FILE}")"
+  DEVICE=$(bashio::config 'device' "")
+  TARGET_DIR=$(bashio::config 'target_dir' "")
+  MAX_COPIES=$(bashio::config 'max_copies' 0)
 
-  _validate_config
-
-  log "-----------------------------------------------------------"
-  if [ -z "${USB_DEVICE}" ]; then
-    usb_value="${YELLOW}not set${NC}"
+  if bashio::config.true 'sync_exist_start'; then
+      SYNC_EXIST_START=true
   else
-    usb_value="${BLUE}${USB_DEVICE}${NC}"
+      SYNC_EXIST_START=false
   fi
-  log "  USB device        : ${usb_value}"
 
-  log "  Mount point       : ${BLUE}${MOUNT_POINT}${NC}"
-  log "  Max backups       : ${BLUE}${MAX_COPIES}${NC}"
+  log_debug "Raw config values:"
+  log_debug "  DEVICE=${DEVICE:-empty}"
+  log_debug "  TARGET_DIR=${TARGET_DIR:-empty}"
+  log_debug "  MAX_COPIES=${MAX_COPIES:-empty}"
+  log_debug "  SYNC_EXIST_START=${SYNC_EXIST_START:-empty}"
+
+  # ------------------------------------------------------------------
+  # Information output
+  # ------------------------------------------------------------------
+
+  if [ -z "${DEVICE}" ]; then
+      device="\033[0;33mnot set\033[0m"
+  else
+      device="\033[0;34m${DEVICE}\033[0m"
+  fi
+
+  if [ -z "${TARGET_DIR}" ]; then
+      target_dir="\033[0;33mnot set\033[0m"
+  else
+      target_dir="\033[0;34m${TARGET_DIR}\033[0m"
+  fi
 
   if [ "${SYNC_EXIST_START}" = "true" ]; then
-    sync_state="${GREEN}enabled${NC}"
+    sync_state="\033[0;32menabled\033[0m"
   else
-    sync_state="${YELLOW}disabled${NC}"
+    sync_state="\033[0;33mdisabled\033[0m"
   fi
 
-  log "  Initial sync      : ${sync_state}"
+  bashio::log "  Device       : ${device}"
+  bashio::log "  Target dir   : ${target_dir}"
+  bashio::log "  Max backups  : \033[0;34m${MAX_COPIES}\033[0m"
+  bashio::log "  Sync state   : ${sync_state}"
 
-  log "-----------------------------------------------------------"
+  # ------------------------------------------------------------------
+  # Validating target directory
+  # ------------------------------------------------------------------
 
-  log_ok "Configuration loaded"
+    _validate_config
 
-  # =======================================================
-  # EXPORT EVERYTHING HERE
-  # =======================================================
+  # ------------------------------------------------------------------
+  # Static paths
+  # ------------------------------------------------------------------
 
-  export CONFIG_FILE \
-        BACKUP_DIR \
-        QUEUE_FILE \
-        DEBUG_FLAG \
-        TARGET_ROOT \
-        USB_DEVICE \
-        MOUNT_POINT \
-        MAX_COPIES \
-        SYNC_EXIST_START
+  SOURCE_DIR="/backup"
+  TARGET_ROOT="/mnt"
+  QUEUE_FILE="/tmp/backup_sync.queue"
+
+  log_debug "Derived paths:"
+  log_debug "  SOURCE_DIR=${SOURCE_DIR}"
+  log_debug "  QUEUE_FILE=${QUEUE_FILE}"
+  log_debug "  TARGET_ROOT=${TARGET_ROOT}"
+
+  bashio::log.green "Configuration loaded"
+  log_debug "load_config(): completed"
+
 }
-
 
 # ---------------------------------------------------------
 # Validate config format
@@ -99,22 +95,48 @@ load_config() {
 
 _validate_config() {
 
-  log_debug "Validating config format"
+  log_debug "_validate_config(): start"
 
-  # mount_point must not be empty
-  if [ -z "${MOUNT_POINT}" ]; then
-    _config_fail "mount_point is empty"
+  # ----------------------------------------------------------
+  # Mount point default
+  # ----------------------------------------------------------
+
+  if [ -z "${TARGET_DIR}" ]; then
+      TARGET_DIR="backups"
+      bashio::log.yellow "Target dir not set — using default: ${TARGET_DIR}"
+      log_debug "TARGET_DIR fallback applied"
   fi
 
-  # mount_point must be a name, not a path
-  if [[ "${MOUNT_POINT}" == /* ]]; then
-    _config_fail "mount_point must not start with '/' (use name only, e.g. baсkups)"
+  # ----------------------------------------------------------
+  # Remove leading slashes
+  # ----------------------------------------------------------
+
+  if [[ "${TARGET_DIR}" == /* ]]; then
+      bashio::log.yellow "Target dir must not start with '/'. Normalizing."
+      TARGET_DIR="${TARGET_DIR#/}"
+      log_debug "Leading slash removed, TARGET_DIR=${TARGET_DIR}"
   fi
 
-  # max_copies must be positive integer
-  if ! [[ "${MAX_COPIES}" =~ ^[0-9]+$ ]] || [ "${MAX_COPIES}" -le 0 ]; then
-    _config_fail "max_copies must be a positive integer"
+  # ----------------------------------------------------------
+  # Prevent path traversal
+  # ----------------------------------------------------------
+
+  if [[ "${TARGET_DIR}" == *".."* ]]; then
+      bashio::log.red "Target dir must not contain '..'"
+      return 1
   fi
 
-  log_debug "Config format validation passed"
+  # ----------------------------------------------------------
+  # Prevent empty after normalization
+  # ----------------------------------------------------------
+
+  if [ -z "${TARGET_DIR}" ]; then
+      TARGET_DIR="backups"
+      log_debug "Target dir became empty after normalization — using default: ${TARGET_DIR}"
+  fi
+
+  log_debug "Final TARGET_DIR=${TARGET_DIR}"
+  log_debug "_validate_config(): completed"
+
+  return 0
 }

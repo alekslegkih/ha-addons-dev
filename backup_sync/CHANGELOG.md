@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0
+
+- Changed completely redesigned USB mounting logic
+- Changed improved storage validation and device detection
+- Improved more stable copy worker with detailed transfer logs
+
 ## 0.2.5
 
 - Added translations.

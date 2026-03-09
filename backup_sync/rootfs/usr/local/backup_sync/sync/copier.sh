@@ -1,13 +1,22 @@
-#!/usr/bin/env bash
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
 
 set -uo pipefail
 
-TARGET_DIR="/${TARGET_ROOT}/${MOUNT_POINT}"
 
-source "${BASE_DIR}/core/logger.sh"
+RUNTIME_ENV="/run/backup_sync/runtime.env"
+
+if [ ! -f "$RUNTIME_ENV" ]; then
+    echo "runtime.env not found"
+    exit 1
+fi
+
+set -a
+source "$RUNTIME_ENV"
+set +a
 
 emit() {
-  python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || true
+    python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || true
 }
 
 
@@ -53,11 +62,11 @@ cleanup_old() {
     [ "${MAX_COPIES}" -le 0 ] && return 0
 
     local count
-    count=$(ls -1t "${TARGET_DIR}"/*.tar* 2>/dev/null | wc -l || echo 0)
+    count=$(ls -1t "${TARGET_PATH}"/*.tar* 2>/dev/null | wc -l || echo 0)
 
     while [ "${count}" -gt "${MAX_COPIES}" ]; do
-        old=$(ls -1t "${TARGET_DIR}"/*.tar* | tail -n 1)
-        log_warn " • Removing old backup: $(basename "$old")"
+        old=$(ls -1t "${TARGET_PATH}"/*.tar* | tail -n 1)
+        bashio::log.yellow " • Removing old backup: $(basename "$old")"
         rm -f "$old"
         count=$((count - 1))
     done
@@ -65,80 +74,80 @@ cleanup_old() {
 
 copy_one() {
 
-  local src="$1"
-  local name tmp size size_mb
-  local wait_start wait_end wait_sec
-  local copy_start copy_end copy_sec speed
-  local COPY_TIMEOUT
+    TARGET_PATH="${TARGET_ROOT}/${DEVICE}/${TARGET_DIR}"
 
-  name="$(basename "$src")"
-  tmp="${TARGET_DIR}/.${name}.tmp"
+    local src="$1"
+    local name tmp size size_mb
+    local wait_start wait_end wait_sec
+    local copy_start copy_end copy_sec speed
+    local COPY_TIMEOUT
 
-  log_section "Backup copy processing"
-  log "Backup detected: ${name}"
+    name="$(basename "$src")"
+    tmp="${TARGET_PATH}/.${name}.tmp"
 
-  # -------------------------
-  # stabilization phase
-  # -------------------------
+    bashio::log "Backup detected:  $(date '+%Y-%m-%d %H:%M:%S')"
+    bashio::log "Backup file: ${name}"
 
-  log "  • Waiting for file stabilization..."
+    # -------------------------
+    # stabilization phase
+    # -------------------------
 
-  wait_start=$(now)
-  wait_stable "$src"
-  wait_end=$(now)
+    bashio::log "  • Waiting for file stabilization..."
 
-  wait_sec=$((wait_end - wait_start))
+    wait_start=$(now)
+    wait_stable "$src"
+    wait_end=$(now)
 
-  size=$(stat -c %s "$src" 2>/dev/null || echo 0)
-  size_mb=$((size / 1048576))
+    wait_sec=$((wait_end - wait_start))
 
-  log "  • File stabilized (${wait_sec}s)"
+    size=$(stat -c %s "$src" 2>/dev/null || echo 0)
+    size_mb=$((size / 1048576))
 
-  emit copy_started "{\"filename\":\"${name}\",\"size_bytes\":${size}}"
+    bashio::log "  • File stabilized (${wait_sec}s)"
 
-  # -------------------------
-  # copy phase
-  # -------------------------
+    emit copy_started "{\"filename\":\"${name}\",\"size_bytes\":${size}}"
 
-  log "  • Copying..."
+    # -------------------------
+    # copy phase
+    # -------------------------
 
-  # Минимальная допустимая скорость ~1MB/s
-  # +120 секунд запас
-  COPY_TIMEOUT=$(( size_mb + 120 ))
+    bashio::log "  • Copying..."
 
-  copy_start=$(now)
+    COPY_TIMEOUT=$(( size_mb + 120 ))
 
-  if ! timeout --kill-after=10 "${COPY_TIMEOUT}" cp "$src" "$tmp"; then
+    copy_start=$(now)
 
-    log_error "  ✗ Copy failed or stalled"
+    if ! timeout --kill-after=10 "${COPY_TIMEOUT}" cp "$src" "$tmp"; then
+
+    bashio::log.red "  ✗ Copy failed or stalled"
     rm -f "$tmp"
 
-    # Проверяем, не пропал ли диск
-    if ! mountpoint -q "${TARGET_DIR}"; then
-      log_error "  ✗ Target storage not mounted"
-      emit storage_failed '{"reason":"device_disconnected","message":"Target storage is not mounted"}'
-      exit 1
+        # Проверяем, не пропал ли диск
+        if ! mountpoint -q "${TARGET_PATH}"; then
+        bashio::log.red "  ✗ Target storage not mounted"
+        emit storage_failed '{"reason":"device_disconnected","message":"Target storage is not mounted"}'
+        exit 1
+        fi
+
+        emit error "{\"filename\":\"${name}\",\"reason\":\"copy_failed_or_timeout\"}"
+        return 1
     fi
 
-    emit error "{\"filename\":\"${name}\",\"reason\":\"copy_failed_or_timeout\"}"
-    return 1
-  fi
+    mv "$tmp" "${TARGET_PATH}/${name}"
 
-  mv "$tmp" "${TARGET_DIR}/${name}"
+    copy_end=$(now)
+    copy_sec=$((copy_end - copy_start))
+    [ "$copy_sec" -le 0 ] && copy_sec=1
 
-  copy_end=$(now)
-  copy_sec=$((copy_end - copy_start))
-  [ "$copy_sec" -le 0 ] && copy_sec=1
+    speed=$((size / copy_sec))
 
-  speed=$((size / copy_sec))
+    bashio::log.green "  ✓ Done ($(human_size "$size")) in ${copy_sec}s ($(human_size "$speed")/s)"
 
-  log_ok "  ✓ Done ($(human_size "$size")) in ${copy_sec}s ($(human_size "$speed")/s)"
+    emit copy_completed "{\"filename\":\"${name}\",\"size_bytes\":${size},\"seconds\":${copy_sec},\"speed_bps\":${speed}}"
 
-  emit copy_completed "{\"filename\":\"${name}\",\"size_bytes\":${size},\"seconds\":${copy_sec},\"speed_bps\":${speed}}"
+    cleanup_old
 
-  cleanup_old
-
-  return 0
+    return 0
 }
 
 # ---------------------------------------------------------

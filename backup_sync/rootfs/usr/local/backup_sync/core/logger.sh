@@ -1,71 +1,44 @@
-#!/usr/bin/with-contenv bashio
-# shellcheck shell=bash
+import os
 
-# =========================================================
-# Simple pretty logger for Backup Sync addon
-# User-friendly by default, debug via /data/debug.flag
-# =========================================================
+RESET   = "\033[0m"
+GREEN   = "\033[32m"
+YELLOW  = "\033[33m"
+RED     = "\033[31m"
+BLUE    = "\033[34m"
+MAGENTA = "\033[35m"
 
-DEBUG_FLAG="/config/debug.flag"
+DEBUG_FLAG = os.environ.get("DEBUG_FLAG")
+DEBUG = DEBUG_FLAG and os.path.exists(DEBUG_FLAG)
 
-# ---------- Colors ----------
-NC="\033[0m"
 
-WHITE=""
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-RED="\033[0;31m"
-BLUE="\033[0;34m"
-PURPLE="\033[0;35m"
+def _print(color, msg):
+    print(f"{color}{msg}{RESET}", flush=True)
 
-# ---------- Timestamp ----------
-_ts() {
-    date '+%Y-%m-%d %H:%M:%S'
-}
 
-# ---------- Debug check ----------
-_is_debug() {
-    [ -f "${DEBUG_FLAG}" ]
-}
+def log(msg):
+    print(msg, flush=True)
 
-# ---------- Core printer ----------
-_log_raw() {
-    local color="$1"
-    shift
-    echo -e "${color}$*${NC}"
-}
 
-# =========================================================
-# Public API
-# =========================================================
+def log_green(msg):
+    _print(GREEN, msg)
 
-# Plain message (white)
-log() {
-    _log_raw "${WHITE}" "$@"
-}
 
-# Success (green)
-log_ok() {
-    _log_raw "${GREEN}" "$@"
-}
+def log_yellow(msg):
+    _print(YELLOW, msg)
 
-# Warning (yellow)
-log_warn() {
-    _log_raw "${YELLOW}" "$@"
-}
 
-# Error (red + timestamp)
-log_error() {
-    _log_raw "${RED}" "$@"
-}
+def log_red(msg):
+    _print(RED, msg)
 
-# Section header (blue)
-log_section() {
-    _log_raw "${BLUE}" "=== $* ==="
-}
 
-# Debug (purple + timestamp, only if flag exists)
-log_debug() {
-    _is_debug || return 0
-    _log_raw "${PURPLE}" "[$(_ts)] $*" >&2
-}
+def log_blue(msg):
+    _print(BLUE, msg)
+
+
+def log_magenta(msg):
+    _print(MAGENTA, msg)
+
+
+def log_debug(msg):
+    if DEBUG:
+        _print(MAGENTA, f"[DEBUG] {msg}")

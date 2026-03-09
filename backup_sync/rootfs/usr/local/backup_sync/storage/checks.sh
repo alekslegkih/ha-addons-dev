@@ -3,141 +3,215 @@
 
 set -euo pipefail
 
-_is_debug() { [ -f "${DEBUG_FLAG}" ]; }
-
-# =========================================================
+# ------------------------------------------------------------------
 # Device resolving
-# =========================================================
+# ------------------------------------------------------------------
 
 resolve_device() {
-  local input="$1"
-  local path
+    local input="$1"
+    local path
+    local matches
+    local count
 
-  log_debug "Resolving device for: ${input}"
+    log_debug "resolve_device(): input=${input}"
 
-  for path in \
-    "/dev/${input}" \
-    "/dev/disk/by-label/${input}" \
-    "/dev/disk/by-uuid/${input}"
-  do
-    if [ -b "$path" ]; then
-      printf '%s\n' "$path"
-      return 0
+    # ----------------------------------------------------------
+    # 1. Direct device path (sdb2)
+    # ----------------------------------------------------------
+
+    path="/dev/${input}"
+    log_debug "Checking direct path=${path}"
+
+    if [ -b "${path}" ]; then
+        log_debug "Resolved to ${path} (direct)"
+        printf '%s\n' "${path}"
+        return 0
     fi
-  done
 
-  return 1
+    # ----------------------------------------------------------
+    # 2. LABEL match (duplicate check, but keep by-label path)
+    # ----------------------------------------------------------
+
+    matches="$(blkid -t LABEL="${input}" -o device 2>/dev/null || true)"
+    count="$(printf "%s\n" "${matches}" | sed '/^$/d' | wc -l)"
+
+    if [ "${count}" -gt 1 ]; then
+        bashio::log.red "Multiple devices found with LABEL=${input}"
+        printf "%s\n" "${matches}" | while read -r dev; do
+            bashio::log.red "  ${dev}"
+        done
+        bashio::log.red "Please use UUID instead."
+        return 1
+    fi
+
+    if [ "${count}" -eq 1 ]; then
+        path="/dev/disk/by-label/${input}"
+        if [ -b "${path}" ]; then
+            log_debug "Resolved via LABEL to ${path}"
+            printf '%s\n' "${path}"
+            return 0
+        fi
+    fi
+
+    # ----------------------------------------------------------
+    # 3. UUID match (duplicate check, keep by-uuid path)
+    # ----------------------------------------------------------
+
+    matches="$(blkid -t UUID="${input}" -o device 2>/dev/null || true)"
+    count="$(printf "%s\n" "${matches}" | sed '/^$/d' | wc -l)"
+
+    if [ "${count}" -gt 1 ]; then
+        bashio::log.red "Multiple devices found with UUID=${input}"
+        printf "%s\n" "${matches}" | while read -r dev; do
+            bashio::log.red "  ${dev}"
+        done
+        return 1
+    fi
+
+    if [ "${count}" -eq 1 ]; then
+        path="/dev/disk/by-uuid/${input}"
+        if [ -b "${path}" ]; then
+            log_debug "Resolved via UUID to ${path}"
+            printf '%s\n' "${path}"
+            return 0
+        fi
+    fi
+
+    log_debug "resolve_device(): no matching block device found"
+    return 1
 }
 
 
-# =========================================================
+# ------------------------------------------------------------------
 # Storage validation
-# =========================================================
+# ------------------------------------------------------------------
 
 check_storage() {
 
-  log_debug "USB_DEVICE=${USB_DEVICE}"
-  log "Connecting to configured USB device..."
+    log_debug "check_storage(): start"
+    log_debug "Configured DEVICE=${DEVICE:-none}"
 
-  # 1. Device configured?
-  if [ -z "${USB_DEVICE}" ]; then
-    log_error "No USB device configured"
-    emit storage_failed '{"reason":"no_device_configured"}'
+    bashio::log.cyan "Connecting to configured device..."
 
-    return 1
-  fi
+    if [ -z "${DEVICE}" ]; then
+        bashio::log.red "No device configured"
+        emit storage_failed '{"reason":"no_device_configured"}'
+        return 1
+    fi
 
-  # 2. Resolve device path
-  local device
-  device="$(resolve_device "${USB_DEVICE}")" || {
-    log_error "Device ${USB_DEVICE} not found or not a block device"
-    emit storage_failed '{"reason":"not_block_device"}'
+    local device
+    device="$(resolve_device "${DEVICE}")" || {
+        bashio::log.red "Device ${DEVICE} not found or not a block device"
+        emit storage_failed '{"reason":"not_block_device"}'
+        return 1
+    }
 
-    return 1
-  }
+    log_debug "Resolved device=${device}"
 
-  log_debug "Resolved device=${device}"
+    case "${device}" in
+        /dev/sda*|/dev/mmcblk0*|/dev/nvme0n1*)
+            bashio::log.red "Refusing to use system device: ${device}"
+            emit storage_failed '{"reason":"system_device_blocked"}'
+            return 1
+            ;;
+    esac
 
-  # 3. Protect system disks
-  case "${device}" in
-    /dev/sda*|/dev/mmcblk0*|/dev/nvme0n1*)
-      log_error "Refusing to use system device: ${device}"
-      emit storage_failed '{"reason":"system_device_blocked"}'
+    log_debug "Detecting filesystem via lsblk"
 
-      return 1
-      ;;
-  esac
+    local fstype
+    fstype="$(lsblk -no FSTYPE "${device}" 2>/dev/null || true)"
 
-  # 4. Filesystem detection
-  log_debug "Detecting filesystem via lsblk"
+    log_debug "Detected fstype=${fstype:-none}"
 
-  local fstype
-  fstype="$(lsblk -no FSTYPE "${device}" 2>/dev/null || true)"
+    if [ -z "${fstype}" ]; then
+        bashio::log.red "Filesystem not detected on ${device}"
+        emit storage_failed '{"reason":"no_filesystem"}'
+        return 1
+    fi
 
-  log_debug "fstype=${fstype:-none}"
-
-  if [ -z "${fstype}" ]; then
-    log_error "Filesystem not detected on ${device}"
-    emit storage_failed '{"reason":"no_filesystem"}'
-    return 1
-  fi
-
-  log_ok "Connection successful."
-  return 0
+    bashio::log.green "Connection successful."
+    log_debug "check_storage(): success"
+    return 0
 }
 
 
+# ------------------------------------------------------------------
+# Target validation
+# ------------------------------------------------------------------
+
 check_target() {
 
-# =========================================================
-# Source check (/backup)
-# =========================================================
+    log_debug "check_target(): start"
 
-  log "Checking the source directory..."
+    # ----------------------------------------------------------
+    # Safety check (should never fail after validation)
+    # ----------------------------------------------------------
 
-  if [ ! -d "/backup" ]; then
-    log_error "Source directory /backup does not exist"
-    emit storage_failed '{"reason":"source_missing"}'
-    return 1
-  fi
+    if [ -z "${TARGET_DIR}" ]; then
+        bashio::log.red "TARGET_DIR is empty (validation failure)"
+        return 1
+    fi
 
-  log_ok "Source directory /backup found"
+    local device
+    device="$(resolve_device "${DEVICE}")" || {
+        bashio::log.red "Cannot resolve device in check_target"
+        return 1
+    }
 
-# =========================================================
-# Target checks
-# =========================================================
+    log_debug "Resolved device=${device}"
 
-  local target="/media/${MOUNT_POINT}"
+    local mount_name
+    mount_name="$(basename "${device}")"
 
-  log_debug "Check target path=${target}"
+    local target="${TARGET_ROOT}/${mount_name}"
+    local target_path="${target}/${TARGET_DIR}"
 
-  # 1. Exists
-  if [ ! -d "${target}" ]; then
-    log_error "Target directory ${target} does not exist"
-    emit storage_failed '{"reason":"target_missing"}'
-    return 1
-  fi
+    log_debug "Mount target=${target}"
+    log_debug "Target path=${target_path}"
 
-  # 2. Is mountpoint
-  log_debug "Running findmnt --target ${target}"
+    # ----------------------------------------------------------
+    # Verify mountpoint
+    # ----------------------------------------------------------
 
-  if ! findmnt --target "${target}" >/dev/null 2>&1; then
-    log_error "Target ${target} is not a mountpoint"
-    emit storage_failed '{"reason":"target_not_mounted"}'
-    return 1
-  fi
+    if ! mountpoint -q "${target}"; then
+        bashio::log.red "Target ${target} is not a mountpoint"
+        return 1
+    fi
 
-  # 3. Writable test
-  local testfile="${target}/.write_test"
-  log_debug "Writable testfile=${testfile}"
+    log_debug "Mountpoint verified"
 
-  if ! touch "${testfile}" 2>/dev/null; then
-    log_error "Target ${target} is not writable"
-    emit storage_failed '{"reason":"target_not_writable"}'
-    return 1
-  fi
+    # ----------------------------------------------------------
+    # Ensure target directory exists
+    # ----------------------------------------------------------
 
-  rm -f "${testfile}"
+    if [ ! -d "${target_path}" ]; then
+        bashio::log "Target directory ${target_path} not found — creating"
 
-  return 0
+        mkdir -p "${target_path}" || {
+            bashio::log.red "Faild to create terget directory"
+            return 1
+        }
+
+        log_debug "Target directory created"
+    fi
+
+    # ----------------------------------------------------------
+    # Write test
+    # ----------------------------------------------------------
+
+    local testfile="${target_path}/.write_test"
+    log_debug "Write test file=${testfile}"
+
+    if ! touch "${testfile}" 2>/dev/null; then
+        bashio::log.red "Target directory not writable"
+        return 1
+    fi
+
+    rm -f "${testfile}"
+    log_debug "Write test passed"
+
+    bashio::log.green "Storage layer ready"
+    log_debug "check_target(): success"
+
+    return 0
 }

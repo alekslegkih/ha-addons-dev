@@ -8,24 +8,48 @@ sys.path.append(str(BASE))
 
 import os
 from ha.events import emit
-from core import config   # <-- include config.h
 
+env = {}
+
+env_path = Path("/run/backup_sync/runtime.env")
+
+if not env_path.exists():
+    print("[watcher] runtime.env missing", flush=True)
+    sys.exit(1)
+
+with env_path.open() as f:
+    for line in f:
+        line = line.strip()
+
+        if not line or "=" not in line:
+            continue
+
+        k, v = line.split("=", 1)
+        env[k] = v.strip().strip("'").strip('"')
+
+SOURCE_DIR = Path(env.get("SOURCE_DIR", ""))
+DEBUG_FLAG = Path(env.get("DEBUG_FLAG", ""))
+QUEUE_FILE = Path(env.get("QUEUE_FILE", ""))
+TARGET_PATH = Path(env.get("TARGET_PATH", ""))
 
 # ---------------------------------------------------------
 # helpers
 # ---------------------------------------------------------
 
+
 def debug(msg: str):
-    if config.DEBUG_FLAG.exists():
+    if DEBUG_FLAG.exists():
         print(f"[DEBUG][scanner] {msg}", flush=True)
 
 
+
+VALID_PATTERNS = ("*.tar", "*.tar.gz")
+
 def list_backups(path: Path):
     files = []
-    for pattern in config.VALID_PATTERNS:
+    for pattern in VALID_PATTERNS:
         files.extend(path.glob(pattern))
     return files
-
 
 # ---------------------------------------------------------
 # main
@@ -33,23 +57,16 @@ def list_backups(path: Path):
 
 def main():
 
-    mount_point = config.MOUNT_POINT   # <-- берём из config
+    debug(f"source={SOURCE_DIR}")
+    debug(f"target={TARGET_PATH}")
+    debug(f"queue={QUEUE_FILE}")
 
-    if not mount_point:
-        print("Initial scan skipped: MOUNT_POINT not set")
-        return 0
 
-    target_dir = config.TARGET_ROOT / mount_point
-
-    debug(f"source={config.BACKUP_DIR}")
-    debug(f"target={target_dir}")
-    debug(f"queue={config.QUEUE_FILE}")
-
-    if not config.BACKUP_DIR.exists():
+    if not SOURCE_DIR.exists():
         debug("source dir missing")
         return 1
 
-    if not target_dir.exists():
+    if not TARGET_PATH.exists():
         debug("target dir missing")
         return 1
 
@@ -57,20 +74,20 @@ def main():
     # collect
     # -----------------------------------------------------
 
-    backups = list_backups(config.BACKUP_DIR)
+    backups = list_backups(SOURCE_DIR)
     backups.sort(key=lambda p: p.stat().st_mtime)
 
-    existing = {f.name for f in list_backups(target_dir)}
+    existing = {f.name for f in list_backups(TARGET_PATH)}
 
     found = len(backups)
     already = 0
     queued = 0
 
     # -----------------------------------------------------
-    # enqueue
+    # enqueue 
     # -----------------------------------------------------
 
-    with config.QUEUE_FILE.open("a") as q:
+    with QUEUE_FILE.open("a") as q:
         for b in backups:
 
             if b.name in existing:
