@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+  workflow_dispatch:
+    inputs:
+      force_build:
+        description: "Force build all addons"
+        required: false
+        default: "false"
+
 jobs:
 
   lint:
@@ -24,6 +31,7 @@ jobs:
           shellcheck -S error -x -e SC1091 $(git ls-files "*.sh")
           yamllint .
           markdownlint .
+
 
   detect:
     runs-on: ubuntu-latest
@@ -45,20 +53,35 @@ jobs:
             BASE=${{ github.event.before }}
           fi
 
-          ADDONS=$(git diff $BASE ${{ github.sha }} --name-only | cut -d/ -f1 | sort -u)
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            BASE=$(git rev-list --max-parents=0 HEAD)
+          fi
+
+          FORCE_BUILD=false
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force_build }}" = "true" ]; then
+            FORCE_BUILD=true
+          fi
+
+          if [ "$FORCE_BUILD" = true ]; then
+            ADDONS=$(find . -maxdepth 2 -name "config.yaml" -exec dirname {} \; | sed 's|^\./||' | sort -u)
+          else
+            ADDONS=$(git diff $BASE ${{ github.sha }} --name-only | cut -d/ -f1 | sort -u)
+          fi
 
           RESULT="[]"
 
           for addon in $ADDONS; do
             if [ -f "$addon/config.yaml" ]; then
 
-              OLD=$(git show $BASE:$addon/config.yaml 2>/dev/null | grep '^version:' | awk '{print $2}')
-              NEW=$(grep '^version:' $addon/config.yaml | awk '{print $2}')
-
-              echo "addon=$addon OLD=$OLD NEW=$NEW"
-
-              if [ -n "$OLD" ] && [ "$OLD" != "$NEW" ]; then
+              if [ "$FORCE_BUILD" = true ]; then
                 RESULT=$(jq -c ". + [\"$addon\"]" <<< "$RESULT")
+              else
+                OLD=$(git show $BASE:$addon/config.yaml 2>/dev/null | grep '^version:' | awk '{print $2}')
+                NEW=$(grep '^version:' $addon/config.yaml | awk '{print $2}')
+
+                if [ -n "$OLD" ] && [ "$OLD" != "$NEW" ]; then
+                  RESULT=$(jq -c ". + [\"$addon\"]" <<< "$RESULT")
+                fi
               fi
 
             fi
@@ -77,15 +100,24 @@ jobs:
       fail-fast: false
       matrix:
         addon: ${{ fromJson(needs.detect.outputs.addons) }}
-        arch: [amd64, aarch64]
 
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
 
       - uses: actions/checkout@v4
+
+      - id: channel
+        run: |
+          if [ "${{ github.event.repository.name }}" = "ha-addons-dev" ]; then
+            echo "tag_prefix=dev-" >> $GITHUB_OUTPUT
+            echo "latest_tag=dev" >> $GITHUB_OUTPUT
+          else
+            echo "tag_prefix=" >> $GITHUB_OUTPUT
+            echo "latest_tag=latest" >> $GITHUB_OUTPUT
+          fi
 
       - uses: docker/setup-qemu-action@v3
       - uses: docker/setup-buildx-action@v3
@@ -101,17 +133,44 @@ jobs:
           VERSION=$(grep '^version:' ${{ matrix.addon }}/config.yaml | awk '{print $2}' | tr -d '"')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Build and push
+
+      - name: Build and push multi-arch image
         uses: docker/build-push-action@v6
         with:
           context: ./${{ matrix.addon }}
           push: true
-          platforms: linux/${{ matrix.arch }}
+
+          platforms: linux/amd64,linux/arm64
 
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}-${{ matrix.arch }}:${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}-${{ matrix.arch }}:latest
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}:${{ steps.channel.outputs.tag_prefix }}${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}:${{ steps.channel.outputs.latest_tag }}
+
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.title=${{ matrix.addon }}
+            org.opencontainers.image.description=${{ matrix.addon }} Home Assistant addon
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}/tree/main/${{ matrix.addon }}
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            org.opencontainers.image.licenses=MIT
 
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+
+      - name: Create git tag
+        run: |
+          TAG="${{ matrix.addon }}-v${{ steps.version.outputs.version }}"
+
+          echo "Preparing tag $TAG"
+
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          if git ls-remote --tags origin "$TAG" | grep -q "$TAG"; then
+            echo "Tag already exists, skipping"
+            exit 0
+          fi
+
+          git tag $TAG
+          git push origin $TAG
