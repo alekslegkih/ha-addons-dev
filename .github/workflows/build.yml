@@ -142,14 +142,6 @@ jobs:
 
           platforms: linux/amd64,linux/arm64
 
-          labels: |  
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-            org.opencontainers.image.title=${{ matrix.addon }}
-            org.opencontainers.image.description=${{ matrix.addon }} Home Assistant addon
-            org.opencontainers.image.url=https://github.com/${{ github.repository }}/tree/main/${{ matrix.addon }}
-            org.opencontainers.image.version=${{ steps.version.outputs.version }}
-            org.opencontainers.image.licenses=MIT  
-
           tags: |
             ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}:${{ steps.channel.outputs.tag_prefix }}${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}:${{ steps.channel.outputs.latest_tag }}
