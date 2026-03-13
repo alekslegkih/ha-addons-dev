@@ -1,8 +1,36 @@
 # Changelog
 
+## v0.5.3
+
+- Changed logging of ru modules
+
+## v0.5.2
+
+- Minor bug fixes
+
+## v0.5.1
+
+- Minor bug fixes
+
+## v0.5.0
+
+- Added file browser for managing backups (create folders, rename, delete, download)
+- Added free space check before copying to USB
+- Fixed queue processing stability
+- Fixed rare race conditions in file stabilization
+- Updated documentation
+
+## v0.4.1
+
+- Fixed image
+
+## v0.4.0
+
+- Removed the destination directory parameter.
+
 ## v0.3.1
 
-- Fixed code
+- Fixed errors code
 
 ## v0.3.0
 

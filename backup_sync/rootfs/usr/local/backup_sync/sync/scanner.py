@@ -1,12 +1,20 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE))
 
-import os
+from core.logger import (
+    log_debug,
+    log,
+    log_green,
+    log_yellow,
+    log_red,
+)
+
 from ha.events import emit
 
 env = {}
@@ -14,7 +22,7 @@ env = {}
 env_path = Path("/run/backup_sync/runtime.env")
 
 if not env_path.exists():
-    print("[watcher] runtime.env missing", flush=True)
+    log_red(f"runtime.env missing", flush=True)
     sys.exit(1)
 
 with env_path.open() as f:
@@ -37,12 +45,6 @@ TARGET_PATH = Path(env.get("TARGET_PATH", ""))
 # ---------------------------------------------------------
 
 
-def debug(msg: str):
-    if DEBUG_FLAG.exists():
-        print(f"[DEBUG][scanner] {msg}", flush=True)
-
-
-
 VALID_PATTERNS = ("*.tar", "*.tar.gz")
 
 def list_backups(path: Path):
@@ -57,17 +59,17 @@ def list_backups(path: Path):
 
 def main():
 
-    debug(f"source={SOURCE_DIR}")
-    debug(f"target={TARGET_PATH}")
-    debug(f"queue={QUEUE_FILE}")
+    log_debug(f"source={SOURCE_DIR}")
+    log_debug(f"target={TARGET_PATH}")
+    log_debug(f"queue={QUEUE_FILE}")
 
 
     if not SOURCE_DIR.exists():
-        debug("source dir missing")
+        log_debug("source dir missing")
         return 1
 
     if not TARGET_PATH.exists():
-        debug("target dir missing")
+        log_debug("target dir missing")
         return 1
 
     # -----------------------------------------------------
@@ -84,7 +86,7 @@ def main():
     queued = 0
 
     # -----------------------------------------------------
-    # enqueue 
+    # enqueue
     # -----------------------------------------------------
 
     with QUEUE_FILE.open("a") as q:
@@ -92,21 +94,22 @@ def main():
 
             if b.name in existing:
                 already += 1
-                debug(f"skip existing: {b.name}")
+                log_debug(f"skip existing: {b.name}")
                 continue
 
             q.write(str(b) + "\n")
             queued += 1
-            debug(f"queued: {b.name}")
+            log_debug(f"queued: {b.name}")
 
     # -----------------------------------------------------
 
-    print("Initial scan:")
-    print(f"  Found:     {found}")
-    print(f"  Existing:  {already}")
-    print(f"  Queued:    {queued}")
+    log("Initial scan:")
+    log(f"  Found:     {found}")
+    log(f"  Existing:  {already}")
+    log(f"  Queued:    {queued}")
 
-    emit("initial_scan_completed", {
+    emit("copy_service", {
+        "reason": "initial_scan",
         "found": found,
         "existing": already,
         "queued": queued

@@ -3,7 +3,6 @@
 
 set -uo pipefail
 
-
 RUNTIME_ENV="/run/backup_sync/runtime.env"
 
 if [ ! -f "$RUNTIME_ENV" ]; then
@@ -18,7 +17,6 @@ set +a
 emit() {
     python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || true
 }
-
 
 # ---------------------------------------------------------
 # helpers
@@ -72,6 +70,22 @@ cleanup_old() {
     done
 }
 
+check_free_space() {
+    local size="$1"
+    local path="$2"
+
+    local free
+    free=$(df -B1 "$path" | awk 'NR==2 {print $4}')
+
+    if [ "$free" -lt "$size" ]; then
+        bashio::log.red "  ✗ Not enough space: $(human_size "$free") free, need $(human_size "$size")"
+        emit storage_failed "{\"reason\":\"device_error\",\"error\":\"no_space\",\"available\":${free},\"required\":${size}}"
+        return 1
+    fi
+
+    return 0
+}
+
 copy_one() {
 
     TARGET_PATH="${TARGET_ROOT}/${DEVICE}/${TARGET_DIR}"
@@ -85,7 +99,7 @@ copy_one() {
     name="$(basename "$src")"
     tmp="${TARGET_PATH}/.${name}.tmp"
 
-    bashio::log "Backup detected:  $(date '+%Y-%m-%d %H:%M:%S')"
+    bashio::log "New backup detected:  $(date '+%Y-%m-%d %H:%M:%S')"
     bashio::log "Backup file: ${name}"
 
     # -------------------------
@@ -103,9 +117,13 @@ copy_one() {
     size=$(stat -c %s "$src" 2>/dev/null || echo 0)
     size_mb=$((size / 1048576))
 
-    bashio::log "  • File stabilized (${wait_sec}s)"
+    check_free_space "$size" "$TARGET_PATH" || {
+    bashio::log.yellow "  ⏭ Skipping copy due to insufficient space"
+    echo 0
+}
 
-    emit copy_started "{\"filename\":\"${name}\",\"size_bytes\":${size}}"
+    bashio::log "  • File stabilized (${wait_sec}s)"
+    emit copy_service "{\"reason\":\"copy_started\",\"filename\":\"${name}\",\"size_bytes\":${size}}"
 
     # -------------------------
     # copy phase
@@ -122,14 +140,13 @@ copy_one() {
     bashio::log.red "  ✗ Copy failed or stalled"
     rm -f "$tmp"
 
-        # Проверяем, не пропал ли диск
         if ! mountpoint -q "${TARGET_PATH}"; then
-        bashio::log.red "  ✗ Target storage not mounted"
-        emit storage_failed '{"reason":"device_disconnected","message":"Target storage is not mounted"}'
-        exit 1
+            bashio::log.red "  ✗ Target storage not mounted"
+            emit storage_failed "{\"reason\":\"device_error\",\"error\":\"Target device disconnected\"}"
+            exit 1
         fi
 
-        emit error "{\"filename\":\"${name}\",\"reason\":\"copy_failed_or_timeout\"}"
+        emit copy_service "{\"reason\":\"copy_failed\",\"filename\":\"${name}\"}"
         return 1
     fi
 
@@ -142,8 +159,7 @@ copy_one() {
     speed=$((size / copy_sec))
 
     bashio::log.green "  ✓ Done ($(human_size "$size")) in ${copy_sec}s ($(human_size "$speed")/s)"
-
-    emit copy_completed "{\"filename\":\"${name}\",\"size_bytes\":${size},\"seconds\":${copy_sec},\"speed_bps\":${speed}}"
+    emit copy_service "{\"reason\":\"copy_completed\",\"filename\":\"${name}\",\"size_bytes\":${size},\"seconds\":${copy_sec},\"speed_bps\":${speed}}"
 
     cleanup_old
 

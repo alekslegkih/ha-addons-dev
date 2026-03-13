@@ -43,36 +43,6 @@ WATCHER_BIN="${BASE_DIR}/sync/watcher.py"
 SCANNER_BIN="${BASE_DIR}/sync/scanner.py"
 COPIER_BIN="${BASE_DIR}/sync/copier.sh"
 
-# ------------------------------------------------------------------
-# Start
-# ------------------------------------------------------------------
-
-bashio::log "========================================"
-bashio::log.green "=== Backup Sync add-on starting ==="
-bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
-bashio::log "========================================"
-
-# ------------------------------------------------------------------
-# Exit & Error
-# ------------------------------------------------------------------
-
-fail_and_stop() {
-    local caller="${FUNCNAME[1]}"
-
-    log_debug "fail_and_stop triggered by ${caller}"
-    emit init_failed '{"reason":"fatal_err"}'
-
-    if _is_debug; then
-        bashio::log.yellow "Debug mode enabled — container will stay alive"
-        log_debug "Entering infinite sleep (debug mode)"
-        sleep infinity
-    fi
-
-    log_debug "Exiting with code 1"
-    local reason="${1:-fatal_err}"
-    emit init_failed "{\"reason\":\"${reason}\"}"
-    exit 1
-}
 
 # ------------------------------------------------------------------
 # Helpers
@@ -89,6 +59,28 @@ emit() {
     fi
 }
 
+# ------------------------------------------------------------------
+# Exit & Error
+# ------------------------------------------------------------------
+
+fail_and_stop() {
+    local caller="${FUNCNAME[1]}"
+    log_debug "fail_and_stop triggered by ${caller}"
+
+    local reason="${1:-fatal_err}"
+    log_debug "Exiting with code \"${reason}\""
+
+
+    if _is_debug; then
+        bashio::log.yellow "Debug mode enabled — container will stay alive"
+        log_debug "Entering infinite sleep (debug mode)"
+
+        sleep infinity
+    fi
+
+    exit 1
+}
+
 # ---------------------------------------------------------
 # runtime export
 # ---------------------------------------------------------
@@ -103,20 +95,34 @@ write_runtime_env() {
 
     printf 'BASE_DIR=%q\n' "$BASE_DIR" >> "$TMP_FILE"
     printf 'DEVICE=%q\n' "$DEVICE" >> "$TMP_FILE"
-    printf 'SOURCE_DIR=%q\n' "$SOURCE_DIR" >> "$TMP_FILE"
+    printf 'SOURCE_DIR=%q\n' "/$SOURCE_DIR" >> "$TMP_FILE"
     printf 'TARGET_ROOT=%q\n' "$TARGET_ROOT" >> "$TMP_FILE"
     printf 'TARGET_DIR=%q\n' "$TARGET_DIR" >> "$TMP_FILE"
     printf 'QUEUE_FILE=%q\n' "$QUEUE_FILE" >> "$TMP_FILE"
     printf 'MAX_COPIES=%q\n' "$MAX_COPIES" >> "$TMP_FILE"
     printf 'SYNC_EXIST_START=%q\n' "$SYNC_EXIST_START" >> "$TMP_FILE"
     printf 'DEBUG_FLAG=%q\n' "$DEBUG_FLAG" >> "$TMP_FILE"
-    printf 'TARGET_PATH=%q\n' "${TARGET_ROOT}/${DEVICE}/${TARGET_DIR}" >> "$TMP_FILE"
-    
+    printf 'TARGET_PATH=%q\n' "$TARGET_PATH" >> "$TMP_FILE"
+
     chmod 600 "$TMP_FILE"
     mv "$TMP_FILE" "$ENV_FILE"
 
     bashio::log.green "Runtime env write"
 }
+
+# ------------------------------------------------------------------
+# Start
+# ------------------------------------------------------------------
+ADDON_VERSION="$(bashio::addon.version)"
+ADDON_NAME=$(bashio::addon.name)
+
+bashio::log "========================================"
+bashio::log.green "=== ${ADDON_NAME} ==="
+bashio::log.green "=== Version:  ${ADDON_VERSION} ==="
+bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
+bashio::log "========================================"
+
+emit service_state '{"reason":"addon_started"}'
 
 # ------------------------------------------------------------------
 # Load config
@@ -160,11 +166,15 @@ check_target || fail_and_stop
 bashio::log.green "Mount and target checks completed"
 
 # ------------------------------------------------------------------
+# Flag barier
+# ------------------------------------------------------------------
+touch "/tmp/service.ready"
+
+# ------------------------------------------------------------------
 # Sync layer
 # ------------------------------------------------------------------
-
 bashio::log.blue " === Sync layer ==="
-emit service_state '{"reason":"addon_ready"}'
+
 log_debug "Ready state emitted"
 
 python3 "${WATCHER_BIN}" &
@@ -180,6 +190,6 @@ if [ "${SYNC_EXIST_START}" = "true" ]; then
 fi
 
 bashio::log.green "System ready"
-emit ready '{}'
+emit service_state '{"reason":"addon_ready"}'
 
 wait "${COPIER_PID}"

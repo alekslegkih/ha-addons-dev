@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>DLNA File Manager</title>
+
+<style>
+/* =========================================================
+    THEME VARIABLES
+========================================================= */
+
+:root {
+    --bg: #121417;
+    --card: #1b1f24;
+    --hover: #232a31;
+    --border: #2a3138;
+    --text: #e6e6e6;
+    --muted: #9aa4ad;
+    --accent: #4da3ff;
+    --folder: #f4c430;
+    --file: #7dd3fc;
+    --danger: #ff6b6b;
+    --row-alt: #1f252c;
+    --scroll-thumb: #3a444d;
+    --scroll-track: var(--card);
+    --heading-color: #e2e8f0;
+    --size-color: #a8b3bd;
+    --input-bg: #1e242b;
+    --input-border: #2a3138;
+}
+
+
+/* =========================================================
+    BASE PAGE
+========================================================= */
+
+body {
+    margin: 0;
+    background: var(--bg);
+    font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        Roboto,
+        sans-serif;
+    color: var(--text);
+    font-size: 14px;
+}
+
+
+/* =========================================================
+    MAIN CONTAINER
+========================================================= */
+
+.container {
+    max-width: 1000px;
+    margin: 40px auto;
+    padding: 26px 28px;
+    background: var(--card);
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.45);
+    height: 88vh;
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* =========================================================
+    TABLE WRAPPER + SCROLLBAR
+========================================================= */
+
+.table-wrapper {
+    margin-top: 24px;
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+.table-wrapper::-webkit-scrollbar { width: 8px; }
+
+.table-wrapper::-webkit-scrollbar-track {
+    background: var(--scroll-track);
+}
+
+.table-wrapper::-webkit-scrollbar-thumb {
+    background: var(--scroll-thumb);
+    border-radius: 6px;
+}
+
+
+/* =========================================================
+    HEADER
+========================================================= */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.disk {
+    font-size: 12px;
+    color: var(--muted);
+}
+
+
+/* =========================================================
+    INPUTS
+========================================================= */
+
+input[type="text"],
+input[type="file"],
+select,
+.text-input {
+    width: 100%;
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    padding: 8px 12px;
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+.text-input:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(77, 163, 255, 0.15);
+}
+
+/* =========================================================
+    BUTTONS
+========================================================= */
+
+.ha-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 90px;
+    gap: 6px;
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 8px 14px;
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.ha-btn:hover {
+    background: var(--hover);
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.ha-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
+button:disabled,
+.ha-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* Button variants */
+
+.ha-btn.primary {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ha-btn.primary:hover {
+    background: var(--accent);
+    color: #fff;
+}
+
+.ha-btn.danger {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.ha-btn.danger:hover {
+    background: var(--danger);
+    color: #fff;
+}
+
+.ha-btn.secondary:hover {
+    background: var(--hover);
+    color: var(--text);
+}
+
+
+/* =========================================================
+    TOOLBAR
+========================================================= */
+
+.toolbar {
+    margin-top: 22px;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+
+/* =========================================================
+    FILE TABLE
+========================================================= */
+
+.file-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.file-table thead {
+    border-bottom: 1px solid var(--border);
+}
+
+.file-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--card);
+    z-index: 2;
+    border-bottom: 1px solid var(--border);
+}
+
+.file-table th,
+.file-table td {
+    padding: 11px 12px;
+    vertical-align: middle;
+}
+
+.file-table th {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.4px;
+    text-align: left;
+    color: var(--heading-color);
+}
+
+.file-table td:nth-child(2),
+.file-table th:nth-child(2) {
+    width: 140px;
+    text-align: right;
+    color: var(--muted);
+}
+
+.file-table td:nth-child(3),
+.file-table th:nth-child(3) {
+    width: 130px;
+    white-space: nowrap;
+    text-align: right;
+}
+
+.file-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.file-table tbody tr:nth-child(even) {
+    background: var(--row-alt);
+}
+
+.file-table tbody tr:hover {
+    background: var(--hover);
+}
+
+
+/* =========================================================
+    FILE ICONS
+========================================================= */
+
+.folder-icon,
+.file-icon {
+    display: inline-block;
+    width: 22px;
+    text-align: center;
+    margin-right: 6px;
+}
+
+.folder-icon { color: var(--folder); }
+.file-icon   { color: var(--file); }
+
+
+/* =========================================================
+    LINKS / ACTIONS
+========================================================= */
+
+.name {
+    text-decoration: none;
+    color: var(--text);
+    cursor: pointer;
+}
+
+.name:hover { color: var(--accent); }
+
+.move,
+.rename,
+.delete,
+.download {
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.move { color: var(--accent); }
+.rename { color: var(--muted); }
+.download { color: var(--file); }
+.delete { color: var(--danger); }
+
+.move:hover,
+.download:hover { opacity: 0.8; }
+
+.delete:hover { opacity: 0.75; }
+
+.rename:hover { color: var(--accent); }
+
+.file-table td:nth-child(3) a {
+    margin-left: 12px;
+}
+
+
+/* =========================================================
+    MODALS
+========================================================= */
+
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 12px;
+    width: 300px;
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    font-size: 16px;
+}
+
+.modal-actions {
+    margin-top: 18px;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+
+/* =========================================================
+    UPLOAD OVERLAY
+========================================================= */
+
+.upload-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(3px);
+    justify-content: center;
+    align-items: center;
+    z-index: 999;
+}
+
+.upload-overlay.conflict .upload-box {
+    border: 1px solid var(--accent);
+    box-shadow: 0 0 0 2px rgba(77,163,255,0.25);
+}
+
+.upload-overlay.conflict #overlayTitle {
+    color: var(--danger);
+}
+
+.upload-box {
+    background: var(--card);
+    padding: 24px;
+    border-radius: 14px;
+    width: 320px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.upload-filename {
+    margin-top: 8px;
+    font-weight: 600;
+    word-break: break-all;
+}
+
+.upload-filesize {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+}
+
+.overlay-actions {
+    margin-top: 16px;
+    display: flex;
+    gap: 10px;
+}
+
+.overlay-actions button {
+    flex: 1;
+}
+
+.overlay-actions button.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* =========================================================
+    PROGRESS BARS
+========================================================= */
+
+.progress-bar {
+    height: 8px;
+    background: #2a2f36;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    transition: width 0.15s linear;
+}
+
+.progress-info {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+    min-height: 32px;
+    white-space: pre-line;
+}
+
+
+/* =========================================================
+    LIGHT MODE
+========================================================= */
+
+@media (prefers-color-scheme: light) {
+
+    :root {
+
+        --bg: #f4f6f8;
+        --card: #ffffff;
+        --hover: #eef2f6;
+        --border: #d9e1e8;
+        --text: #1f2933;
+        --muted: #6b7280;
+        --accent: #2563eb;
+        --folder: #c59d00;
+        --file: #0ea5e9;
+        --danger: #dc2626;
+        --row-alt: #f1f5f9;
+        --scroll-thumb: #cbd5e1;
+        --scroll-track: #f4f6f8;
+        --heading-color: #1f2937;
+        --size-color: #475569;
+        --input-bg: var(--row-alt);
+        --input-border: #d1d5db;
+    }
+
+    body {
+        background: var(--bg);
+    }
+
+    .container {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    }
+
+}
+</style>
+
+</head>
+<body>
+
+<!-- =========================================================
+    MAIN CONTAINER
+========================================================= -->
+<div class="container">
+
+    <!-- =====================================================
+    HEADER
+    ====================================================== -->
+    <div class="header">
+
+        <div style="display:flex; align-items:center; gap:14px;">
+            <button class="ha-btn" id="backBtn">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                </svg>
+                Back
+            </button>
+
+            <h1 style="margin:0;">Backup Manager</h1>
+        </div>
+
+        <div class="disk">
+            Total: {{ total_space }} |
+            Used: {{ used_space }} |
+            Free: {{ free_space }} |
+            Files: <span id="fileCount">{{ files|length }}</span>
+        </div>
+
+    </div>
+
+
+    <!-- =====================================================
+    CURRENT PATH STORAGE
+    ====================================================== -->
+    <div id="currentPath"
+        data-path="{{ current_path }}"
+        style="display:none;">
+    </div>
+
+
+    <!-- =====================================================
+    TOOLBAR
+    ====================================================== -->
+    <div class="toolbar">
+
+        <!-- Create folder -->
+        <form id="mkdirForm" style="display:flex; gap:10px;">
+
+            <input
+                type="text"
+                name="dirname"
+                id="folderInput"
+                class="text-input"
+                placeholder="New folder name">
+
+            <button
+                type="submit"
+                id="createBtn"
+                class="ha-btn"
+                disabled>
+                Create
+            </button>
+
+        </form>
+
+    </div>
+
+
+    <!-- =====================================================
+    FILE TABLE
+    ====================================================== -->
+    <div class="table-wrapper">
+
+        <table class="file-table" id="fileList">
+
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th style="width:120px;">Size</th>
+                    <th style="width:60px;"></th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% if parent is not none %}
+
+                <tr class="back-row">
+                    <td>
+
+                        <a class="name" data-path="{{ parent }}">
+
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round"
+                                style="vertical-align:middle; margin-right:6px;">
+
+                                <path d="M9 7l-5 5 5 5"/>
+                                <path d="M4 12h10a5 5 0 0 1 0 10"/>
+
+                            </svg>
+
+                            ..
+
+                        </a>
+
+                    </td>
+
+                    <td></td>
+                    <td></td>
+
+                </tr>
+
+                {% endif %}
+
+
+                <!-- FOLDERS -->
+                {% for f in folders %}
+
+                <tr>
+
+                    <td>
+
+                        <span class="folder-icon">📁</span>
+
+                        <a
+                            class="name"
+                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+                            {{ f }}
+                        </a>
+
+                    </td>
+
+                    <td>-</td>
+
+                    <td>
+
+                        <!-- MOVE -->
+                        <a class="move"
+                            href="#"
+                            title="Move"
+                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M3 7h6l2 2h10v11H3z"/>
+                                <path d="M12 13h5"/>
+                                <path d="M14 11l3 3-3 3"/>
+
+                            </svg>
+
+                        </a>
+
+
+                        <!-- RENAME -->
+                        <a class="rename"
+                            href="#"
+                            title="Rename"
+                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                            <svg width="18" height="18" viewBox="0 0 128 128"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="6"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M96 24l8 8-56 56-16 4 4-16z"/>
+                                <path d="M24 104h32"/>
+
+                            </svg>
+
+                        </a>
+
+
+                        <!-- DELETE -->
+                        <a class="delete"
+                            href="#"
+                            title="Delete"
+                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M4 6h16"/>
+                                <path d="M6 6l1 14h10l1-14"/>
+                                <path d="M9 6V4h6v2"/>
+                                <path d="M10 10v7"/>
+                                <path d="M14 10v7"/>
+
+                            </svg>
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+
+
+                <!-- FILES -->
+                {% for f, size in files %}
+
+                <tr>
+
+                    <td>
+                        <span class="file-icon">📄</span>
+                        {{ f }}
+                    </td>
+
+                    <td>{{ size }}</td>
+
+                    <td>
+
+                        <!-- DOWNLOAD -->
+                        <a class="download"
+                            title="Save"
+                            href="download/{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M12 4v9"/>
+                                <path d="M9 10l3 3 3-3"/>
+                                <path d="M4 18h16"/>
+
+                            </svg>
+
+                        </a>
+
+                        <!-- MOVE -->
+                        <a class="move"
+                            href="#"
+                            title="Move"
+                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M3 6h6l2 2h10v12H3z"/>
+                                <path d="M13 14h4"/>
+                                <path d="M15 12l3 3-3 3"/>
+
+                            </svg>
+
+                        </a>
+
+                        <!-- RENAME -->
+                        <a class="rename"
+                            href="#"
+                            title="Rename"
+                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                            <svg width="18" height="18" viewBox="0 0 128 128"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="6"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M96 24l8 8-56 56-16 4 4-16z"/>
+                                <path d="M24 104h32"/>
+
+                            </svg>
+
+                        </a>
+
+                        <!-- DELETE -->
+                        <a class="delete"
+                            href="#"
+                            title="Delete"
+                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                            <svg width="18" height="18" viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2.2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+
+                                <path d="M4 6h16"/>
+                                <path d="M6 6l1 14h10l1-14"/>
+                                <path d="M9 6V4h6v2"/>
+                                <path d="M10 10v7"/>
+                                <path d="M14 10v7"/>
+
+                            </svg>
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+    MODALS
+========================================================= -->
+
+<!-- MOVE MODAL -->
+<div id="moveModal" class="modal">
+    <div class="modal-content">
+        <h3>Move <span id="moveItemName"></span> to</h3>
+        <select id="moveSelect" class="text-input"></select>
+        <div class="modal-actions">
+            <button class="ha-btn primary" id="moveConfirmBtn">Move</button>
+            <button class="ha-btn secondary" id="moveCancelBtn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div id="deleteModal" class="modal">
+    <div class="modal-content">
+        <h3>Delete file?</h3>
+        <p id="deleteName" style="font-size:13px; color:var(--muted);"></p>
+        <div class="modal-actions">
+            <button id="confirmDeleteBtn" class="ha-btn danger">Delete</button>
+            <button class="ha-btn secondary" id="deleteCancelBtn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<!-- RENAME MODAL -->
+<div id="renameModal" class="modal">
+    <div class="modal-content">
+        <h3>Rename</h3>
+        <input type="text" id="renameInput" class="text-input">
+        <div style="margin-top:18px; display:flex; justify-content:space-between;">
+            <button class="ha-btn primary" id="renameConfirmBtn">Save</button>
+            <button class="ha-btn secondary" id="renameCancelBtn">Cancel</button>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- GENERIC MESSAGE MODAL -->
+<div id="messageModal" class="modal">
+
+    <div class="modal-content">
+
+        <h3 id="messageTitle">Notice</h3>
+
+        <p id="messageText"
+            style="font-size:13px; color:var(--muted);">
+        </p>
+
+        <div class="modal-actions" style="justify-content: flex-end;">
+
+            <button class="ha-btn primary" id="messageOkBtn">
+                OK
+            </button>
+
+            <button class="ha-btn secondary"
+                    id="messageCancelBtn"
+                    style="display:none;">
+                Cancel
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+/* =========================================================
+    DOM ELEMENTS
+========================================================= */
+
+/* FOLDER CREATION */
+const mkdirForm = document.getElementById("mkdirForm");
+const folderInput = document.getElementById("folderInput");
+const createBtn = document.getElementById("createBtn");
+
+/* FILE LIST / NAVIGATION */
+const fileListTable = document.getElementById("fileList");
+const currentPathEl = document.getElementById("currentPath");
+const fileCountEl = document.getElementById("fileCount");
+
+/* =========================================================
+    ICONS
+========================================================= */
+
+const ICONS = {
+
+move: `<svg width="18" height="18" viewBox="0 0 24 24"
+fill="none" stroke="currentColor"
+stroke-width="2.2" stroke-linecap="round"
+stroke-linejoin="round">
+<path d="M3 6h6l2 2h10v12H3z"/>
+<path d="M13 14h4"/>
+<path d="M15 12l3 3-3 3"/>
+</svg>`,
+
+rename: `<svg width="18" height="18" viewBox="0 0 128 128"
+fill="none" stroke="currentColor"
+stroke-width="6" stroke-linecap="round"
+stroke-linejoin="round">
+<path d="M96 24l8 8-56 56-16 4 4-16z"/>
+<path d="M24 104h32"/>
+</svg>`,
+
+delete: `<svg width="18" height="18" viewBox="0 0 24 24"
+fill="none" stroke="currentColor"
+stroke-width="2.2" stroke-linecap="round"
+stroke-linejoin="round">
+<path d="M4 6h16"/>
+<path d="M6 6l1 14h10l1-14"/>
+<path d="M9 6V4h6v2"/>
+<path d="M10 10v7"/>
+<path d="M14 10v7"/>
+</svg>`,
+
+download: `<svg width="18" height="18" viewBox="0 0 24 24"
+fill="none" stroke="currentColor"
+stroke-width="2.2" stroke-linecap="round"
+stroke-linejoin="round">
+<path d="M12 4v9"/>
+<path d="M9 10l3 3 3-3"/>
+<path d="M4 18h16"/>
+</svg>`
+
+};
+
+
+/* =========================================================
+    PATH UTILITIES
+========================================================= */
+
+function buildPath(base, name) {
+    return base ? base + "/" + name : name;
+}
+
+function encodePath(path) {
+    return path
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+}
+
+/* =========================================================
+    API HELPER
+========================================================= */
+
+function post(url, data) {
+
+    return fetch(url, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams(data)
+    })
+    .then(res => res.json());
+
+}
+
+/* =========================================================
+    FILE LIST RENDERING
+========================================================= */
+
+function getActionButtons(fullPath, isFile) {
+
+const downloadButton = isFile ? `
+<a class="download"
+title="Save"
+href="download/${encodePath(fullPath)}">
+${ICONS.download}
+</a>` : "";
+
+return `
+
+${downloadButton}
+
+<a class="move"
+title="Move"
+data-path="${fullPath}">
+${ICONS.move}
+</a>
+
+<a class="rename"
+title="Rename"
+data-path="${fullPath}">
+${ICONS.rename}
+</a>
+
+<a class="delete"
+title="Delete"
+data-path="${fullPath}">
+${ICONS.delete}
+</a>
+
+`;
+}
+
+
+function refreshFileList() {
+
+    const currentPath =
+        currentPathEl.dataset.path;
+
+    fetch("api/list?path=" + encodeURIComponent(currentPath))
+        .then(res => res.json())
+        .then(data => {
+
+            if (data.status !== "ok") return;
+            fileCountEl.innerText = data.files.length;
+
+            const table = fileListTable;
+            const tbody = table.querySelector("tbody");
+
+            let html = "";
+
+            if (data.parent !== null) {
+                html += `
+                    <tr class="back-row">
+                        <td>
+                            <a class="name" data-path="${data.parent}">
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    style="vertical-align:middle; margin-right:6px;">
+                                    <path d="M9 7l-5 5 5 5"/>
+                                    <path d="M4 12h10a5 5 0 0 1 0 10"/>
+                                </svg>
+                                ..
+                            </a>
+                        </td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                `;
+            }
+
+            data.folders.forEach(folder => {
+
+                const fullPath =
+                    buildPath(currentPath, folder);
+
+                html += `
+                    <tr>
+                        <td>
+                            <span class="folder-icon">📁</span>
+                            <a class="name"
+                                data-path="${fullPath}">
+                                ${folder}
+                            </a>
+                        </td>
+                        <td>-</td>
+                        <td>
+                            ${getActionButtons(fullPath, false)}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            data.files.forEach(file => {
+
+                const fullPath =
+                    buildPath(currentPath, file.name);
+
+                html += `
+                    <tr>
+                        <td>
+                            <span class="file-icon">📄</span>
+                            ${file.name}
+                        </td>
+                        <td>${file.size}</td>
+                        <td>
+                            ${getActionButtons(fullPath, true)}
+                        </td>
+                    </tr>
+                `;
+            });
+            
+        tbody.innerHTML = html;
+
+        })
+        .catch(err => {
+            console.error("List refresh error:", err);
+        });
+
+}
+
+
+/* =========================================================
+    FOLDER CREATION
+========================================================= */
+
+folderInput.addEventListener("input", function() {
+    createBtn.disabled = folderInput.value.trim() === "";
+});
+
+folderInput.addEventListener("keypress", function(e) {
+    if (e.key === "Enter" && folderInput.value.trim() !== "") {
+        createBtn.click();
+    }
+});
+
+
+/* =========================================================
+    MOVE
+========================================================= */
+
+let moveSource = null;
+
+function openMoveModal(source) {
+    moveSource = source;
+    
+    const name = source.split("/").pop();
+    document.getElementById("moveItemName").innerText = name;
+
+    fetch("api/folders")
+        .then(res => res.json())
+        .then(data => {
+
+            if (data.status !== "ok") return;
+
+            const select = document.getElementById("moveSelect");
+            select.innerHTML = "";
+
+            data.folders.forEach(folder => {
+
+                if (folder === moveSource) return;
+                if (moveSource.startsWith(folder + "/")) return;
+                if (folder.startsWith(moveSource + "/")) return;
+
+                const option = document.createElement("option");
+                option.value = folder;
+                option.textContent = folder === "" ? "/" : folder;
+                select.appendChild(option);
+
+            });
+
+            document.getElementById("moveModal").style.display = "flex";
+        });
+}
+
+function closeMoveModal() {
+    document.getElementById("moveModal").style.display = "none";
+    moveSource = null;
+}
+
+function confirmMove() {
+
+    const destination = document.getElementById("moveSelect").value;
+
+    post("move", {
+        source: moveSource,
+        destination: destination
+    })
+    .then(data => {
+
+        if (data.status === "ok") {
+            closeMoveModal();
+            refreshFileList();
+        } else {
+            alert("Move failed");
+        }
+
+    });
+}
+
+
+/* =========================================================
+    DELETE
+========================================================= */
+
+let deleteTarget = null;
+
+document.getElementById("confirmDeleteBtn")
+.addEventListener("click", function() {
+
+    if (!deleteTarget) return;
+
+    fetch("delete/" + encodePath(deleteTarget))
+    .then(res => res.json())
+    .then(data => {
+
+        if (data.status === "ok") {
+            closeDeleteModal();
+            refreshFileList();
+        } else {
+            alert("Delete failed");
+        }
+
+    });
+
+});
+
+function openDeleteModal(path) {
+
+    deleteTarget = path;
+
+    const name = path.split("/").pop();
+    document.getElementById("deleteName").innerText = name;
+
+    document.getElementById("deleteModal").style.display = "flex";
+}
+
+function closeDeleteModal() {
+    document.getElementById("deleteModal").style.display = "none";
+    deleteTarget = null;
+}
+
+
+/* =========================================================
+    RENAME
+========================================================= */
+
+let renameSource = null;
+
+function openRenameModal(path) {
+
+    renameSource = path;
+
+    const name = path.split("/").pop();
+    const input = document.getElementById("renameInput");
+
+    const lastDot = name.lastIndexOf(".");
+    
+    if (lastDot > 0) {
+        input.value = name.substring(0, lastDot);
+    } else {
+        input.value = name;
+    }
+
+    document.getElementById("renameModal").style.display = "flex";
+
+    input.focus();
+    input.select();
+}
+
+function closeRenameModal() {
+    document.getElementById("renameModal").style.display = "none";
+    renameSource = null;
+}
+
+function confirmRename() {
+
+    const input = document.getElementById("renameInput");
+    let newName = input.value.trim();
+
+    if (!newName || !renameSource) return;
+
+    const oldName = renameSource.split("/").pop();
+    const lastDot = oldName.lastIndexOf(".");
+
+    if (lastDot > 0) {А
+        const extension = oldName.substring(lastDot);
+        newName += extension;
+    }
+
+    post("rename", {
+        source: renameSource,
+        new_name: newName
+    })
+    .then(data => {
+
+        if (data.status === "ok") {
+            closeRenameModal();
+            refreshFileList();
+        } else {
+            alert("Rename failed");
+        }
+
+    });
+}
+
+
+/* =========================================================
+    CREATE FOLDER
+========================================================= */
+
+mkdirForm.addEventListener("submit", function(e){
+
+    e.preventDefault();
+
+    const name = folderInput.value.trim();
+    if (!name) return;
+
+    const currentPath =
+        currentPathEl.dataset.path;
+
+    post("mkdir/" + encodeURIComponent(currentPath), {
+        dirname: name
+    })
+    .then(data => {
+
+        if (data.status === "ok") {
+
+            folderInput.value = "";
+            createBtn.disabled = true;
+
+            refreshFileList();
+
+        } else {
+
+            alert("Create folder failed");
+
+        }
+
+    });
+
+});
+
+
+/* =========================================================
+    EXIT ADDON
+========================================================= */
+
+function exitAddon() {
+    const parentPath = window.parent.location.pathname;
+    const parts = parentPath.split("/");
+
+    if (parts[1] === "app" && parts[2]) {
+        const slug = parts[2];
+        window.top.location.href =
+            "/config/app/" + slug + "/info";
+    }
+}
+
+
+/* =========================================================
+    GLOBAL CLICK HANDLER
+========================================================= */
+
+document.addEventListener("click", function(e){
+
+    if (e.target.closest("#backBtn")) {
+        exitAddon();
+        return;
+    }
+
+    if (e.target.closest("#moveConfirmBtn")) {
+        confirmMove();
+        return;
+    }
+
+    if (e.target.closest("#moveCancelBtn")) {
+        closeMoveModal();
+        return;
+    }
+
+    if (e.target.closest("#renameConfirmBtn")) {
+        confirmRename();
+        return;
+    }
+
+    if (e.target.closest("#renameCancelBtn")) {
+        closeRenameModal();
+        return;
+    }
+
+    if (e.target.closest("#deleteCancelBtn")) {
+        closeDeleteModal();
+        return;
+    }
+
+    const folderLink = e.target.closest(".name");
+    if (folderLink && folderLink.dataset.path !== undefined) {
+        e.preventDefault();
+        e.stopPropagation();
+        const path = folderLink.dataset.path;
+        currentPathEl.dataset.path = path;
+        refreshFileList();
+        return;
+    }
+
+    const moveBtn = e.target.closest(".move");
+    if (moveBtn) {
+        e.preventDefault();
+        openMoveModal(moveBtn.dataset.path);
+        return;
+    }
+
+    const renameBtn = e.target.closest(".rename");
+    if (renameBtn) {
+        e.preventDefault();
+        openRenameModal(renameBtn.dataset.path);
+        return;
+    }
+
+    const deleteBtn = e.target.closest(".delete");
+    if (deleteBtn) {
+        e.preventDefault();
+        openDeleteModal(deleteBtn.dataset.path);
+        return;
+    }
+
+});
+
+</script>
+</body>
+</html>

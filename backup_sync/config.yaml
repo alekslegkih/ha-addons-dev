@@ -1,12 +1,12 @@
 name: "Backup Sync to USB"
 description: "Automatically copies Home Assistant backups to connected USB storage"
-version: "0.3.1"
+version: "0.5.3"
 slug: "backup_sync"
-url: "https://github.com/alekslegkih/ha-addons"
+url: "https://github.com/alekslegkih/ha-addons/tree/main/backup_sync"
 arch:
   - amd64
   - aarch64
-image: ghcr.io/alekslegkih/backup_sync-{arch}
+image: ghcr.io/alekslegkih/backup_sync
 startup: application
 boot: auto
 init: false
@@ -48,12 +48,10 @@ map:
   - addon_config:rw
 options:
   device: ""
-  target_dir: "backups"
   max_copies: 7
   sync_exist_start: false
 schema:
   device: "str"
-  target_dir: "str"
   max_copies: "int"
   sync_exist_start: "bool"
 panel_icon: mdi:cloud-upload-outline

@@ -95,14 +95,14 @@ check_storage() {
 
     if [ -z "${DEVICE}" ]; then
         bashio::log.red "No device configured"
-        emit storage_failed '{"reason":"no_device_configured"}'
+        emit storage_failed '{"reason":"device_error", "error":"no_device_configured"}'
         return 1
     fi
 
     local device
     device="$(resolve_device "${DEVICE}")" || {
         bashio::log.red "Device ${DEVICE} not found or not a block device"
-        emit storage_failed '{"reason":"not_block_device"}'
+        emit storage_failed '{"reason":"device_error", "error"::"not_block_device"}'
         return 1
     }
 
@@ -111,7 +111,7 @@ check_storage() {
     case "${device}" in
         /dev/sda*|/dev/mmcblk0*|/dev/nvme0n1*)
             bashio::log.red "Refusing to use system device: ${device}"
-            emit storage_failed '{"reason":"system_device_blocked"}'
+            emit storage_failed '{"reason":"device_error", "error":"system_device_blocked"}'
             return 1
             ;;
     esac
@@ -125,7 +125,7 @@ check_storage() {
 
     if [ -z "${fstype}" ]; then
         bashio::log.red "Filesystem not detected on ${device}"
-        emit storage_failed '{"reason":"no_filesystem"}'
+        emit storage_failed '{"reason":"device_error", "error":"no_filesystem"}'
         return 1
     fi
 
