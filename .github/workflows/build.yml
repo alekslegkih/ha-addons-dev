@@ -109,14 +109,12 @@ jobs:
 
       - uses: actions/checkout@v4
 
-      - id: channel
+      - id: image
         run: |
           if [ "${{ github.event.repository.name }}" = "ha-addons-dev" ]; then
-            echo "tag_prefix=dev-" >> $GITHUB_OUTPUT
-            echo "latest_tag=dev" >> $GITHUB_OUTPUT
+            echo "image=${{ matrix.addon }}-dev" >> $GITHUB_OUTPUT
           else
-            echo "tag_prefix=" >> $GITHUB_OUTPUT
-            echo "latest_tag=latest" >> $GITHUB_OUTPUT
+            echo "image=${{ matrix.addon }}" >> $GITHUB_OUTPUT
           fi
 
       - uses: docker/setup-qemu-action@v3
@@ -143,8 +141,8 @@ jobs:
           platforms: linux/amd64,linux/arm64
 
           tags: |
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}:${{ steps.channel.outputs.tag_prefix }}${{ steps.version.outputs.version }}
-            ghcr.io/${{ github.repository_owner }}/${{ matrix.addon }}:${{ steps.channel.outputs.latest_tag }}
+            ghcr.io/${{ github.repository_owner }}/${{ steps.image.outputs.image }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/${{ steps.image.outputs.image }}:latest
 
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
