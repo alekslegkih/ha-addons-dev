@@ -11,7 +11,7 @@ BASE_DIR="/usr/local/simple_dlna"
 export BASE_DIR
 
 # ------------------------------------------------------------------
-# Load runtime modules
+# Load runtime modules (теперь железо можно)
 # ------------------------------------------------------------------
 
 source "${BASE_DIR}/core/dlna_config.sh"

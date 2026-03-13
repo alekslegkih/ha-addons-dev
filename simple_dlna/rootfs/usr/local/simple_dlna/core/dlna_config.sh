@@ -122,7 +122,7 @@ sync_managed_block() {
         return
     fi
 
-    log_warn "Managed block differs from expected configuration. Restoring system-managed values."
+    log_yellow "Managed block differs from expected configuration. Restoring system-managed values."
 
     log_debug "Creating backup ${CONFIG_FILE}.bak"
     cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"

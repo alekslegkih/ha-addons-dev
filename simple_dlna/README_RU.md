@@ -15,7 +15,7 @@
 
 ## Документация
 
-[Документация](https://github.com/alekslegkih/ha-addons/blob/main/simple-_lna/DOCS_RU.md)
+[Документация](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS_RU.md)
 
 ## Лицензирование
 

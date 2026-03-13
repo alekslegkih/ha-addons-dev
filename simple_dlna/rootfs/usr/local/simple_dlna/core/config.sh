@@ -41,7 +41,6 @@ load_config() {
     log_debug "  MAX_COPIES=${MAX_COPIES:-empty}"
     log_debug "  SYNC_EXIST_START=${SYNC_EXIST_START:-empty}"
 
-
     # ------------------------------------------------------------------
     # Information output
     # ------------------------------------------------------------------
