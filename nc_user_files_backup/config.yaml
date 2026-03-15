@@ -8,7 +8,7 @@ arch:
   - aarch64
   - amd64
 
-build_from: ghcr.io/hassio-addons/base:20.0.1  
+image: ghcr.io/alekslegkih/nc_user_files_backup
 startup: application
 boot: auto
 init: false
