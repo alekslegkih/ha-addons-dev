@@ -1,6 +1,6 @@
 name: "Nextcloud User Files Backup"
 description: "Backup Nextcloud user files to external USB drive"
-version: "0.2.4"
+version: "0.2.5"
 slug: "nc_user_files_backup"
 url: "https://github.com/alekslegkih/ha-addons/tree/main/nc_user_files_backup"
 
