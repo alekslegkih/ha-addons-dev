@@ -1,6 +1,6 @@
 name: "Nextcloud User Files Backup"
 description: "Backup Nextcloud user files to external USB drive"
-version: "0.2.5"
+version: "0.2.6"
 slug: "nc_user_files_backup"
 url: "https://github.com/alekslegkih/ha-addons/tree/main/nc_user_files_backup"
 
@@ -8,7 +8,7 @@ arch:
   - aarch64
   - amd64
 
-image: ghcr.io/alekslegkih/nc_user_files_backup
+image: ghcr.io/alekslegkih/nc_user_files_backup-dev
 startup: application
 boot: auto
 init: false
