@@ -1,0 +1,94 @@
+name: "Nextcloud User Files Backup"
+description: "Backup Nextcloud user files to external USB drive"
+version: "0.2.4"
+slug: "nc_user_files_backup"
+url: "https://github.com/alekslegkih/ha-addons/tree/main/nc_user_files_backup"
+
+arch:
+  - aarch64
+  - amd64
+
+build_from: ghcr.io/hassio-addons/base:20.0.1  
+startup: application
+boot: auto
+init: false
+
+privileged:
+  - SYS_ADMIN
+  - DAC_READ_SEARCH
+
+devices:
+  - /dev/sdb1
+  - /dev/sdc1
+  - /dev/sdd1
+  - /dev/sde1
+  - /dev/sdf1
+  - /dev/sdb2
+  - /dev/sdc2
+  - /dev/sdd2
+  - /dev/sde2
+  - /dev/sdf2
+  - /dev/sdb3
+  - /dev/sdc3
+  - /dev/sdd1
+  - /dev/sde3
+  - /dev/sdf3
+  - /dev/sdb4
+  - /dev/sdc4
+  - /dev/sdd4
+  - /dev/sde4
+  - /dev/sdf4
+  - /dev/nvme0
+  - /dev/nvme1
+  - /dev/nvme2
+  - /dev/mmcblk0
+  - /dev/mmcblk1
+  - /dev/fuse
+
+hassio_api: true
+homeassistant_api: true
+hassio_role: homeassistant
+
+map:
+  - addon_config:rw
+  - media:rw
+  - share:rw
+
+schema:
+  schedule: match(^([\d\*/,\-]+)\s+([\d\*/,\-]+)\s+([\d\*/,\-]+)\s+([\d\*/,\-]+)\s+([\d\*/,\-]+)$)
+  rsync_options: str
+  timezone: str
+  test_mode: bool
+
+  storage:
+    source_device: str
+    source_dir: str
+    destination_device: str
+    destination_dir: str
+
+  power:
+    enabled: bool
+    disk_switch: str?
+
+options:
+  schedule: "47 2 * * *"
+  rsync_options: "-aHAX --delete"
+  timezone: "Europe/Moscow"
+  test_mode: false
+
+  storage:
+    source_device: ""
+    source_dir: "data"
+    destination_device: ""
+    destination_dir: "backup"
+
+  power:
+    enabled: true
+    disk_switch: ""
+
+panel_icon: mdi:cloud-upload-outline
+panel_title: "Backup browser"
+
+ingress: true
+ingress_stream: true
+ingress_port: 8899

@@ -1,0 +1,82 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+set -euo pipefail
+
+RUNTIME="/run/nc_user_files_backup"
+ENV_FILE="${RUNTIME}/runtime.env"
+TRIGGER="${RUNTIME}/trigger_backup"
+LOCK="${RUNTIME}/backup.lock"
+
+
+PIPELINE="/usr/bin/backup_pipeline"
+
+# ------------------------------------------------------------------
+# Exit & Error
+# ------------------------------------------------------------------
+
+fail_and_stop() {
+
+    local caller="${FUNCNAME[1]}"
+    local reason="${1:-fatal_error}"
+
+    bashio::log.red "Fatal error in ${caller}: ${reason}"
+
+    log_debug "fail_and_stop triggered by ${caller}"
+    log_debug "Exit reason: ${reason}"
+
+    if _is_debug; then
+        bashio::log.yellow "Debug mode enabled — container will stay alive"
+
+        sleep infinity
+
+    fi
+
+    exit 1
+}
+
+run_backup() {
+
+    if [ -f "$LOCK" ]; then
+        bashio::log.yellow "Backup already running"
+        return
+    fi
+
+    touch "$LOCK"
+
+    bashio::log.blue "=== Starting backup pipeline ==="
+
+    if "$PIPELINE"; then
+        bashio::log.green "Backup completed"
+    else
+        bashio::log.red "Backup failed"
+    fi
+}
+
+trap 'rm -f "$LOCK"' EXIT
+
+if [ ! -f "$ENV_FILE" ]; then
+    fail_and_stop "runtime_env_missing"
+fi
+
+source "$ENV_FILE"
+
+bashio::log.green "Backup scheduler started"
+
+if ! pgrep -x crond >/dev/null; then
+    bashio::log.green "Starting cron daemon"
+    crond -l 8 || fail_and_stop "cron_start_failed"
+fi
+
+bashio::log.blue "Automatic schedule: ${SCHEDULE}"
+
+while true; do
+
+    if [ -f "$TRIGGER" ]; then
+        rm -f "$TRIGGER"
+        log_debug "Trigger detected"
+        run_backup
+    fi
+
+    sleep 10
+done

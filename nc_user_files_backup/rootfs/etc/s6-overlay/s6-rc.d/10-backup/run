@@ -1,0 +1,14 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+RUNTIME_DIR="/run/nc_user_files_backup"
+READY_FILE="${RUNTIME_DIR}/service.ready"
+
+while [ ! -f "$READY_FILE" ]; do
+    sleep 1
+done
+
+rm -f "${RUNTIME_DIR}/service.ready"
+
+# Start main application
+exec /usr/bin/backup_scheduler
