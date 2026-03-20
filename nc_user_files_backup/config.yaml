@@ -8,7 +8,7 @@ arch:
   - aarch64
   - amd64
 
-image: ghcr.io/alekslegkih/nc_user_files_backup
+image: ghcr.io/alekslegkih/nc_user_files_backup-dev
 startup: application
 boot: auto
 init: false
