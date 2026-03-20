@@ -7,25 +7,22 @@ import logging
 from events import emit
 
 
-# ------------------------------------------------------------------
-# Logger
-# ------------------------------------------------------------------
-
+# Module logger for CLI utility
 _logger = logging.getLogger("nc_user_files_backup.emit_cli")
 
 
-# ------------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------------
-
+# Print CLI usage help
+# Writes message to stderr
 def _usage() -> None:
     print("Usage: emit_cli.py <event_name> '<json_payload>'", file=sys.stderr)
 
 
-# ------------------------------------------------------------------
-# Main
-# ------------------------------------------------------------------
-
+# CLI entrypoint
+# Reads event name and optional JSON payload from arguments
+# Validates payload and forwards event to emit()
+# Returns:
+#   0 on success
+#   1 on argument or JSON validation error
 def main() -> int:
     if len(sys.argv) < 2:
         _usage()
@@ -53,9 +50,7 @@ def main() -> int:
     return 0
 
 
-# ------------------------------------------------------------------
-# Entry point
-# ------------------------------------------------------------------
-
+# Script entrypoint
+# Executes main() and propagates exit code to shell
 if __name__ == "__main__":
     sys.exit(main())

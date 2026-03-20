@@ -63,14 +63,6 @@ def human_size(size):
     return f"{size:.1f} PB"
 
 
-def trigger_rescan():
-    try:
-        log_debug("Triggering minidlna rescan (SIGHUP)")
-        subprocess.run(["pkill", "-HUP", "minidlnad"], check=False)
-    except Exception as e:
-        log_yellow(f"Rescan failed: {e}")
-
-
 def smart_filename(filename: str) -> str:
     filename = os.path.basename(filename)
 
@@ -188,8 +180,6 @@ def delete(subpath):
         except Exception as e:
             log_red(f"Failed to remove file {name}: {e}")
 
-    trigger_rescan()
-
     return {"status": "ok"}
 
 
@@ -269,7 +259,6 @@ def move():
             return {"status": "error", "message": "Already exists"}, 400
 
         shutil.move(str(source_path), str(target_path))
-        trigger_rescan()
 
     except Exception as e:
 
@@ -321,7 +310,6 @@ def rename():
             return {"status": "error", "message": "Already exists"}, 400
 
         source_path.rename(target_path)
-        trigger_rescan()
 
         return {"status": "ok"}
 

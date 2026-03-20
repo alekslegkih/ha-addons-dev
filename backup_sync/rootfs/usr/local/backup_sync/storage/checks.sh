@@ -16,7 +16,7 @@ resolve_device() {
     log_debug "resolve_device(): input=${input}"
 
     # ----------------------------------------------------------
-    # 1. Direct device path (sdb2)
+    # 1. Direct device path
     # ----------------------------------------------------------
 
     path="/dev/${input}"

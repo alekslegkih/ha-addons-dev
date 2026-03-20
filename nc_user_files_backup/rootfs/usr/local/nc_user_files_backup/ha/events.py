@@ -4,20 +4,13 @@ import urllib.request
 import urllib.error
 import logging
 
-
-# ------------------------------------------------------------------
-# Constants
-# ------------------------------------------------------------------
-
+# Event domain and API configuration
 DOMAIN = "nc_user_files_backup"
 SUPERVISOR_URL = "http://supervisor/core/api/events"
 TIMEOUT = 2
 
-
-# ------------------------------------------------------------------
-# Runtime state
-# ------------------------------------------------------------------
-
+# Runtime state (Supervisor token detection)
+# Events are enabled only if token is available
 _TOKEN = os.getenv("SUPERVISOR_TOKEN")
 _ENABLED = bool(_TOKEN)
 
@@ -26,16 +19,19 @@ _logger = logging.getLogger("backup_sync.events")
 _logger.debug(f"Events module initialized: enabled={_ENABLED}")
 
 
-# ------------------------------------------------------------------
-# Internal helpers
-# ------------------------------------------------------------------
-
+# Build full event name with domain prefix
+# Example:
+#   storage_failed -> nc_user_files_backup.storage_failed
 def _build_event_name(name: str) -> str:
     event_name = f"{DOMAIN}.{name}"
     _logger.debug(f"Built event name={event_name}")
     return event_name
 
 
+# Send HTTP POST request to Home Assistant Supervisor API
+# Arguments:
+#   event_type - full event name
+#   payload    - JSON payload (dict)
 def _post(event_type: str, payload: dict) -> None:
     url = f"{SUPERVISOR_URL}/{event_type}"
     data = json.dumps(payload).encode("utf-8")
@@ -57,10 +53,13 @@ def _post(event_type: str, payload: dict) -> None:
         _logger.debug("Event POST successful")
 
 
-# ------------------------------------------------------------------
-# Public API
-# ------------------------------------------------------------------
-
+# Public API: emit event to Home Assistant
+# Arguments:
+#   name - event name (without domain)
+#   data - optional payload dictionary
+# Notes:
+#   - does nothing if Supervisor token is not available
+#   - never raises (safe for background services)
 def emit(name: str, data: dict | None = None) -> None:
     """
     Send event to Home Assistant event bus.

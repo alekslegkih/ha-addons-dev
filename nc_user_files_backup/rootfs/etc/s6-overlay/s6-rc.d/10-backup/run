@@ -9,6 +9,7 @@ while [ ! -f "$READY_FILE" ]; do
 done
 
 rm -f "${RUNTIME_DIR}/service.ready"
+rm -f "${RUNTIME_DIR}/backup.lock"
 
 # Start main application
 exec /usr/bin/backup_scheduler

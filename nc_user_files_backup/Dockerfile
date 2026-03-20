@@ -28,7 +28,6 @@ RUN apk add --no-cache \
     bash \
     coreutils \
     util-linux \
-    jq \
     python3 \
     py3-pip
 
@@ -39,7 +38,8 @@ RUN python3 -m pip install --no-cache-dir \
     --prefer-binary \
     watchdog \
     requests \
-    flask
+    flask \
+    croniter
 
 # Права на скрипты
 RUN chmod +x \

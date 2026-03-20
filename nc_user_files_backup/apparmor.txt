@@ -5,6 +5,8 @@ profile simple-dlna flags=(attach_disconnected,mediate_deleted) {
 
   capability sys_admin,
   capability dac_read_search,
+  capability setgid, 
+  capability setuid,
 
   file,
   signal,

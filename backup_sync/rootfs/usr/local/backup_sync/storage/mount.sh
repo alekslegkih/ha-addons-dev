@@ -124,7 +124,7 @@ mount_usb() {
                 log_debug "ntfs-3g mount failed with code=${second_exit}"
 
                 bashio::log.red "Direct mount failed (ntfs + ntfs-3g)"
-                emit storage_failed "{"reason":"device_error","fs=ntfs"}"
+                emit storage_failed "{\"reason\":\"device_error\",\"error\":\"fs=ntfs\"}"
                 return 1
             fi
         fi

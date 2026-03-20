@@ -3,37 +3,36 @@
 
 set -euo pipefail
 
-# ------------------------------------------------------------------
-# Static paths
-# ------------------------------------------------------------------
-
+# Static paths and addon directories
+# BASE_DIR is exported for use in sourced modules
 DIR_ADDON="nc_user_files_backup"  # addon home path
 BASE_DIR="/usr/local/${DIR_ADDON}"
+RUNTIME_DIR="/run/${DIR_ADDON}"
 export BASE_DIR
 
 CONFIG_DIR="/config"
 DEBUG_FLAG="${CONFIG_DIR}/debug.flag"
 
-RUNTIME_DIR="/run/${DIR_ADDON}"
+# cron_next files
+LAST_BACKUP_FILE="${RUNTIME_DIR}/last_backup.ts"
+NEXT_RUN_FILE="${RUNTIME_DIR}/next_run.ts"
+WARNED_FOR_FILE="${RUNTIME_DIR}/warned_for.ts"
 
-# ------------------------------------------------------------------
-# Start
-# ------------------------------------------------------------------
-
+# Addon startup info
+# Prints version, name and startup timestamp
 ADDON_VERSION="$(bashio::addon.version)"
 ADDON_NAME=$(bashio::addon.name)
 
-bashio::log "========================================"
-bashio::log.green "=== ${ADDON_NAME} ==="
-bashio::log.green "=== Version:  ${ADDON_VERSION} ==="
+bashio::log "============================================="
+bashio::log.blue "=== ${ADDON_NAME} ==="
+bashio::log.blue "=== Version:  ${ADDON_VERSION} ==="
 bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
-bashio::log "========================================"
 
-# ------------------------------------------------------------------
-# logger for addon
-# User-friendly by default, debug via /config/debug.flag
-# ------------------------------------------------------------------
 
+# Debug logger helper
+# Enabled by presence of /config/debug.flag
+# Arguments:
+#   $@ - message to log
 log_debug() {
     if [ -n "${DEBUG_FLAG:-}" ] && [ -f "${DEBUG_FLAG}" ]; then
         bashio::log.magenta "[DEBUG] $*"
@@ -43,20 +42,19 @@ log_debug() {
 log_debug "Script started"
 log_debug "BASE_DIR=${BASE_DIR}"
 
-# ------------------------------------------------------------------
-# Load modules
-# ------------------------------------------------------------------
 
+# Load core modules
+# Provides configuration and helper functions
 log_debug "Loading modules..."
-
 source "${BASE_DIR}/core/config.sh"
-
 log_debug "Modules ${BASE_DIR} loaded"
 
-# ------------------------------------------------------------------
-# Helpers
-# ------------------------------------------------------------------
 
+# Emit helper for Home Assistant events
+# Arguments:
+#   $@ - event name and JSON payload
+# Notes:
+#   Errors are ignored (non-blocking)
 emit() {
     log_debug "Emit called with args: $*"
     python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || {
@@ -65,10 +63,10 @@ emit() {
     }
 }
 
-# ------------------------------------------------------------------
-# Runtime ENV writer
-# ------------------------------------------------------------------
 
+# Write runtime environment file
+# Exports all resolved configuration variables for other processes
+# Writes atomically via temporary file
 write_runtime_env() {
 
     local ENV_FILE="${RUNTIME_DIR}/runtime.env"
@@ -82,7 +80,6 @@ write_runtime_env() {
 
     printf 'SCHEDULE=%q\n' "$SCHEDULE" >> "$TMP_FILE"
     printf 'RSYNC_OPTIONS=%q\n' "$RSYNC_OPTIONS" >> "$TMP_FILE"
-    printf 'TIMEZONE=%q\n' "$TIMEZONE" >> "$TMP_FILE"
     printf 'TEST_MODE=%q\n' "$TEST_MODE" >> "$TMP_FILE"
 
     printf 'SOURCE_DEVICE=%q\n' "$SOURCE_DEVICE" >> "$TMP_FILE"
@@ -101,19 +98,20 @@ write_runtime_env() {
     printf 'TARGET_ROOT=%q\n' "$TARGET_ROOT" >> "$TMP_FILE"
     printf 'DEBUG_FLAG=%q\n' "$DEBUG_FLAG" >> "$TMP_FILE"
 
+    printf 'LAST_BACKUP_FILE=%q\n' "$LAST_BACKUP_FILE" >> "$TMP_FILE"
+    printf 'NEXT_RUN_FILE=%q\n' "$NEXT_RUN_FILE" >> "$TMP_FILE"
+    printf 'WARNED_FOR_FILE=%q\n' "$WARNED_FOR_FILE" >> "$TMP_FILE"
+
     chmod 600 "$TMP_FILE"
     mv "$TMP_FILE" "$ENV_FILE"
 
     log_debug "Runtime env written to ${ENV_FILE}"
-
 }
 
 
-
-# ------------------------------------------------------------------
-# Cron job create
-# ------------------------------------------------------------------
-
+# Install cron job for scheduled backups
+# Creates root crontab and writes trigger command
+# Uses touch file as trigger mechanism
 install_cron_job() {
 
     local CRON_FILE="/etc/crontabs/root"
@@ -122,26 +120,29 @@ install_cron_job() {
     log_debug "install_cron_job(): start"
     log_debug "Schedule value: ${SCHEDULE}"
 
-    bashio::log "Installing cron job"
+    bashio::log "Installing cron job..."
 
+    # Ensure cron directory exists
     log_debug "Ensuring cron directory exists: /etc/crontabs"
     mkdir -p /etc/crontabs || {
         bashio::log.red "Failed to create /etc/crontabs directory"
         return 1
     }
 
+    # Write cron configuration
     log_debug "Writing cron file: ${CRON_FILE}"
-
     cat > "${CRON_FILE}" <<EOF
 SHELL=/bin/sh
 PATH=/usr/sbin:/usr/bin:/sbin:/bin
 
-${SCHEDULE} touch ${TRIGGER}
+${SCHEDULE} echo "CRON fired \$(date '+%Y-%m-%d %H:%M:%S')" >> /proc/1/fd/1 2>&1; touch ${TRIGGER}
+
 EOF
 
     log_debug "Cron file content:"
     log_debug "$(cat ${CRON_FILE})"
 
+    # Set secure permissions
     chmod 600 "${CRON_FILE}" || {
         bashio::log.red "Failed to set permissions on ${CRON_FILE}"
         return 1
@@ -153,14 +154,12 @@ EOF
     log_debug "install_cron_job(): completed"
 }
 
-# ------------------------------------------------------------------
-# Main (configuration phase only)
-# ------------------------------------------------------------------
 
+# Main entrypoint (configuration phase only)
+# Loads config, validates it, installs cron and prepares runtime env
 log_debug "Emitting addon_started event"
 emit service_state '{"reason":"addon_started"}'
 
-bashio::log.blue "=== Configuration ==="
 log_debug "Starting configuration phase"
 
 set +e 
@@ -178,11 +177,12 @@ if [ "$rc" -ne 0 ]; then
     exec /run/s6/basedir/bin/halt
 fi
 
-# Cron load
-install_cron_job
-
 bashio::log.green "Configuration loaded"
 
+# Install cron job
+install_cron_job
+
+# Debug: final resolved configuration
 log_debug "Configuration loaded successfully"
 log_debug "SOURCE_DEVICE=${SOURCE_DEVICE}"
 log_debug "SOURCE_DIR=${SOURCE_DIR}"
@@ -192,7 +192,6 @@ log_debug "SOURCE_PATH=${SOURCE_PATH}"
 log_debug "DEST_PATH=${DEST_PATH}"
 log_debug "SCHEDULE=${SCHEDULE}"
 log_debug "RSYNC_OPTIONS=${RSYNC_OPTIONS}"
-log_debug "TIMEZONE=${TIMEZONE}"
 log_debug "TEST_MODE=${TEST_MODE}"
 log_debug "POWER_ENABLED=${POWER_ENABLED}"
 log_debug "DISK_SWITCH=${DISK_SWITCH}"
@@ -200,14 +199,27 @@ log_debug "CONFIG_DIR=${CONFIG_DIR}"
 log_debug "TARGET_ROOT=${TARGET_ROOT}"
 log_debug "DEBUG_FLAG=${DEBUG_FLAG:-not_set}"
 
+# Persist runtime environment
 write_runtime_env
+
+# --- Initialize scheduler state ---
+now=$(date +%s)
+
+echo "$now" > "${LAST_BACKUP_FILE}.tmp"
+mv "${LAST_BACKUP_FILE}.tmp" "${LAST_BACKUP_FILE}"
+
+next_run=$(python3 "${BASE_DIR}/core/cron_next.py" "$SCHEDULE" "$now")
+echo "$next_run" > "${NEXT_RUN_FILE}.tmp"
+mv "${NEXT_RUN_FILE}.tmp" "${NEXT_RUN_FILE}"
+
+rm -f "${WARNED_FOR_FILE}"
+
+log_debug "Scheduler state initialized: last_backup=${now}, next_run=${next_run}"
 
 log_debug "Configuration phase completed"
 log_debug "Script exiting successfully"
 
-# ------------------------------------------------------------------
-# Flag barier
-# ------------------------------------------------------------------
+# Signal that service is ready
 touch "${RUNTIME_DIR}/service.ready"
 
 exit 0
