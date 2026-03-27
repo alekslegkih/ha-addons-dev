@@ -1,12 +1,12 @@
 name: Simple DLNA
 description: "Lightweight DLNA server based on ReadyMedia"
-version: "0.2.17"
+version: "0.2.18"
 slug: simple_dlna
 url: "https://github.com/alekslegkih/ha-addons/tree/main/simple_dlna"
 arch:
   - amd64
   - aarch64
-image: ghcr.io/alekslegkih/simple_dlna
+image: ghcr.io/alekslegkih/simple_dlna-dev
 startup: application
 boot: auto
 init: false
