@@ -16,3 +16,4 @@ configuration:
     description: >
       Remaining runtime at which the system shutdown
       will be triggered. Leave empty to use apcupsd defaults.
+

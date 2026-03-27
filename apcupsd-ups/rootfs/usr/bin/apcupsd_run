@@ -56,7 +56,7 @@ for i in $(seq 1 ${MAX_RETRIES}); do
             bashio::log.green "UPS detected: ${model}"
             bashio::log "Serial: ${serial}"
             bashio::log "Battery charge: ${battery}"
-            
+
             success=1
             break
         fi

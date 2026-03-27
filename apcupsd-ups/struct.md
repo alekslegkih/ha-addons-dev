@@ -8,7 +8,7 @@ apcupsd-addon/
 │   ├── etc/
 │   │   ├── apcupsd/
 │   │   │   ├── doshutdown
-│   │   │   └── apcupsd.conf 
+│   │   │   └── apcupsd.conf
 │   │   └── s6-overlay/
 │   │       └── s6-rc.d/
 │   │           ├── 00-init/
