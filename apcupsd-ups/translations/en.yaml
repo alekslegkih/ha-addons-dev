@@ -1,0 +1,18 @@
+configuration:
+  shutdown_host:
+    name: Shutdown host
+    description: >
+      If enabled, the system will be safely shut down
+      when the UPS reaches a critical battery level.
+
+  shutdown_battery_level:
+    name: Battery level (%)
+    description: >
+      Battery charge level at which the system shutdown
+      will be triggered. Leave empty to use apcupsd defaults.
+
+  shutdown_runtime:
+    name: Runtime remaining (minutes)
+    description: >
+      Remaining runtime at which the system shutdown
+      will be triggered. Leave empty to use apcupsd defaults.

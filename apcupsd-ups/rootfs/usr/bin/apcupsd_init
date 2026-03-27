@@ -1,0 +1,120 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+set -eEuo pipefail
+
+# Пути к основным файлам и директориям
+CONFIG_FILE="/etc/apcupsd/apcupsd.conf"
+TMP_FILE="${CONFIG_FILE}.tmp"
+
+RUNTIME_DIR="/run/apcupsd"
+LOG_DIR="/var/log/apcupsd"
+
+# Файл для передачи параметров в longrun сервис
+RUNTIME_CONFIG="${RUNTIME_DIR}/options.env"
+
+# Информация об аддоне
+ADDON_NAME="$(bashio::addon.name)"
+ADDON_VERSION="$(bashio::addon.version)"
+
+# Логирование
+# Вывод базовой информации о запуске аддона
+bashio::log "============================================="
+bashio::log.blue "=== ${ADDON_NAME} ==="
+bashio::log.blue "=== Version: ${ADDON_VERSION} ==="
+bashio::log.green "Init started at: $(date '+%Y-%m-%d %H:%M:%S')"
+
+# Проверка конфигурации
+# Чтение и проверка параметров из options/schema
+
+# Параметр shutdown_host просто считываем (валидирован schema)
+shutdown_host="$(bashio::config 'shutdown_host')"
+
+# Проверка уровня батареи (если задан)
+if bashio::config.has_value 'shutdown_battery_level'; then
+    shutdown_battery_level="$(bashio::config 'shutdown_battery_level')"
+
+    # Проверяем, что значение — число в диапазоне 1..100
+    if ! [[ "${shutdown_battery_level}" =~ ^[0-9]+$ ]] \
+        || [ "${shutdown_battery_level}" -lt 1 ] \
+        || [ "${shutdown_battery_level}" -gt 100 ]; then
+        bashio::log.red "Invalid shutdown_battery_level: ${shutdown_battery_level}"
+        exit 1
+    fi
+fi
+
+# Проверка времени работы (если задано)
+if bashio::config.has_value 'shutdown_runtime'; then
+    shutdown_runtime="$(bashio::config 'shutdown_runtime')"
+
+    # Проверяем диапазон 1..60 минут
+    if ! [[ "${shutdown_runtime}" =~ ^[0-9]+$ ]] \
+        || [ "${shutdown_runtime}" -lt 1 ] \
+        || [ "${shutdown_runtime}" -gt 60 ]; then
+        bashio::log.red "Invalid shutdown_runtime: ${shutdown_runtime}"
+        exit 1
+    fi
+fi
+
+# Подготовка директорий
+# Создание директорий, необходимых для работы apcupsd
+bashio::log "Preparing runtime directories..."
+
+mkdir -p "${RUNTIME_DIR}"
+mkdir -p "${LOG_DIR}"
+
+chmod 755 "${RUNTIME_DIR}"
+chmod 755 "${LOG_DIR}"
+
+# Генерация runtime конфигурации
+# Сохраняем параметры для использования в longrun сервисе
+bashio::log "Writing runtime configuration..."
+
+cat <<EOF > "${RUNTIME_CONFIG}"
+SHUTDOWN_HOST=${shutdown_host}
+EOF
+
+chmod 600 "${RUNTIME_CONFIG}"
+
+# Генерация конфигурации
+# Полная генерация apcupsd.conf без использования старого файла
+bashio::log "Generating apcupsd.conf..."
+
+{
+    # Заголовок обязателен (убирает warning apcupsd)
+    echo "## apcupsd.conf v1.1 ##"
+
+    # Базовая конфигурация USB UPS
+    cat <<EOF
+UPSNAME apc
+UPSCABLE usb
+UPSTYPE usb
+DEVICE
+EOF
+
+    # Опциональные параметры shutdown
+    if bashio::config.has_value 'shutdown_battery_level'; then
+        echo "BATTERYLEVEL ${shutdown_battery_level}"
+    fi
+
+    if bashio::config.has_value 'shutdown_runtime'; then
+        echo "MINUTES ${shutdown_runtime}"
+    fi
+
+} > "${TMP_FILE}"
+
+# Атомарная замена конфигурационного файла
+mv "${TMP_FILE}" "${CONFIG_FILE}"
+chmod 644 "${CONFIG_FILE}"
+
+bashio::log.green "Configuration generated successfully"
+
+if [ "${shutdown_host}" = "true" ]; then
+    bashio::log "\033[0;34mShutdown host: \033[0;32menabled\033[0m"
+else
+    bashio::log "\033[0;34mShutdown host: \033[0;33mdisabled\033[0m"
+fi
+
+# Завершение
+# Init завершает работу после подготовки окружения
+bashio::log.green "Init completed successfully"

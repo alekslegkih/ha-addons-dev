@@ -1,0 +1,27 @@
+name: apcupsd (APC UPS)
+version: "0.1.4"
+slug: apcupsd-ups
+description: apcupsd-based service for monitoring APC UPS devices
+url: "https://github.com/alekslegkih/ha-addons/tree/main/apcupsd-ups"
+arch:
+  - amd64
+  - aarch64
+image: ghcr.io/alekslegkih/apcupsd-ups-dev
+startup: system
+boot: auto
+init: false
+udev: true
+usb: true
+hassio_api: true
+options:
+  shutdown_host: true
+  shutdown_battery_level: 10
+  shutdown_runtime: 5
+schema:
+  shutdown_host: bool
+  shutdown_battery_level: int(1,100)?
+  shutdown_runtime: int(1,60)?
+ports:
+  3551/tcp: null
+ports_description:
+  3551/tcp: apcupsd port

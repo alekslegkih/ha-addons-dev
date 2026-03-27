@@ -1,0 +1,81 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+set -eEuo pipefail
+
+# Пути
+RUNTIME_DIR="/run/apcupsd"
+RUNTIME_CONFIG="${RUNTIME_DIR}/options.env"
+
+# Проверка наличия runtime-конфига
+# Это защита от некорректного запуска без init
+if [ ! -f "${RUNTIME_CONFIG}" ]; then
+    bashio::log.red "Runtime config not found: ${RUNTIME_CONFIG}"
+    exit 1
+fi
+
+# Загружаем параметры
+# Здесь появится SHUTDOWN_HOST
+# shellcheck disable=SC1090
+source "${RUNTIME_CONFIG}"
+
+# Logging
+bashio::log "Starting apcupsd..."
+
+# Запускаем демон в фоне
+apcupsd -b &
+APCUPSD_PID=$!
+
+# Небольшая пауза, чтобы демон успел стартовать
+bashio::log "Detecting UPS device..."
+
+sleep 5
+
+# Healthcheck
+# Проверяем доступность UPS через apcaccess
+
+MAX_RETRIES=5
+RETRY_DELAY=2
+
+success=0
+
+for i in $(seq 1 ${MAX_RETRIES}); do
+    if output="$(apcaccess 2>/dev/null)"; then
+
+        # Проверяем наличие ключевых полей
+        if echo "${output}" | grep -q "STATUS" \
+            && echo "${output}" | grep -q "MODEL"; then
+
+            bashio::log.green "UPS communication established"
+
+            # Получаем информацию об UPS
+            model="$(echo "${output}" | awk -F': ' '/MODEL/{print $2}')"
+            serial="$(echo "${output}" | awk -F': ' '/SERIALNO/{print $2}')"
+            battery="$(echo "${output}" | awk -F': ' '/BCHARGE/{print $2}')"
+
+            bashio::log.green "UPS detected: ${model}"
+            bashio::log "Serial: ${serial}"
+            bashio::log "Battery charge: ${battery}"
+            
+            success=1
+            break
+        fi
+    fi
+
+    bashio::log.yellow "UPS not ready yet (${i}/${MAX_RETRIES})"
+    sleep "${RETRY_DELAY}"
+done
+
+# Если не удалось получить данные — падаем
+if [ "${success}" -ne 1 ]; then
+    bashio::log.red "UPS detected but no data received"
+    bashio::log.red "Device may not be supported or accessible"
+
+    exit 1
+fi
+
+# Основной процесс
+# Держим контейнер, ожидая завершения apcupsd
+bashio::log.green "apcupsd is running"
+
+wait "${APCUPSD_PID}"
