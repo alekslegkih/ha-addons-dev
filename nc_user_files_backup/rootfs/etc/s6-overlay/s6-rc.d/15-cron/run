@@ -1,8 +1,0 @@
-#!/command/with-contenv bashio
-# shellcheck shell=bash
-
-set -euo pipefail
-
-bashio::log.green "Starting cron daemon"
-
-exec crond -f -l 8 -L /var/log/cron.log -c /etc/crontabs
