@@ -1,0 +1,20 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+DIR_ADDON="nc_user_files_backup"  # addon home path
+BASE_DIR="/usr/local/${DIR_ADDON}"
+RUNTIME_DIR="/run/${DIR_ADDON}"
+
+ENV_FILE="${RUNTIME_DIR}/runtime.env"
+READY_FILE="${RUNTIME_DIR}/service.ready"
+WEB_APP="${BASE_DIR}/web/filemanager.py"
+
+
+while [ ! -f "$READY_FILE" ]; do
+    sleep 1
+done
+
+rm -f "${RUNTIME_DIR}/backup.lock"
+
+# Start main application
+exec /usr/bin/backup_scheduler

@@ -1,0 +1,78 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+set -euo pipefail
+
+DIR_ADDON="nc_user_files_backup"
+BASE_DIR="/usr/local/${DIR_ADDON}"
+RUNTIME_DIR="/run/${DIR_ADDON}"
+RUNTIME_ENV="${RUNTIME_DIR}/runtime.env"
+
+# Check if debug mode is enabled via debug flag file
+_is_debug() {
+    [ -n "${DEBUG_FLAG:-}" ] && [ -f "${DEBUG_FLAG}" ]
+}
+
+# Log debug messages with magenta color when debug mode is enabled
+log_debug() {
+    if _is_debug; then
+        bashio::log.magenta "[DEBUG] $*"
+    fi
+}
+
+# Load runtime environment and required scripts
+if [ ! -f "${RUNTIME_ENV}" ]; then
+    bashio::log.red "Runtime environment file not found: ${RUNTIME_ENV}"
+    exit 1
+fi
+
+source "${RUNTIME_ENV}"
+log_debug "Loading runtime environment"
+
+# Load required modules for power management, storage operations, and sync
+log_debug "Loading modules"
+source "${BASE_DIR}/core/pipeline_flow.sh"
+source "${BASE_DIR}/sync/copier.sh"
+
+# Helpers
+emit() {
+    log_debug "Emit called with args: $*"
+    python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || {
+        log_debug "Emit failed (ignored)"
+        true
+    }
+}
+
+# Cleanup function to ensure proper unmounting and power off on script exit
+cleanup() {
+    log_debug "Running cleanup"
+    umount_destination || true
+}
+
+# Register cleanup function to run on script exit
+trap cleanup EXIT
+
+# Start of execution of pipeline procedure
+log_debug "Starting backup pipeline"
+bashio::log.blue "Starting backup pipeline..."
+bashio::log.blue "At: $(date '+%Y-%m-%d %H:%M:%S')"
+
+# Power on the backup device
+# Wait for the disk to appear only if the power was turned on
+power_on_and_wait_disk || exit 1
+
+# Mount destination device
+# Validate that backup directory exists on destination
+mount_and_check_destination || exit 1
+
+bashio::log.green "Destination storage ready"
+
+# Perform the actual backup copy operation
+copy_user_files || {
+    bashio::log.red "Backup copy failed"
+    exit 1
+}
+
+# Unmount destination storage
+# Power off the backup device
+umount_and_poweroff || exit 1

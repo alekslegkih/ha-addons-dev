@@ -1,0 +1,213 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+set -euo pipefail
+
+DIR_ADDON="nc_user_files_backup"
+BASE_DIR="/usr/local/${DIR_ADDON}"
+
+RUNTIME_DIR="/run/${DIR_ADDON}"
+RUNTIME_ENV="${RUNTIME_DIR}/runtime.env"
+READY_FILE="${RUNTIME_DIR}/service.ready"
+TRIGGER="${RUNTIME_DIR}/trigger_backup"
+
+# Check if debug mode is enabled via debug flag file
+_is_debug() {
+    [ -n "${DEBUG_FLAG:-}" ] && [ -f "${DEBUG_FLAG}" ]
+}
+
+# Log debug messages with magenta color when debug mode is enabled
+log_debug() {
+    if _is_debug; then
+        bashio::log.magenta "[DEBUG] $*"
+    fi
+}
+
+# Handle fatal errors and stop execution
+# If debug mode is enabled, keep container alive for troubleshooting
+fail_and_stop() {
+    local caller="${FUNCNAME[1]}"
+    local reason="${1:-fatal_error}"
+
+    log_debug "fail_and_stop triggered by ${caller}"
+    log_debug "Exit reason: ${reason}"
+
+    if _is_debug; then
+        bashio::log.yellow "Debug mode enabled — container will stay alive"
+        sleep infinity
+    fi
+
+    exit 1
+}
+
+# Execute backup pipeline with lock file to prevent concurrent runs
+run_backup() {
+
+    local PIPELINE="/usr/bin/backup_pipeline"
+    local LOCK="${RUNTIME_DIR}/backup.lock"
+
+    if [ -f "$LOCK" ]; then
+        bashio::log.yellow "Backup already running"
+        return
+    fi
+
+    touch "$LOCK"
+
+    if "$PIPELINE"; then
+        bashio::log.green "Backup completed successfully"
+        bashio::log "Updating scheduler state after backup"
+    
+        now=$(date +%s)
+
+        echo "$now" > "${LAST_BACKUP_FILE}.tmp"
+        mv "${LAST_BACKUP_FILE}.tmp" "${LAST_BACKUP_FILE}"
+
+        next_run=$(python3 "${BASE_DIR}/core/cron_next.py" "$SCHEDULE" "$now")
+
+        if [ -z "$next_run" ]; then
+            bashio::log.red "Failed to calculate next_run"
+            return 1
+        fi
+
+        echo "$next_run" > "${NEXT_RUN_FILE}.tmp"
+        mv "${NEXT_RUN_FILE}.tmp" "${NEXT_RUN_FILE}"
+
+        rm -f "${WARNED_FOR_FILE}"
+
+    else
+        bashio::log.red "Backup failed"
+    fi
+
+    rm -f "$LOCK"
+    
+
+    bashio::log "Backup scheduler started. Waiting..."
+}
+
+
+# Helpers
+emit() {
+    log_debug "Emit called with args: $*"
+    python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || {
+        log_debug "Emit failed (ignored)"
+        true
+    }
+}
+
+
+# Check for missed backup execution
+# Verifies whether the scheduled backup was executed within allowed time window
+# Uses NEXT_RUN_FILE and LAST_BACKUP_FILE timestamps
+# Emits warning event if backup was missed
+check_missed_backup() {
+    local now_ts last_backup_ts next_run_ts warned_run_ts
+
+    log_debug "Checking for missed backup"
+
+    now_ts=$(date +%s)
+
+    # Read state (fail-soft)
+    last_backup_ts=$(cat "$LAST_BACKUP_FILE" 2>/dev/null || echo 0)
+    next_run_ts=$(cat "$NEXT_RUN_FILE" 2>/dev/null || echo 0)
+    warned_run_ts=$(cat "$WARNED_FOR_FILE" 2>/dev/null || echo "")
+
+    # Skip if scheduled time has not yet arrived
+    if [ "$now_ts" -lt "$next_run_ts" ]; then
+        return
+    fi
+
+    # Skip if within grace period
+    if [ "$now_ts" -lt $((next_run_ts + GRACE)) ]; then
+        return
+    fi
+
+    # Skip if backup already completed
+    if [ "$last_backup_ts" -ge "$next_run_ts" ]; then
+        return
+    fi
+
+    # Skip if already warned for this schedule
+    if [ "$warned_run_ts" = "$next_run_ts" ]; then
+        return
+    fi
+
+    # Missed backup detected
+    bashio::log.red "Backup missed: expected at ${next_run_ts}"
+
+    emit service_state "{\"reason\":\"backup_missed\",\"expected\":${next_run_ts}}"
+
+    # Record warning to prevent duplicate alerts
+    echo "$next_run_ts" > "${WARNED_FOR_FILE}.tmp"
+    mv "${WARNED_FOR_FILE}.tmp" "$WARNED_FOR_FILE"
+}
+
+
+# Load runtime environment and required scripts
+if [ ! -f "${RUNTIME_ENV}" ]; then
+    bashio::log.red "Runtime environment file not found: ${RUNTIME_ENV}"
+    fail_and_stop "runtime_env_missing"
+fi
+
+log_debug "Loading runtime environment"
+
+source "${RUNTIME_ENV}"
+source "${BASE_DIR}/storage/mount.sh"
+source "${BASE_DIR}/storage/checks.sh"
+
+# Validate source device configuration
+log_debug "Running source device validation"
+
+if [ -z "${SOURCE_DEVICE:-}" ]; then
+    bashio::log.red "Source device is not set"
+    bashio::log.yellow "Open the Nextcloud addon and check which disk is used for data."
+    bashio::log.yellow "Then set the same value in this addon:"
+    bashio::log.yellow "  source_device: <disk_from_nextcloud>"
+    fail_and_stop
+fi
+
+if [ -z "${SOURCE_DIR:-}" ]; then
+    bashio::log.red "source_dir is not set"
+    bashio::log.yellow "This must point to the Nextcloud data directory."
+    bashio::log.yellow "Example:"
+    bashio::log.yellow "  source_dir: data"
+    fail_and_stop
+fi
+
+# Verify that source device exists
+if ! check_device "${SOURCE_DEVICE}"; then
+    bashio::log.red "Source device not found: ${SOURCE_DEVICE}"
+    bashio::log.yellow "This must match the disk configured in the Nextcloud addon."
+    bashio::log.yellow "Make sure the disk is connected and matches Nextcloud configuration."
+    fail_and_stop
+fi
+
+# Mount source device
+if ! mount_source; then
+    bashio::log.red "Failed to mount source device: ${SOURCE_DEVICE}"
+    fail_and_stop
+fi
+
+# Validate that Nextcloud data directory exists on mounted device
+if ! check_source; then
+    bashio::log.red "Nextcloud data directory not found"
+    bashio::log.red "Expected path: ${SOURCE_PATH}"
+    bashio::log.yellow "Check parameters:"
+    bashio::log.yellow "  source_device: ${SOURCE_DEVICE}"
+    bashio::log.yellow "  source_dir: ${SOURCE_DIR}"
+    fail_and_stop
+fi
+
+bashio::log.green "Source storage ready"
+bashio::log "Automatic schedule: ${SCHEDULE}"
+bashio::log "Backup scheduler started. Waiting..."
+
+# Main loop: monitor trigger file and execute backups
+while true; do
+    if [ -f "$TRIGGER" ]; then
+        rm -f "$TRIGGER"
+        log_debug "Trigger detected"
+        run_backup
+    fi
+    check_missed_backup
+    sleep 10
+done
