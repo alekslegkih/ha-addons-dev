@@ -53,3 +53,4 @@ def log_magenta(msg):
 def log_debug(msg):
     if DEBUG:
         _print(MAGENTA, f"[DEBUG] {msg}")
+

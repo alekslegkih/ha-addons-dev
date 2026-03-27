@@ -31,11 +31,8 @@ log_debug "Loading runtime environment"
 
 # Load required modules for power management, storage operations, and sync
 log_debug "Loading modules"
-source "${BASE_DIR}/power/on_off.sh"
-source "${BASE_DIR}/storage/mount.sh"
+source "${BASE_DIR}/core/pipeline_flow.sh"
 source "${BASE_DIR}/sync/copier.sh"
-source "${BASE_DIR}/storage/checks.sh"
-source "${BASE_DIR}/storage/detect.sh"
 
 # Helpers
 emit() {
@@ -61,55 +58,12 @@ bashio::log.blue "Starting backup pipeline..."
 bashio::log.blue "At: $(date '+%Y-%m-%d %H:%M:%S')"
 
 # Power on the backup device
-if [ "${POWER_ENABLED}" = "true" ]; then
-    bashio::log "Powering on backup device..."
-    power_on || {
-        bashio::log.red "Backup disk power-on failed (${DISK_SWITCH})"
-        exit 1
-    }
-    
-    bashio::log "Preparing backup disk, please wait a few seconds..."
-    
-    # Wait for the disk to appear only if the power was turned on
-    if ! wait_disk 25; then
-        if [ -n "${DEST_DEVICE:-}" ]; then
-            bashio::log.red "Backup disk not found: ${DEST_DEVICE}"
-        else
-            bashio::log.red "Destination device is not set"
-        fi
-
-        bashio::log.yellow "Make sure the disk is connected and powered on."
-        detect_devices
-        bashio::log.yellow "  You can use:"
-        bashio::log.yellow "    - device name (sdb1)"
-        bashio::log.yellow "    - filesystem label"
-        bashio::log.yellow "    - UUID"
-        exit 1
-    fi
-fi
+# Wait for the disk to appear only if the power was turned on
+power_on_and_wait_disk || exit 1
 
 # Mount destination device
-bashio::log.green "Backup disk found: ${DEST_DEVICE}"
-bashio::log "Mounting destination storage..."
-
-if ! mount_destination; then
-    bashio::log.red "Failed to mount destination device: ${DEST_DEVICE}"
-    exit 1
-fi
-
 # Validate that backup directory exists on destination
-if ! check_destination; then
-
-
-    bashio::log.yellow "  Check parameters:"
-    bashio::log.yellow "    Destination device: ${DEST_DEVICE}"
-    bashio::log.yellow "    Destination dir: ${DEST_DIR}    | Example: Backups"
-    bashio::log.red "Backup directory validation failed"
-
-    umount_destination || true
-
-    exit 1
-fi
+mount_and_check_destination || exit 1
 
 bashio::log.green "Destination storage ready"
 
@@ -120,19 +74,5 @@ copy_user_files || {
 }
 
 # Unmount destination storage
-bashio::log "Unmounting destination storage..."
-if ! umount_destination; then
-    bashio::log.red "Unmount storage failed"
-    exit 1
-fi
-
-bashio::log.green "Storage successfully unmounted"
-
 # Power off the backup device
-if [ "${POWER_ENABLED}" = "true" ]; then
-    bashio::log "Powering off backup device..."
-    power_off || {
-        bashio::log.red "Backup disk power-off failed (${DISK_SWITCH})"
-        exit 1
-    }
-fi
+umount_and_poweroff || exit 1

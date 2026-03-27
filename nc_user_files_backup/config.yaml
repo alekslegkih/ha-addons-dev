@@ -1,6 +1,6 @@
 name: "Nextcloud User Files Backup"
 description: Backup Nextcloud user files to external USB drive"
-version: "0.5.3"
+version: "0.5.19"
 slug: "nc_user_files_backup"
 url: "https://github.com/alekslegkih/ha-addons/tree/main/nc_user_files_backup"
 
@@ -89,4 +89,4 @@ panel_title: "Backup browser"
 
 ingress: true
 ingress_stream: true
-ingress_port: 8899
+ingress_port: 8873

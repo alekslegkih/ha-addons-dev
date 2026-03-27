@@ -23,29 +23,29 @@ emit() {
 wait_disk() {
     local timeout=${1:-20}
     local start=$(date +%s)
-    
+
     # Get list of currently connected disks at script start
     # Searches for SCSI/SATA (sd*), NVMe, and eMMC devices
     local initial=$(ls /dev/sd[b-z] /dev/nvme[0-9]n[0-9] /dev/mmcblk[0-9] 2>/dev/null)
     log_debug "Initial disks: $(echo $initial | sed 's|/dev/||g' | tr '\n' ' ')"
-    
+
     # Poll for new disks until timeout is reached
     while [ $(($(date +%s) - start)) -lt $timeout ]; do
         local current=$(ls /dev/sd[b-z] /dev/nvme[0-9]n[0-9] /dev/mmcblk[0-9] 2>/dev/null)
-        
+
         # Check each currently connected disk
         for disk in $current; do
             if ! echo "$initial" | grep -qxF "$disk"; then
                 log_debug "New disk detected: ${disk#/dev/}"
                 sleep 3  # Give the disk time to fully initialize
-                log_debug "${disk#/dev/}" 
+                log_debug "${disk#/dev/}"
                 return 0
             fi
         done
-        
+
         sleep 1  # Wait before next poll
     done
-    
+
     log_debug "Timeout reached: no new disks found"
     return 1
 }

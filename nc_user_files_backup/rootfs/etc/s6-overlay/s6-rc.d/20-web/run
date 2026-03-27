@@ -3,16 +3,21 @@
 
 set -euo pipefail
 
-RUNTIME_ENV="/run/nc_user_files_backup/runtime.env"
-WEB_APP="/usr/local/nc_user_files_backup/web/filemanager.py"
-READY_FILE="/tmp/nc_user_files_backup/service.ready"
+DIR_ADDON="nc_user_files_backup"  # addon home path
+BASE_DIR="/usr/local/${DIR_ADDON}"
+RUNTIME_DIR="/run/${DIR_ADDON}"
+
+ENV_FILE="${RUNTIME_DIR}/runtime.env"
+READY_FILE="${RUNTIME_DIR}/service.ready"
+WEB_APP="${BASE_DIR}/web/filemanager.py"
+
 
 while [ ! -f "$READY_FILE" ]; do
     sleep 1
 done
 
 set -a
-source "$RUNTIME_ENV"
+source "$ENV_FILE"
 set +a
 
 exec python3 "$WEB_APP"

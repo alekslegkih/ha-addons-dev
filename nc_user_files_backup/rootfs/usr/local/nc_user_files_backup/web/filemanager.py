@@ -5,6 +5,8 @@ import re
 import sys
 import subprocess
 import shutil
+import tempfile
+import zipfile
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent
@@ -29,24 +31,25 @@ from core.logger import (
 
 app = Flask(__name__)
 
-TARGET_PATH = os.environ.get("TARGET_PATH")
+DEST_DIR = os.environ.get("DEST_PATH")
 
-if not TARGET_PATH:
-    log_yellow("TARGET_PATH not set, using /tmp")
-    TARGET_PATH = "/tmp"
+if not DEST_DIR:
+    log_yellow("DEST_PATH not set")
+    DEST_DIR = None
+else:
+    DEST_DIR = os.path.abspath(DEST_DIR)
 
-TARGET_PATH = os.path.abspath(TARGET_PATH)
 
 # =========================
 # Helpers
 # =========================
 
 def safe_path(path):
-    full_path = os.path.abspath(os.path.join(TARGET_PATH, path))
+    full_path = os.path.abspath(os.path.join(DEST_DIR, path))
 
-    if not os.path.commonpath([full_path, TARGET_PATH]) == TARGET_PATH:
+    if not os.path.commonpath([full_path, DEST_DIR]) == DEST_DIR:
         log_yellow(f"Blocked path traversal attempt: {path}")
-        return TARGET_PATH
+        return DEST_DIR
 
     return full_path
 
@@ -96,16 +99,7 @@ def list_directory(rel_path):
 
         full_path = os.path.join(current_dir, e)
 
-        VALID_SUFFIXES = (".tar", ".tar.gz")
-        EXCLUDED_SUFFIXES = (".part",)
-
         if os.path.isfile(full_path):
-
-            if e.endswith(EXCLUDED_SUFFIXES):
-                continue
-
-            if not e.endswith(VALID_SUFFIXES):
-                continue
 
             size_bytes = os.path.getsize(full_path)
 
@@ -120,6 +114,13 @@ def list_directory(rel_path):
 
     return folders, files, parent
 
+def check_disk_available():
+    if not is_disk_available():
+        return {"status": "error", "message": "Disk not available"}, 400
+    return None
+
+def is_disk_available():
+    return DEST_DIR and os.path.exists(DEST_DIR)
 
 # =========================
 # Web routes
@@ -128,9 +129,20 @@ def list_directory(rel_path):
 @app.route("/", methods=["GET"])
 def index():
 
+    if not is_disk_available():
+        return render_template(
+            "index.html",
+            disk_not_ready=True
+        )
+
     rel_path = request.args.get("path", "").strip("/")
 
     log_debug(f"Open path: /{rel_path}")
+
+    if not DEST_DIR:
+        log_red("DEST_PATH not set")
+    elif not os.path.exists(DEST_DIR):
+        log_red(f"Destination path not found: {DEST_DIR}")
 
     try:
 
@@ -147,10 +159,11 @@ def index():
         for f in files_raw
     ]
 
-    total, used, free = shutil.disk_usage(TARGET_PATH)
+    total, used, free = shutil.disk_usage(DEST_DIR)
 
     return render_template(
         "index.html",
+        disk_not_ready=False,
         folders=folders,
         files=files,
         current_path=rel_path,
@@ -209,6 +222,10 @@ def mkdir(subpath):
 def api_list():
 
     rel_path = request.args.get("path", "").strip("/")
+
+    err = check_disk_available()
+    if err:
+        return err
 
     try:
 
@@ -270,7 +287,7 @@ def move():
 @app.route("/api/folders")
 def api_folders():
 
-    base = Path(TARGET_PATH)
+    base = Path(DEST_DIR)
 
     folders = [""] + [
         str(p.relative_to(base))
@@ -332,6 +349,100 @@ def download(subpath):
         download_name=target.name
     )
 
+@app.route("/download_many", methods=["POST"])
+def download_many():
+
+    items = request.json.get("items", [])
+
+    if not items:
+        return {"status": "error", "message": "No items"}, 400
+
+    try:
+        tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".zip")
+        tmp.close()
+
+        with zipfile.ZipFile(tmp.name, "w", zipfile.ZIP_DEFLATED) as z:
+
+            for rel in items:
+
+                path = fs_path(rel)
+
+                if not path.exists():
+                    continue
+
+                if path.is_file():
+                    z.write(path, arcname=path.name)
+
+                elif path.is_dir():
+                    for root, _, files in os.walk(path):
+                        for f in files:
+                            full = Path(root) / f
+                            arcname = full.relative_to(path.parent)
+                            z.write(full, arcname=str(arcname))
+
+        return send_file(
+            tmp.name,
+            as_attachment=True,
+            download_name="archive.zip"
+        )
+
+    except Exception as e:
+        return {"status": "error", "message": str(e)}, 500
+
+#
+@app.route("/mount", methods=["POST"])
+def mount_disk():
+
+    log_yellow("WEB → mount")
+
+    import subprocess
+
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            "source /run/nc_user_files_backup/runtime.env && "
+            "source /usr/local/nc_user_files_backup/core/pipeline_flow.sh && "
+            "power_on_and_wait_disk && "
+            "mount_and_check_destination"
+        ],
+        text=True
+    )
+
+    if result.returncode != 0:
+        return {
+            "status": "error",
+            "message": (result.stdout or "") + "\n" + (result.stderr or "")
+        }, 500
+
+    return {"status": "ok"}
+
+#
+@app.route("/unmount", methods=["POST"])
+def unmount_disk():
+
+    log_yellow("WEB → unmount")
+
+    import subprocess
+
+    result = subprocess.run(
+        [
+            "bash",
+            "-c",
+            "source /run/nc_user_files_backup/runtime.env && "
+            "source /usr/local/nc_user_files_backup/core/pipeline_flow.sh && "
+            "umount_and_poweroff"
+        ],
+        text=True
+    )
+
+    if result.returncode != 0:
+        return {
+            "status": "error",
+            "message": (result.stdout or "") + "\n" + (result.stderr or "")
+        }, 500
+
+    return {"status": "ok"}
 
 # =========================
 # Main
@@ -340,8 +451,8 @@ def download(subpath):
 if __name__ == "__main__":
 
     log_green("Starting Backup Manager")
-    log_debug(f"Running on port 8899")
-    log_debug(f"Target directory: {TARGET_PATH}")
+    log_debug(f"Running on port 8873")
+    log_debug(f"Target directory: {DEST_DIR}")
 
     import logging
     logging.getLogger('werkzeug').setLevel(logging.ERROR)
@@ -349,4 +460,4 @@ if __name__ == "__main__":
     import flask.cli
     flask.cli.show_server_banner = lambda *args, **kwargs: None
 
-    app.run(host="0.0.0.0", port=8899, use_reloader=False)
+    app.run(host="0.0.0.0", port=8873, use_reloader=False)

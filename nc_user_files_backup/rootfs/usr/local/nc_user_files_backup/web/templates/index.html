@@ -499,325 +499,347 @@ button:disabled,
 ========================================================= -->
 <div class="container">
 
-    <!-- =====================================================
-    HEADER
-    ====================================================== -->
-    <div class="header">
+    {% if disk_not_ready %}
 
-        <div style="display:flex; align-items:center; gap:14px;">
-            <button class="ha-btn" id="backBtn">
-                <svg viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
-                </svg>
-                Back
+        <div style="padding:40px; text-align:center;">
+
+            <h2>Backup disk is not connected</h2>
+
+            <p style="opacity:0.7;">
+                Please connect the backup disk to continue
+            </p>
+
+            <button class="ha-btn" id="mountDiskBtn">
+                Connect disk
             </button>
 
-            <h1 style="margin:0;">Backup Manager</h1>
         </div>
 
-        <div class="disk">
-            Total: {{ total_space }} |
-            Used: {{ used_space }} |
-            Free: {{ free_space }} |
-            Files: <span id="fileCount">{{ files|length }}</span>
+        {% else %}
+
+        <!-- =====================================================
+        HEADER
+        ====================================================== -->
+        <div class="header">
+
+            <div style="display:flex; align-items:center; gap:14px;">
+                <button class="ha-btn" id="backBtn">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                    </svg>
+                    Back
+                </button>
+
+                <h1 style="margin:0;">Backup Manager</h1>
+            </div>
+
+            <div class="disk">
+                Total: {{ total_space }} |
+                Used: {{ used_space }} |
+                Free: {{ free_space }} |
+                Files: <span id="fileCount">{{ files|length }}</span>
+            </div>
+
         </div>
 
-    </div>
+
+        <!-- =====================================================
+        CURRENT PATH STORAGE
+        ====================================================== -->
+        <div id="currentPath"
+            data-path="{{ current_path }}"
+            style="display:none;">
+        </div>
 
 
-    <!-- =====================================================
-    CURRENT PATH STORAGE
-    ====================================================== -->
-    <div id="currentPath"
-        data-path="{{ current_path }}"
-        style="display:none;">
-    </div>
+        <!-- =====================================================
+        TOOLBAR
+        ====================================================== -->
+        <div class="toolbar">
+
+            <!-- Create folder -->
+            <form id="mkdirForm" style="display:flex; gap:10px;">
+
+                <input
+                    type="text"
+                    name="dirname"
+                    id="folderInput"
+                    class="text-input"
+                    placeholder="New folder name">
+
+                <button
+                    type="submit"
+                    id="createBtn"
+                    class="ha-btn"
+                    disabled>
+                    Create
+                </button>
+
+                <button id="unmountBtn" class="ha-btn">
+                    Disconnect disk
+                </button>
+
+            </form>
+
+        </div>
 
 
-    <!-- =====================================================
-    TOOLBAR
-    ====================================================== -->
-    <div class="toolbar">
+        <!-- =====================================================
+        FILE TABLE
+        ====================================================== -->
+        <div class="table-wrapper">
 
-        <!-- Create folder -->
-        <form id="mkdirForm" style="display:flex; gap:10px;">
+            <table class="file-table" id="fileList">
 
-            <input
-                type="text"
-                name="dirname"
-                id="folderInput"
-                class="text-input"
-                placeholder="New folder name">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th style="width:120px;">Size</th>
+                        <th style="width:60px;"></th>
+                    </tr>
+                </thead>
 
-            <button
-                type="submit"
-                id="createBtn"
-                class="ha-btn"
-                disabled>
-                Create
-            </button>
+                <tbody>
 
-        </form>
+                    {% if parent is not none %}
 
-    </div>
+                    <tr class="back-row">
+                        <td>
 
+                            <a class="name" data-path="{{ parent }}">
 
-    <!-- =====================================================
-    FILE TABLE
-    ====================================================== -->
-    <div class="table-wrapper">
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    style="vertical-align:middle; margin-right:6px;">
 
-        <table class="file-table" id="fileList">
+                                    <path d="M9 7l-5 5 5 5"/>
+                                    <path d="M4 12h10a5 5 0 0 1 0 10"/>
 
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th style="width:120px;">Size</th>
-                    <th style="width:60px;"></th>
-                </tr>
-            </thead>
+                                </svg>
 
-            <tbody>
+                                ..
 
-                {% if parent is not none %}
+                            </a>
 
-                <tr class="back-row">
-                    <td>
+                        </td>
 
-                        <a class="name" data-path="{{ parent }}">
+                        <td></td>
+                        <td></td>
 
-                            <svg width="18" height="18" viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                style="vertical-align:middle; margin-right:6px;">
+                    </tr>
 
-                                <path d="M9 7l-5 5 5 5"/>
-                                <path d="M4 12h10a5 5 0 0 1 0 10"/>
-
-                            </svg>
-
-                            ..
-
-                        </a>
-
-                    </td>
-
-                    <td></td>
-                    <td></td>
-
-                </tr>
-
-                {% endif %}
+                    {% endif %}
 
 
-                <!-- FOLDERS -->
-                {% for f in folders %}
+                    <!-- FOLDERS -->
+                    {% for f in folders %}
 
-                <tr>
+                    <tr>
 
-                    <td>
+                        <td>
 
-                        <span class="folder-icon">📁</span>
+                            <span class="folder-icon">📁</span>
 
-                        <a
-                            class="name"
-                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+                            <a
+                                class="name"
+                                data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+                                {{ f }}
+                            </a>
+
+                        </td>
+
+                        <td>-</td>
+
+                        <td>
+
+                            <!-- MOVE -->
+                            <a class="move"
+                                href="#"
+                                title="Move"
+                                data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+
+                                    <path d="M3 7h6l2 2h10v11H3z"/>
+                                    <path d="M12 13h5"/>
+                                    <path d="M14 11l3 3-3 3"/>
+
+                                </svg>
+
+                            </a>
+
+
+                            <!-- RENAME -->
+                            <a class="rename"
+                                href="#"
+                                title="Rename"
+                                data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                                <svg width="18" height="18" viewBox="0 0 128 128"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="6"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+
+                                    <path d="M96 24l8 8-56 56-16 4 4-16z"/>
+                                    <path d="M24 104h32"/>
+
+                                </svg>
+
+                            </a>
+
+
+                            <!-- DELETE -->
+                            <a class="delete"
+                                href="#"
+                                title="Delete"
+                                data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+
+                                    <path d="M4 6h16"/>
+                                    <path d="M6 6l1 14h10l1-14"/>
+                                    <path d="M9 6V4h6v2"/>
+                                    <path d="M10 10v7"/>
+                                    <path d="M14 10v7"/>
+
+                                </svg>
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+
+
+                    <!-- FILES -->
+                    {% for f, size in files %}
+
+                    <tr>
+
+                        <td>
+                            <span class="file-icon">📄</span>
                             {{ f }}
-                        </a>
+                        </td>
 
-                    </td>
+                        <td>{{ size }}</td>
 
-                    <td>-</td>
+                        <td>
 
-                    <td>
+                            <!-- DOWNLOAD -->
+                            <a class="download"
+                                title="Save"
+                                href="download/{{ current_path ~ '/' ~ f if current_path else f }}">
 
-                        <!-- MOVE -->
-                        <a class="move"
-                            href="#"
-                            title="Move"
-                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
 
-                            <svg width="18" height="18" viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round">
+                                    <path d="M12 4v9"/>
+                                    <path d="M9 10l3 3 3-3"/>
+                                    <path d="M4 18h16"/>
 
-                                <path d="M3 7h6l2 2h10v11H3z"/>
-                                <path d="M12 13h5"/>
-                                <path d="M14 11l3 3-3 3"/>
+                                </svg>
 
-                            </svg>
+                            </a>
 
-                        </a>
+                            <!-- MOVE -->
+                            <a class="move"
+                                href="#"
+                                title="Move"
+                                data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
 
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
 
-                        <!-- RENAME -->
-                        <a class="rename"
-                            href="#"
-                            title="Rename"
-                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+                                    <path d="M3 6h6l2 2h10v12H3z"/>
+                                    <path d="M13 14h4"/>
+                                    <path d="M15 12l3 3-3 3"/>
 
-                            <svg width="18" height="18" viewBox="0 0 128 128"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="6"
-                                stroke-linecap="round"
-                                stroke-linejoin="round">
+                                </svg>
 
-                                <path d="M96 24l8 8-56 56-16 4 4-16z"/>
-                                <path d="M24 104h32"/>
+                            </a>
 
-                            </svg>
+                            <!-- RENAME -->
+                            <a class="rename"
+                                href="#"
+                                title="Rename"
+                                data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
 
-                        </a>
+                                <svg width="18" height="18" viewBox="0 0 128 128"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="6"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
 
+                                    <path d="M96 24l8 8-56 56-16 4 4-16z"/>
+                                    <path d="M24 104h32"/>
 
-                        <!-- DELETE -->
-                        <a class="delete"
-                            href="#"
-                            title="Delete"
-                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
+                                </svg>
 
-                            <svg width="18" height="18" viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round">
+                            </a>
 
-                                <path d="M4 6h16"/>
-                                <path d="M6 6l1 14h10l1-14"/>
-                                <path d="M9 6V4h6v2"/>
-                                <path d="M10 10v7"/>
-                                <path d="M14 10v7"/>
+                            <!-- DELETE -->
+                            <a class="delete"
+                                href="#"
+                                title="Delete"
+                                data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
 
-                            </svg>
+                                <svg width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
 
-                        </a>
+                                    <path d="M4 6h16"/>
+                                    <path d="M6 6l1 14h10l1-14"/>
+                                    <path d="M9 6V4h6v2"/>
+                                    <path d="M10 10v7"/>
+                                    <path d="M14 10v7"/>
 
-                    </td>
+                                </svg>
 
-                </tr>
+                            </a>
 
-                {% endfor %}
+                        </td>
 
+                    </tr>
 
+                    {% endfor %}
 
-                <!-- FILES -->
-                {% for f, size in files %}
+                </tbody>
 
-                <tr>
+            </table>
 
-                    <td>
-                        <span class="file-icon">📄</span>
-                        {{ f }}
-                    </td>
-
-                    <td>{{ size }}</td>
-
-                    <td>
-
-                        <!-- DOWNLOAD -->
-                        <a class="download"
-                            title="Save"
-                            href="download/{{ current_path ~ '/' ~ f if current_path else f }}">
-
-                            <svg width="18" height="18" viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round">
-
-                                <path d="M12 4v9"/>
-                                <path d="M9 10l3 3 3-3"/>
-                                <path d="M4 18h16"/>
-
-                            </svg>
-
-                        </a>
-
-                        <!-- MOVE -->
-                        <a class="move"
-                            href="#"
-                            title="Move"
-                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
-
-                            <svg width="18" height="18" viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round">
-
-                                <path d="M3 6h6l2 2h10v12H3z"/>
-                                <path d="M13 14h4"/>
-                                <path d="M15 12l3 3-3 3"/>
-
-                            </svg>
-
-                        </a>
-
-                        <!-- RENAME -->
-                        <a class="rename"
-                            href="#"
-                            title="Rename"
-                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
-
-                            <svg width="18" height="18" viewBox="0 0 128 128"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="6"
-                                stroke-linecap="round"
-                                stroke-linejoin="round">
-
-                                <path d="M96 24l8 8-56 56-16 4 4-16z"/>
-                                <path d="M24 104h32"/>
-
-                            </svg>
-
-                        </a>
-
-                        <!-- DELETE -->
-                        <a class="delete"
-                            href="#"
-                            title="Delete"
-                            data-path="{{ current_path ~ '/' ~ f if current_path else f }}">
-
-                            <svg width="18" height="18" viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2.2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round">
-
-                                <path d="M4 6h16"/>
-                                <path d="M6 6l1 14h10l1-14"/>
-                                <path d="M9 6V4h6v2"/>
-                                <path d="M10 10v7"/>
-                                <path d="M14 10v7"/>
-
-                            </svg>
-
-                        </a>
-
-                    </td>
-
-                </tr>
-
-                {% endfor %}
-
-            </tbody>
-
-        </table>
-
-    </div>
-
+        </div>
+    {% endif %}
 </div>
 
 
@@ -1122,15 +1144,19 @@ function refreshFileList() {
     FOLDER CREATION
 ========================================================= */
 
-folderInput.addEventListener("input", function() {
-    createBtn.disabled = folderInput.value.trim() === "";
-});
+if (folderInput && createBtn) {
 
-folderInput.addEventListener("keypress", function(e) {
-    if (e.key === "Enter" && folderInput.value.trim() !== "") {
-        createBtn.click();
-    }
-});
+    folderInput.addEventListener("input", function() {
+        createBtn.disabled = folderInput.value.trim() === "";
+    });
+
+    folderInput.addEventListener("keypress", function(e) {
+        if (e.key === "Enter" && folderInput.value.trim() !== "") {
+            createBtn.click();
+        }
+    });
+
+}
 
 
 /* =========================================================
@@ -1307,37 +1333,39 @@ function confirmRename() {
     CREATE FOLDER
 ========================================================= */
 
-mkdirForm.addEventListener("submit", function(e){
+if (mkdirForm) {
+    mkdirForm.addEventListener("submit", function(e){
 
-    e.preventDefault();
+        e.preventDefault();
 
-    const name = folderInput.value.trim();
-    if (!name) return;
+        const name = folderInput.value.trim();
+        if (!name) return;
 
-    const currentPath =
-        currentPathEl.dataset.path;
+        const currentPath =
+            currentPathEl.dataset.path;
 
-    post("mkdir/" + encodeURIComponent(currentPath), {
-        dirname: name
-    })
-    .then(data => {
+        post("mkdir/" + encodeURIComponent(currentPath), {
+            dirname: name
+        })
+        .then(data => {
 
-        if (data.status === "ok") {
+            if (data.status === "ok") {
 
-            folderInput.value = "";
-            createBtn.disabled = true;
+                folderInput.value = "";
+                createBtn.disabled = true;
 
-            refreshFileList();
+                refreshFileList();
 
-        } else {
+            } else {
 
-            alert("Create folder failed");
+                alert("Create folder failed");
 
-        }
+            }
+
+        });
 
     });
-
-});
+}
 
 
 /* =========================================================
@@ -1424,6 +1452,61 @@ document.addEventListener("click", function(e){
     }
 
 });
+
+const mountBtn = document.getElementById("mountDiskBtn");
+
+if (mountBtn) {
+
+    mountBtn.addEventListener("click", () => {
+
+        mountBtn.disabled = true;
+        mountBtn.innerText = "Connecting...";
+
+        fetch("mount", { method: "POST" })
+            .then(res => res.json())
+            .then(data => {
+
+            console.log("CLICK");
+
+                if (data.status === "ok") {
+                    window.location.href = window.location.pathname;
+                } else {
+                    alert(data.message || "Mount failed");
+                    mountBtn.disabled = false;
+                    mountBtn.innerText = "Connect disk";
+                }
+
+            })
+            .catch(() => {
+                alert("Mount failed");
+                mountBtn.disabled = false;
+                mountBtn.innerText = "Connect disk";
+            });
+
+    });
+
+}
+
+const unmountBtn = document.getElementById("unmountBtn");
+
+if (unmountBtn) {
+
+    unmountBtn.addEventListener("click", () => {
+
+        if (!confirm("Disconnect disk?")) return;
+
+        unmountBtn.disabled = true;
+
+        fetch("unmount", { method: "POST" })
+            .then(() => window.location.href = window.location.pathname)
+            .catch(() => {
+                alert("Failed to disconnect");
+                unmountBtn.disabled = false;
+            });
+
+    });
+
+}
 
 </script>
 </body>

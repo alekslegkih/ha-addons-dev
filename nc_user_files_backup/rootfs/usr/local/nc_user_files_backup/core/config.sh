@@ -180,7 +180,7 @@ _validate_config() {
     if [[ "$DISK_SWITCH" != switch.* ]]; then
         DISK_SWITCH="switch.${DISK_SWITCH}"
     fi
-    
+
     log_debug "Final SOURCE_DIR=${SOURCE_DIR}"
     log_debug "Final DEST_DIR=${DEST_DIR}"
 

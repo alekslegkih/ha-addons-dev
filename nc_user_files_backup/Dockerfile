@@ -29,7 +29,9 @@ RUN apk add --no-cache \
     coreutils \
     util-linux \
     python3 \
-    py3-pip
+    py3-pip \
+    mc
+    # mc for test only
 
 # Python зависимости
 RUN python3 -m pip install --no-cache-dir \

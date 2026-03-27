@@ -10,6 +10,11 @@ BASE_DIR="/usr/local/${DIR_ADDON}"
 RUNTIME_DIR="/run/${DIR_ADDON}"
 export BASE_DIR
 
+# startr flag
+READY_FILE="${RUNTIME_DIR}/service.ready"
+rm -f "${READY_FILE}"
+
+#
 CONFIG_DIR="/config"
 DEBUG_FLAG="${CONFIG_DIR}/debug.flag"
 
@@ -162,18 +167,18 @@ emit service_state '{"reason":"addon_started"}'
 
 log_debug "Starting configuration phase"
 
-set +e 
-load_config 
-rc=$? 
-set -e 
+set +e
+load_config
+rc=$?
+set -e
 
-if [ "$rc" -ne 0 ]; then 
-    bashio::log.red "Configuration load failed" 
-    if [ -f /run/s6-linux-init-container-results/exitcode ]; 
-        then echo 0 > /run/s6-linux-init-container-results/exitcode 
-    fi 
-        
-    bashio::log.red "Service crashed (exit code: $rc) —configuration error" 
+if [ "$rc" -ne 0 ]; then
+    bashio::log.red "Configuration load failed"
+    if [ -f /run/s6-linux-init-container-results/exitcode ];
+        then echo 0 > /run/s6-linux-init-container-results/exitcode
+    fi
+
+    bashio::log.red "Service crashed (exit code: $rc) —configuration error"
     exec /run/s6/basedir/bin/halt
 fi
 
@@ -220,6 +225,7 @@ log_debug "Configuration phase completed"
 log_debug "Script exiting successfully"
 
 # Signal that service is ready
-touch "${RUNTIME_DIR}/service.ready"
+touch "${READY_FILE}"
+log_debug "READY_FILE create"
 
 exit 0
