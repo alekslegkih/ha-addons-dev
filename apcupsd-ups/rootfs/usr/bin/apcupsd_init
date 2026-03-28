@@ -107,6 +107,19 @@ EOF
 mv "${TMP_FILE}" "${CONFIG_FILE}"
 chmod 644 "${CONFIG_FILE}"
 
+# Заглушаем стандартные скрипты apcupsd
+for script in onbattery offbattery commfailure commok; do
+    if [ -f "/etc/apcupsd/${script}" ]; then
+        cat <<'EOF' > "/etc/apcupsd/${script}"
+#!/bin/sh
+exit 0
+EOF
+        chmod +x "/etc/apcupsd/${script}"
+    fi
+done
+
+bashio::log.yellow "Default apcupsd event scripts disabled"
+
 bashio::log.green "Configuration generated successfully"
 
 if [ "${shutdown_host}" = "true" ]; then

@@ -1,5 +1,5 @@
 name: apcupsd (APC UPS)
-version: "0.1.6"
+version: "0.1.7"
 slug: apcupsd-ups
 description: apcupsd-based service for monitoring APC UPS devices
 url: "https://github.com/alekslegkih/ha-addons/tree/main/apcupsd-ups"
