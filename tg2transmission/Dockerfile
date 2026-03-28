@@ -19,5 +19,5 @@ COPY rootfs /
 RUN pip3 install --no-cache-dir requests
 
 RUN chmod +x \
-    /etc/s6-overlay/s6-rc.d/01-service/run \
-    /etc/s6-overlay/s6-rc.d/01-service/finish
+    /etc/s6-overlay/s6-rc.d/tg2transmission/run \
+    /etc/s6-overlay/s6-rc.d/tg2transmission/finish
