@@ -35,12 +35,10 @@ def load_config():
     with open(CONFIG_PATH) as f:
         cfg = json.load(f)
 
-    # --- defaults ---
     cfg.setdefault("user_ids", [])
     cfg.setdefault("watch_folder", "/share/watch")
     cfg.setdefault("poll_interval", 2)
 
-    # --- validation ---
     if not cfg.get("token"):
         raise RuntimeError("config: 'token' is required")
 
@@ -140,13 +138,13 @@ def transmission_add(magnet):
 # Handlers
 # ------------------------------------------------------------------
 
-def handle_document(token, msg):
+def handle_document(token, msg, user_name):
     doc = msg["document"]
     filename = doc.get("file_name", "")
 
     if not filename.endswith(".torrent"):
-        send_message(token, msg["chat"]["id"], "⚠️ не .torrent")
-        emit("invalid_input", {"type": "file", "name": filename})
+        send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: не .torrent")
+        emit("invalid_input", {"type": "file", "name": filename, "user_name": user_name})
         return
 
     file_id = doc["file_id"]
@@ -157,18 +155,23 @@ def handle_document(token, msg):
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
     file_data = requests.get(file_url, timeout=30).content
 
-    save_path = os.path.join(cfg("watch_folder"), filename)
+    watch_folder = cfg("watch_folder")
+    Path(watch_folder).mkdir(parents=True, exist_ok=True)
 
-    Path(cfg("watch_folder")).mkdir(parents=True, exist_ok=True)
+    save_path = os.path.join(watch_folder, filename)
 
     with open(save_path, "wb") as f:
         f.write(file_data)
 
-    send_message(token, msg["chat"]["id"], "✅ torrent добавлен")
-    emit("torrent_added", {"name": filename})
+    send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
+
+    emit("torrent_added", {
+        "name": filename,
+        "user_name": user_name
+    })
 
 
-def handle_text(token, msg):
+def handle_text(token, msg, user_name):
     text = msg.get("text", "")
 
     if not text.startswith("magnet:?"):
@@ -177,10 +180,10 @@ def handle_text(token, msg):
     ok = transmission_add(text)
 
     if ok:
-        send_message(token, msg["chat"]["id"], "🧲 magnet добавлен")
-        emit("magnet_added", {})
+        send_message(token, msg["chat"]["id"], f"🧲 {user_name}: magnet добавлен")
+        emit("magnet_added", {"user_name": user_name})
     else:
-        send_message(token, msg["chat"]["id"], "❌ ошибка добавления magnet")
+        send_message(token, msg["chat"]["id"], f"❌ {user_name}: ошибка добавления magnet")
 
     return True
 
@@ -188,6 +191,7 @@ def handle_text(token, msg):
 # ------------------------------------------------------------------
 # Main loop
 # ------------------------------------------------------------------
+
 def main():
     token = cfg("token")
 
@@ -233,11 +237,10 @@ def main():
                 user_name = users.get(user_id, str(user_id))
 
                 if "document" in msg:
-                    handle_document(token, msg)
+                    handle_document(token, msg, user_name)
 
-                # --- text (magnet) ---
                 elif "text" in msg:
-                    if not handle_text(token, msg):
+                    if not handle_text(token, msg, user_name):
                         send_message(token, msg["chat"]["id"], "⚠️ неизвестный ввод")
 
             if last_update_id is not None:
