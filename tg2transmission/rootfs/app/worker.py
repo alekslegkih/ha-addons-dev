@@ -1,12 +1,11 @@
 import os
 import json
-import time
 import logging
 from pathlib import Path
 
 import requests
 
-from events import emit
+from ha_events import emit
 
 
 # ------------------------------------------------------------------
@@ -28,6 +27,13 @@ logger = logging.getLogger("tg2transmission.worker")
 
 
 # ------------------------------------------------------------------
+# HTTP Session (ВАЖНО)
+# ------------------------------------------------------------------
+
+session = requests.Session()
+
+
+# ------------------------------------------------------------------
 # Config
 # ------------------------------------------------------------------
 
@@ -37,19 +43,9 @@ def load_config():
 
     cfg.setdefault("user_ids", [])
     cfg.setdefault("watch_folder", "/share/watch")
-    cfg.setdefault("poll_interval", 2)
 
     if not cfg.get("token"):
         raise RuntimeError("config: 'token' is required")
-
-    if not isinstance(cfg["user_ids"], list):
-        raise RuntimeError("config: 'user_ids' must be a list")
-
-    if not isinstance(cfg["watch_folder"], str):
-        raise RuntimeError("config: 'watch_folder' must be a string")
-
-    if not isinstance(cfg["poll_interval"], int):
-        raise RuntimeError("config: 'poll_interval' must be int")
 
     return cfg
 
@@ -82,16 +78,20 @@ def set_offset(offset):
 
 def telegram_api(token, method, params=None, timeout=10):
     url = f"https://api.telegram.org/bot{token}/{method}"
-    r = requests.post(url, json=params or {}, timeout=timeout)
+
+    r = session.post(url, json=params or {}, timeout=timeout)
     r.raise_for_status()
     return r.json()
 
 
 def send_message(token, chat_id, text):
-    telegram_api(token, "sendMessage", {
-        "chat_id": chat_id,
-        "text": text
-    })
+    try:
+        telegram_api(token, "sendMessage", {
+            "chat_id": chat_id,
+            "text": text
+        })
+    except Exception as e:
+        logger.warning(f"send_message failed: {e}")
 
 
 # ------------------------------------------------------------------
@@ -117,7 +117,7 @@ def transmission_add(magnet):
         if session_id:
             headers["X-Transmission-Session-Id"] = session_id
 
-        r = requests.post(
+        r = session.post(
             TRANSMISSION_URL,
             json=payload,
             headers=headers,
@@ -153,7 +153,7 @@ def handle_document(token, msg, user_name):
     file_path = file_info["result"]["file_path"]
 
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
-    file_data = requests.get(file_url, timeout=30).content
+    file_data = session.get(file_url, timeout=30).content
 
     watch_folder = cfg("watch_folder")
     Path(watch_folder).mkdir(parents=True, exist_ok=True)
@@ -251,10 +251,12 @@ def main():
             if last_update_id is not None:
                 set_offset(last_update_id)
 
+        except requests.exceptions.ReadTimeout:
+            logger.debug("Telegram polling timeout (normal)")
+            continue
+
         except Exception as e:
             logger.warning(f"Error: {e}")
-
-        time.sleep(cfg("poll_interval"))
 
 
 if __name__ == "__main__":
