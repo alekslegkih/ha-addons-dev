@@ -207,7 +207,7 @@ def handle_document(token, msg, user_name):
 
         send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: не .torrent")
 
-        emit( {
+        emit("event", {
             "reason": "invalid_input",
             "type": "file",
             "name": filename,
@@ -234,7 +234,7 @@ def handle_document(token, msg, user_name):
 
     send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
 
-    emit( {
+    emit("event", {
         "reason": "torrent_added",
         "name": filename,
         "user_name": user_name
@@ -254,7 +254,7 @@ def handle_text(token, msg, user_name):
 
         send_message(token, msg["chat"]["id"], f"🧲 {user_name}: magnet добавлен")
 
-        emit( {
+        emit("event", {
             "reason": "magnet_added",
             "user_name": user_name
 })
@@ -317,10 +317,10 @@ def main():
 
                     send_message(token, msg["chat"]["id"], "❌ не авторизован")
 
-                    emit( {
+                    emit("event", {
                         "reason": "unauthorized_user",
                         "user_id": user_id
-})
+                    })
                     continue
 
                 user_name = users.get(user_id, str(user_id))
