@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 
 import requests
+import time
 
 from events import emit
 
@@ -223,9 +224,9 @@ def main():
                 "getUpdates",
                 {
                     "offset": offset + 1,
-                    "timeout": 25
+                    "timeout": 0
                 },
-                timeout=35
+                timeout=10
             )
 
             logger.info("getUpdates DONE")
@@ -271,6 +272,7 @@ def main():
         except Exception as e:
             logger.warning(f"Error: {e}")
 
+        time.sleep(2)
 
 if __name__ == "__main__":
     main()
