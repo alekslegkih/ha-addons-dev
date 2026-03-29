@@ -1,6 +1,6 @@
 name: TG → Transmission
 description: "Receive torrents via Telegram and pass to Transmission"
-version: "0.0.4"
+version: "0.0.5"
 slug: tg2transmission
 url: "https://github.com/alekslegkih/ha-addons/tree/main/tg2transmission"
 image: ghcr.io/alekslegkih/tg2transmission-dev
@@ -13,12 +13,12 @@ init: false
 hassio_api: true
 map:
   - share:rw
+schema:
+  token: str
+  user_ids:
+    - id: int
+  watch_folder: str
 options:
   token: ""
   user_ids: []
   watch_folder: "/share/watch"
-schema:
-  token: str
-  user_ids:
-    - int
-  watch_folder: str
