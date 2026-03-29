@@ -190,7 +190,17 @@ def handle_text(token, msg):
 # ------------------------------------------------------------------
 def main():
     token = cfg("token")
-    user_ids = cfg("user_ids")
+    raw_user_ids = cfg("user_ids", [])
+
+    user_ids = []
+    for u in raw_user_ids:
+        if not isinstance(u, dict):
+            continue
+
+        uid = u.get("id")
+
+        if isinstance(uid, int):
+            user_ids.append(uid)
 
     logger.info("Worker started")
 
