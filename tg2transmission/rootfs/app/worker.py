@@ -176,7 +176,7 @@ def transmission_add(magnet):
         if session_id:
             headers["X-Transmission-Session-Id"] = session_id
 
-        r = tg_session.post(
+        r = local_session.post(
             TRANSMISSION_URL,
             json=payload,
             headers=headers,
