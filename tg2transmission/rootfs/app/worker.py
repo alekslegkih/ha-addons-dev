@@ -5,7 +5,7 @@ from pathlib import Path
 
 import requests
 
-from ha_events import emit
+from events import emit
 
 
 # ------------------------------------------------------------------
