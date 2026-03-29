@@ -80,9 +80,9 @@ def set_offset(offset):
 # Telegram API
 # ------------------------------------------------------------------
 
-def telegram_api(token, method, params=None):
+def telegram_api(token, method, params=None, timeout=10):
     url = f"https://api.telegram.org/bot{token}/{method}"
-    r = requests.post(url, json=params or {}, timeout=30)
+    r = requests.post(url, json=params or {}, timeout=timeout)
     r.raise_for_status()
     return r.json()
 
@@ -214,10 +214,15 @@ def main():
         try:
             offset = get_offset()
 
-            updates = telegram_api(token, "getUpdates", {
-                "offset": offset + 1,
-                "timeout": 30
-            })
+            updates = telegram_api(
+                token,
+                "getUpdates",
+                {
+                    "offset": offset + 1,
+                    "timeout": 25
+                },
+                timeout=35
+            )
 
             last_update_id = None
 
