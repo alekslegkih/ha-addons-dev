@@ -190,17 +190,19 @@ def handle_text(token, msg):
 # ------------------------------------------------------------------
 def main():
     token = cfg("token")
+
     raw_user_ids = cfg("user_ids", [])
 
-    user_ids = []
+    users = {}
     for u in raw_user_ids:
         if not isinstance(u, dict):
             continue
 
         uid = u.get("id")
+        name = u.get("name", str(uid))
 
         if isinstance(uid, int):
-            user_ids.append(uid)
+            users[uid] = name
 
     logger.info("Worker started")
 
@@ -223,15 +225,17 @@ def main():
 
                 user_id = msg.get("from", {}).get("id")
 
-                # strict access
-                if user_id not in user_ids:
+                if user_id not in users:
                     send_message(token, msg["chat"]["id"], "❌ не авторизован")
                     emit("unauthorized_user", {"user_id": user_id})
-                    continue  # ❌ убрали set_offset
+                    continue
+
+                user_name = users.get(user_id, str(user_id))
 
                 if "document" in msg:
                     handle_document(token, msg)
 
+                # --- text (magnet) ---
                 elif "text" in msg:
                     if not handle_text(token, msg):
                         send_message(token, msg["chat"]["id"], "⚠️ неизвестный ввод")
