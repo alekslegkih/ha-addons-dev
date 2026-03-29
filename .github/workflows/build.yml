@@ -12,6 +12,11 @@ on:
         required: false
         default: "false"
 
+      addon:
+        description: "Addon name (optional)"
+        required: false
+        default: ""
+
 jobs:
 
   lint:
@@ -62,8 +67,16 @@ jobs:
             FORCE_BUILD=true
           fi
 
-          if [ "$FORCE_BUILD" = true ]; then
+          SELECTED_ADDON="${{ inputs.addon }}"
+
+          if [ -n "$SELECTED_ADDON" ]; then
+            echo "Manual build for addon: $SELECTED_ADDON"
+            ADDONS="$SELECTED_ADDON"
+
+          elif [ "$FORCE_BUILD" = true ]; then
+            echo "Force build all addons"
             ADDONS=$(find . -maxdepth 2 -name "config.yaml" -exec dirname {} \; | sed 's|^\./||' | sort -u)
+
           else
             ADDONS=$(git diff $BASE ${{ github.sha }} --name-only | cut -d/ -f1 | sort -u)
           fi
@@ -73,7 +86,7 @@ jobs:
           for addon in $ADDONS; do
             if [ -f "$addon/config.yaml" ]; then
 
-              if [ "$FORCE_BUILD" = true ]; then
+              if [ "$FORCE_BUILD" = true ] || [ -n "$SELECTED_ADDON" ]; then
                 RESULT=$(jq -c ". + [\"$addon\"]" <<< "$RESULT")
               else
                 OLD=$(git show $BASE:$addon/config.yaml 2>/dev/null | grep '^version:' | awk '{print $2}')
@@ -137,7 +150,6 @@ jobs:
         with:
           context: ./${{ matrix.addon }}
           push: true
-
           platforms: linux/amd64,linux/arm64
 
           tags: |
