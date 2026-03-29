@@ -214,6 +214,10 @@ def main():
         try:
             offset = get_offset()
 
+            logger.info(f"OFFSET: {offset}")
+
+            logger.info("CALLING getUpdates...")
+
             updates = telegram_api(
                 token,
                 "getUpdates",
@@ -223,6 +227,8 @@ def main():
                 },
                 timeout=35
             )
+
+            logger.info("getUpdates DONE")
 
             logger.info(f"RAW updates: {updates}")
             logger.info(f"Updates count: {len(updates.get('result', []))}")
