@@ -74,7 +74,11 @@ logger.info(f"Transmission: {trans_host}:{trans_port}")
 # HTTP Session + Proxy
 # ------------------------------------------------------------------
 
-session = requests.Session()
+# Telegram session
+tg_session = requests.Session()
+
+# Local session
+local_session = requests.Session()
 
 proxy_cfg = cfg("proxy", {})
 
@@ -107,7 +111,7 @@ if proxy_cfg.get("enabled"):
 
     logger.info(f"Proxy enabled: {scheme}://{host}:{port}")
 
-    session.proxies = {
+    tg_session.proxies = {
         "http": proxy_url,
         "https": proxy_url,
     }
@@ -134,7 +138,7 @@ def set_offset(offset):
 
 def telegram_api(token, method, params=None, timeout=10):
     url = f"https://api.telegram.org/bot{token}/{method}"
-    r = session.post(url, json=params or {}, timeout=timeout)
+    r = tg_session.post(url, json=params or {}, timeout=timeout)
     r.raise_for_status()
     return r.json()
 
@@ -172,7 +176,7 @@ def transmission_add(magnet):
         if session_id:
             headers["X-Transmission-Session-Id"] = session_id
 
-        r = session.post(
+        r = tg_session.post(
             TRANSMISSION_URL,
             json=payload,
             headers=headers,
@@ -216,7 +220,7 @@ def handle_document(token, msg, user_name):
     file_path = file_info["result"]["file_path"]
 
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
-    file_data = session.get(file_url, timeout=30).content
+    file_data = tg_session.get(file_url, timeout=30).content
 
     Path(watch_folder).mkdir(parents=True, exist_ok=True)
 
