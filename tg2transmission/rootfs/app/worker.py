@@ -2,9 +2,9 @@ import os
 import json
 import logging
 from pathlib import Path
+import time
 
 import requests
-import time
 
 from events import emit
 
@@ -16,16 +16,12 @@ from events import emit
 CONFIG_PATH = "/data/options.json"
 OFFSET_FILE = "/data/telegram_offset.txt"
 
-TRANSMISSION_URL = "http://addon_core_transmission:9091/transmission/rpc"
-
-
 # ------------------------------------------------------------------
 # Logging
 # ------------------------------------------------------------------
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tg2transmission.worker")
-
 
 # ------------------------------------------------------------------
 # Config
@@ -43,15 +39,29 @@ def load_config():
 
     return cfg
 
-
 CONFIG = load_config()
-
 
 def cfg(key, default=None):
     return CONFIG.get(key, default)
 
 # ------------------------------------------------------------------
-# HTTP Session
+# Transmission
+# ------------------------------------------------------------------
+
+trans_cfg = cfg("transmission", {})
+
+trans_host = trans_cfg.get("host")
+trans_port = trans_cfg.get("port", 9091)
+
+if not trans_host:
+    raise RuntimeError("transmission: 'host' is required")
+
+TRANSMISSION_URL = f"http://{trans_host}:{trans_port}/transmission/rpc"
+
+logger.info(f"Transmission: {trans_host}:{trans_port}")
+
+# ------------------------------------------------------------------
+# HTTP Session + Proxy
 # ------------------------------------------------------------------
 
 session = requests.Session()
@@ -63,7 +73,6 @@ if proxy_cfg.get("enabled"):
     host = proxy_cfg.get("host")
     port = proxy_cfg.get("port")
 
-    # --- validation ---
     if not proxy_type:
         raise RuntimeError("proxy: 'type' is required when enabled")
 
@@ -76,11 +85,7 @@ if proxy_cfg.get("enabled"):
     if not port:
         raise RuntimeError("proxy: 'port' is required when enabled")
 
-    # --- build ---
-    if proxy_type == "socks":
-        scheme = "socks5h"
-    else:
-        scheme = "http"
+    scheme = "socks5h" if proxy_type == "socks" else "http"
 
     username = proxy_cfg.get("username")
     password = proxy_cfg.get("password")
@@ -90,13 +95,12 @@ if proxy_cfg.get("enabled"):
     else:
         proxy_url = f"{scheme}://{host}:{port}"
 
-    logger.info(f"Using proxy: {scheme}://{host}:{port}")
+    logger.info(f"Proxy enabled: {scheme}://{host}:{port}")
 
     session.proxies = {
         "http": proxy_url,
         "https": proxy_url,
     }
-
 
 # ------------------------------------------------------------------
 # Offset
@@ -112,14 +116,12 @@ def set_offset(offset):
     with open(OFFSET_FILE, "w") as f:
         f.write(str(offset))
 
-
 # ------------------------------------------------------------------
 # Telegram API
 # ------------------------------------------------------------------
 
 def telegram_api(token, method, params=None, timeout=10):
     url = f"https://api.telegram.org/bot{token}/{method}"
-
     r = session.post(url, json=params or {}, timeout=timeout)
     r.raise_for_status()
     return r.json()
@@ -134,13 +136,11 @@ def send_message(token, chat_id, text):
     except Exception as e:
         logger.warning(f"send_message failed: {e}")
 
-
 # ------------------------------------------------------------------
 # Transmission (magnet)
 # ------------------------------------------------------------------
 
 session_id = None
-
 
 def transmission_add(magnet):
     global session_id
@@ -174,7 +174,6 @@ def transmission_add(magnet):
 
     return False
 
-
 # ------------------------------------------------------------------
 # Handlers
 # ------------------------------------------------------------------
@@ -184,8 +183,14 @@ def handle_document(token, msg, user_name):
     filename = doc.get("file_name", "")
 
     if not filename.endswith(".torrent"):
+        logger.info(f"{user_name}: invalid file → {filename}")
         send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: не .torrent")
-        emit("invalid_input", {"type": "file", "name": filename, "user_name": user_name})
+
+        emit("invalid_input", {
+            "type": "file",
+            "name": filename,
+            "user_name": user_name
+        })
         return
 
     file_id = doc["file_id"]
@@ -204,13 +209,14 @@ def handle_document(token, msg, user_name):
     with open(save_path, "wb") as f:
         f.write(file_data)
 
+    logger.info(f"{user_name}: torrent saved → {filename}")
+
     send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
 
     emit("torrent_added", {
         "name": filename,
         "user_name": user_name
     })
-
 
 def handle_text(token, msg, user_name):
     text = msg.get("text", "")
@@ -221,13 +227,17 @@ def handle_text(token, msg, user_name):
     ok = transmission_add(text)
 
     if ok:
+        logger.info(f"{user_name}: magnet added")
+
         send_message(token, msg["chat"]["id"], f"🧲 {user_name}: magnet добавлен")
+
         emit("magnet_added", {"user_name": user_name})
     else:
+        logger.warning(f"{user_name}: magnet failed")
+
         send_message(token, msg["chat"]["id"], f"❌ {user_name}: ошибка добавления magnet")
 
     return True
-
 
 # ------------------------------------------------------------------
 # Main loop
@@ -255,10 +265,6 @@ def main():
         try:
             offset = get_offset()
 
-            logger.info(f"OFFSET: {offset}")
-
-            logger.info("CALLING getUpdates...")
-
             updates = telegram_api(
                 token,
                 "getUpdates",
@@ -269,16 +275,9 @@ def main():
                 timeout=10
             )
 
-            logger.info("getUpdates DONE")
-
-            logger.info(f"RAW updates: {updates}")
-            logger.info(f"Updates count: {len(updates.get('result', []))}")
-
             last_update_id = None
 
             for update in updates.get("result", []):
-                logger.info(f"UPDATE: {update}")
-
                 update_id = update["update_id"]
                 msg = update.get("message", {})
 
@@ -286,10 +285,11 @@ def main():
 
                 user_id = msg.get("from", {}).get("id")
 
-                logger.info(f"user_id: {user_id}")
-
                 if user_id not in users:
+                    logger.info(f"Unauthorized user: {user_id}")
+
                     send_message(token, msg["chat"]["id"], "❌ не авторизован")
+
                     emit("unauthorized_user", {"user_id": user_id})
                     continue
 
@@ -306,13 +306,13 @@ def main():
                 set_offset(last_update_id)
 
         except requests.exceptions.ReadTimeout:
-            logger.debug("Telegram polling timeout (normal)")
             continue
 
         except Exception as e:
             logger.warning(f"Error: {e}")
 
         time.sleep(2)
+
 
 if __name__ == "__main__":
     main()

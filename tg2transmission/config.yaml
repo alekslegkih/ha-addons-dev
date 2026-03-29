@@ -1,6 +1,6 @@
 name: TG → Transmission
 description: "Receive torrents via Telegram and pass to Transmission"
-version: "0.0.22"
+version: "0.1.0"
 slug: tg2transmission
 url: "https://github.com/alekslegkih/ha-addons/tree/main/tg2transmission"
 image: ghcr.io/alekslegkih/tg2transmission-dev
@@ -26,8 +26,14 @@ schema:
     port: port?
     username: str?
     password: password?
+  transmission:
+    host: str?
+    port: port?
 options:
   token: ""
   user_ids: []
   watch_folder: "/share/watch"
   proxy: {}
+  transmission:
+    host: ""
+    port: 9091
