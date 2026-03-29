@@ -28,11 +28,51 @@ logger = logging.getLogger("tg2transmission.worker")
 
 
 # ------------------------------------------------------------------
-# HTTP Session (ВАЖНО)
+# HTTP Session
 # ------------------------------------------------------------------
 
 session = requests.Session()
 
+proxy_cfg = cfg("proxy", {})
+
+if proxy_cfg.get("enabled"):
+    proxy_type = proxy_cfg.get("type")
+    host = proxy_cfg.get("host")
+    port = proxy_cfg.get("port")
+
+    # --- validation ---
+    if not proxy_type:
+        raise RuntimeError("proxy: 'type' is required when enabled")
+
+    if proxy_type not in ("socks", "http"):
+        raise RuntimeError("proxy: 'type' must be 'socks' or 'http'")
+
+    if not host:
+        raise RuntimeError("proxy: 'host' is required when enabled")
+
+    if not port:
+        raise RuntimeError("proxy: 'port' is required when enabled")
+
+    # --- build ---
+    if proxy_type == "socks":
+        scheme = "socks5h"
+    else:
+        scheme = "http"
+
+    username = proxy_cfg.get("username")
+    password = proxy_cfg.get("password")
+
+    if username and password:
+        proxy_url = f"{scheme}://{username}:{password}@{host}:{port}"
+    else:
+        proxy_url = f"{scheme}://{host}:{port}"
+
+    logger.info(f"Using proxy: {scheme}://{host}:{port}")
+
+    session.proxies = {
+        "http": proxy_url,
+        "https": proxy_url,
+    }
 
 # ------------------------------------------------------------------
 # Config

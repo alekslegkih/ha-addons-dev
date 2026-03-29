@@ -18,7 +18,7 @@ COPY rootfs /
 
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 
-RUN pip3 install --no-cache-dir requests
+RUN pip3 install --no-cache-dir requests[socks]
 
 RUN chmod +x \
     /etc/s6-overlay/s6-rc.d/tg2transmission/run \
