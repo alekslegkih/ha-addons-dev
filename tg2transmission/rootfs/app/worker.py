@@ -28,6 +28,29 @@ logger = logging.getLogger("tg2transmission.worker")
 
 
 # ------------------------------------------------------------------
+# Config
+# ------------------------------------------------------------------
+
+def load_config():
+    with open(CONFIG_PATH) as f:
+        cfg = json.load(f)
+
+    cfg.setdefault("user_ids", [])
+    cfg.setdefault("watch_folder", "/share/watch")
+
+    if not cfg.get("token"):
+        raise RuntimeError("config: 'token' is required")
+
+    return cfg
+
+
+CONFIG = load_config()
+
+
+def cfg(key, default=None):
+    return CONFIG.get(key, default)
+
+# ------------------------------------------------------------------
 # HTTP Session
 # ------------------------------------------------------------------
 
@@ -73,29 +96,6 @@ if proxy_cfg.get("enabled"):
         "http": proxy_url,
         "https": proxy_url,
     }
-
-# ------------------------------------------------------------------
-# Config
-# ------------------------------------------------------------------
-
-def load_config():
-    with open(CONFIG_PATH) as f:
-        cfg = json.load(f)
-
-    cfg.setdefault("user_ids", [])
-    cfg.setdefault("watch_folder", "/share/watch")
-
-    if not cfg.get("token"):
-        raise RuntimeError("config: 'token' is required")
-
-    return cfg
-
-
-CONFIG = load_config()
-
-
-def cfg(key, default=None):
-    return CONFIG.get(key, default)
 
 
 # ------------------------------------------------------------------
