@@ -16,12 +16,14 @@ from events import emit
 CONFIG_PATH = "/data/options.json"
 OFFSET_FILE = "/data/telegram_offset.txt"
 
+
 # ------------------------------------------------------------------
 # Logging
 # ------------------------------------------------------------------
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("tg2transmission.worker")
+
 
 # ------------------------------------------------------------------
 # Config
@@ -32,17 +34,19 @@ def load_config():
         cfg = json.load(f)
 
     cfg.setdefault("user_ids", [])
-    cfg.setdefault("watch_folder", "/share/watch")
 
     if not cfg.get("token"):
         raise RuntimeError("config: 'token' is required")
 
     return cfg
 
+
 CONFIG = load_config()
+
 
 def cfg(key, default=None):
     return CONFIG.get(key, default)
+
 
 # ------------------------------------------------------------------
 # Transmission
@@ -52,13 +56,19 @@ trans_cfg = cfg("transmission", {})
 
 trans_host = trans_cfg.get("host")
 trans_port = trans_cfg.get("port", 9091)
+watch_folder = trans_cfg.get("watch_folder", "/share/watch")
 
 if not trans_host:
     raise RuntimeError("transmission: 'host' is required")
 
 TRANSMISSION_URL = f"http://{trans_host}:{trans_port}/transmission/rpc"
 
+trans_auth = None
+if trans_cfg.get("username") and trans_cfg.get("password"):
+    trans_auth = (trans_cfg["username"], trans_cfg["password"])
+
 logger.info(f"Transmission: {trans_host}:{trans_port}")
+
 
 # ------------------------------------------------------------------
 # HTTP Session + Proxy
@@ -102,6 +112,7 @@ if proxy_cfg.get("enabled"):
         "https": proxy_url,
     }
 
+
 # ------------------------------------------------------------------
 # Offset
 # ------------------------------------------------------------------
@@ -115,6 +126,7 @@ def get_offset():
 def set_offset(offset):
     with open(OFFSET_FILE, "w") as f:
         f.write(str(offset))
+
 
 # ------------------------------------------------------------------
 # Telegram API
@@ -136,11 +148,13 @@ def send_message(token, chat_id, text):
     except Exception as e:
         logger.warning(f"send_message failed: {e}")
 
+
 # ------------------------------------------------------------------
 # Transmission (magnet)
 # ------------------------------------------------------------------
 
 session_id = None
+
 
 def transmission_add(magnet):
     global session_id
@@ -162,6 +176,7 @@ def transmission_add(magnet):
             TRANSMISSION_URL,
             json=payload,
             headers=headers,
+            auth=trans_auth,
             timeout=10
         )
 
@@ -174,6 +189,7 @@ def transmission_add(magnet):
 
     return False
 
+
 # ------------------------------------------------------------------
 # Handlers
 # ------------------------------------------------------------------
@@ -184,6 +200,7 @@ def handle_document(token, msg, user_name):
 
     if not filename.endswith(".torrent"):
         logger.info(f"{user_name}: invalid file → {filename}")
+
         send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: не .torrent")
 
         emit("invalid_input", {
@@ -201,7 +218,6 @@ def handle_document(token, msg, user_name):
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
     file_data = session.get(file_url, timeout=30).content
 
-    watch_folder = cfg("watch_folder")
     Path(watch_folder).mkdir(parents=True, exist_ok=True)
 
     save_path = os.path.join(watch_folder, filename)
@@ -217,6 +233,7 @@ def handle_document(token, msg, user_name):
         "name": filename,
         "user_name": user_name
     })
+
 
 def handle_text(token, msg, user_name):
     text = msg.get("text", "")
@@ -238,6 +255,7 @@ def handle_text(token, msg, user_name):
         send_message(token, msg["chat"]["id"], f"❌ {user_name}: ошибка добавления magnet")
 
     return True
+
 
 # ------------------------------------------------------------------
 # Main loop
@@ -311,7 +329,7 @@ def main():
         except Exception as e:
             logger.warning(f"Error: {e}")
 
-        time.sleep(2)
+        time.sleep(10)
 
 
 if __name__ == "__main__":
