@@ -1,6 +1,6 @@
 name: TG → Transmission
 description: "Receive torrents via Telegram and pass to Transmission"
-version: "0.1.6"
+version: "0.1.7"
 slug: tg2transmission
 url: "https://github.com/alekslegkih/ha-addons/tree/main/tg2transmission"
 
@@ -14,7 +14,6 @@ boot: auto
 init: false
 hassio_api: true
 homeassistant_api: true
-hassio_role: homeassistant
 
 map:
   - share:rw
