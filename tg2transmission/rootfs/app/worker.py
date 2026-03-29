@@ -224,15 +224,22 @@ def main():
                 timeout=35
             )
 
+            logger.info(f"RAW updates: {updates}")
+            logger.info(f"Updates count: {len(updates.get('result', []))}")
+
             last_update_id = None
 
             for update in updates.get("result", []):
+                logger.info(f"UPDATE: {update}")
+
                 update_id = update["update_id"]
                 msg = update.get("message", {})
 
                 last_update_id = update_id
 
                 user_id = msg.get("from", {}).get("id")
+
+                logger.info(f"user_id: {user_id}")
 
                 if user_id not in users:
                     send_message(token, msg["chat"]["id"], "❌ не авторизован")
