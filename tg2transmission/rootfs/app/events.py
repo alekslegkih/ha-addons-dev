@@ -3,7 +3,6 @@ import json
 import urllib.request
 import logging
 
-
 # ------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------
@@ -11,7 +10,6 @@ import logging
 DOMAIN = "tg2transmission"
 SUPERVISOR_URL = "http://supervisor/core/api/events"
 TIMEOUT = 3
-
 
 # ------------------------------------------------------------------
 # Runtime state
@@ -21,7 +19,6 @@ _TOKEN = os.getenv("SUPERVISOR_TOKEN")
 _ENABLED = bool(_TOKEN)
 
 _logger = logging.getLogger("tg2transmission.events")
-
 
 # ------------------------------------------------------------------
 # Internal helpers
@@ -46,7 +43,6 @@ def _post(event_type: str, payload: dict) -> None:
     )
 
     urllib.request.urlopen(req, timeout=TIMEOUT).close()
-
 
 # ------------------------------------------------------------------
 # Public API
