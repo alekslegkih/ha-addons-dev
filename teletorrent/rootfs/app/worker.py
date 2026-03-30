@@ -349,6 +349,8 @@ def main():
 
     logger.info("Worker started")
 
+    processed_updates = set()
+
     while True:
         try:
             offset = get_offset()
@@ -367,45 +369,44 @@ def main():
 
             for update in updates.get("result", []):
                 update_id = update["update_id"]
-                msg = update.get("message", {})
+
+                # защита от дублей
+                if update_id in processed_updates:
+                    continue
+                processed_updates.add(update_id)
+
+                if "message" not in update:
+                    continue
+
+                msg = update["message"]
+
+                chat_id = msg.get("chat", {}).get("id")
+                user_id = msg.get("from", {}).get("id")
+
+                if not chat_id or not user_id:
+                    continue
 
                 last_update_id = update_id
 
-                for update in updates.get("result", []):
-                    update_id = update["update_id"]
+                if user_id not in users:
+                    logger.info(f"Unauthorized user: {user_id}")
+                    continue
 
-                    if "message" not in update:
-                        continue
+                user_name = users.get(user_id, str(user_id))
 
-                    msg = update["message"]
-
-                    chat_id = msg.get("chat", {}).get("id")
-                    user_id = msg.get("from", {}).get("id")
-
-                    if not chat_id or not user_id:
-                        continue
-
-                    last_update_id = update_id
-
-                    if user_id not in users:
-                        logger.info(f"Unauthorized user: {user_id}")
-
-                        send_message(token, chat_id, "❌ не авторизован")
-
-                        emit("event", {
-                            "reason": "unauthorized_user",
-                            "user_id": user_id
-                        })
-                        continue
-
-                    user_name = users.get(user_id, str(user_id))
-
+                try:
                     if "document" in msg:
                         handle_document(token, msg, user_name)
 
                     elif "text" in msg:
                         if not handle_text(token, msg, user_name):
                             send_message(token, chat_id, "⚠️ неизвестный ввод")
+
+                except Exception as e:
+                    logger.warning(f"Handler error: {e}")
+
+            if len(processed_updates) > 10000:
+                processed_updates.clear()
 
             if last_update_id is not None:
                 set_offset(last_update_id)
