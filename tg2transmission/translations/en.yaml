@@ -27,66 +27,68 @@ configuration:
     description: >
       Proxy settings for accessing the Telegram API.
       Required if your network restricts direct access.
+    fields:
 
-    enabled:
-      name: Enable Proxy
-      description: >
-        Enables the use of a proxy for Telegram communication.
+      enabled:
+        name: Enable Proxy
+        description: >
+          Enables the use of a proxy for Telegram communication.
 
-    type:
-      name: Proxy Type
-      description: >
-        The type of proxy server to use (socks or http).
+      type:
+        name: Proxy Type
+        description: >
+          The type of proxy server to use (socks or http).
 
-    host:
-      name: Proxy Host
-      description: >
-        The IP address or hostname of the proxy server.
+      host:
+        name: Proxy Host
+        description: >
+          The IP address or hostname of the proxy server.
 
-    port:
-      name: Proxy Port
-      description: >
-        The port of the proxy server.
+      port:
+        name: Proxy Port
+        description: >
+          The port of the proxy server.
 
-    username:
-      name: Username
-      description: >
-        Username for proxy authentication (if required).
+      username:
+        name: Username
+        description: >
+          Username for proxy authentication (if required).
 
-    password:
-      name: Password
-      description: >
-        Password for proxy authentication.
+      password:
+        name: Password
+        description: >
+          Password for proxy authentication.
 
   transmission:
     name: Transmission
     description: >
       Settings for connecting to the Transmission client.
+    fields:
 
-    host:
-      name: Transmission Host
-      description: >
-        The IP address or hostname of the Transmission service.
-        Example: 172.30.32.1 or addon_core_transmission.
+      host:
+        name: Transmission Host
+        description: >
+          The IP address or hostname of the Transmission service.
+          Example: 172.30.32.1 or addon_core_transmission.
 
-    port:
-      name: Port
-      description: >
-        The Transmission RPC port (default: 9091).
+      port:
+        name: Port
+        description: >
+          The Transmission RPC port (default: 9091).
 
-    username:
-      name: Username
-      description: >
-        Username for Transmission authentication (if enabled).
+      username:
+        name: Username
+        description: >
+          Username for Transmission authentication (if enabled).
 
-    password:
-      name: Password
-      description: >
-        Password for Transmission authentication.
+      password:
+        name: Password
+        description: >
+          Password for Transmission authentication.
 
-    watch_folder:
-      name: Watch Folder
-      description: >
-        Folder where .torrent files will be saved.
-        Transmission will automatically pick them up from this directory.
-        Default: /share/watch
+      watch_folder:
+        name: Watch Folder
+        description: >
+          Folder where .torrent files will be saved.
+          Transmission will automatically pick them up from this directory.
+          Default: /share/watch
