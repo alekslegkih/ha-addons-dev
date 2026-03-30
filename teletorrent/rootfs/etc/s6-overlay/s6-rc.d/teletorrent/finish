@@ -8,7 +8,7 @@ emit() {
     python3 "/app/emit_cli.py" "$@" || true
 }
 
-if [ "$exit_code" -eq 0 ]; then
+if [ "$exit_code" -eq 256 ]; then
     emit event '{"reason":"stopping"}'
     bashio::log.green "Stopped at: $(date)"
     bashio::log.green "Service terminated normally. Good-bye!"

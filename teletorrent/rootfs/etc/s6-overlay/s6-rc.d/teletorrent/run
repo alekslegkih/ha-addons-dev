@@ -6,7 +6,7 @@ bashio::log.green "=== STeleTorrent addon starting ==="
 bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
 bashio::log "========================================"
 
-bashio::log.green "Starting worker"
+bashio::log.info "Starting worker"
 
 exec python3 /app/worker.py
 
