@@ -1,0 +1,94 @@
+configuration:
+
+  token:
+    name: Telegram Bot Token
+    description: >
+      The Telegram bot token obtained from @BotFather.
+      It is used to receive messages and send responses.
+
+  user_ids:
+    name: Allowed Users
+    description: >
+      A list of Telegram users who are allowed to interact with the add-on.
+
+    user_name:
+      name: User Name
+      description: >
+        A friendly name for easier identification (e.g. Iam, Wife, Kid).
+
+    user_id:
+      name: Telegram User ID
+      description: >
+        The unique Telegram user ID.
+        Only users listed here will be able to send torrents and magnet links.
+
+  proxy:
+    name: Proxy
+    description: >
+      Proxy settings for accessing the Telegram API.
+      Required if your network restricts direct access.
+    fields:
+
+      enabled:
+        name: Enable Proxy
+        description: >
+          Enables the use of a proxy for Telegram communication.
+
+      type:
+        name: Proxy Type
+        description: >
+          The type of proxy server to use (socks or http).
+
+      host:
+        name: Proxy Host
+        description: >
+          The IP address or hostname of the proxy server.
+
+      port:
+        name: Proxy Port
+        description: >
+          The port of the proxy server.
+
+      username:
+        name: Username
+        description: >
+          Username for proxy authentication (if required).
+
+      password:
+        name: Password
+        description: >
+          Password for proxy authentication.
+
+  transmission:
+    name: Transmission
+    description: >
+      Settings for connecting to the Transmission client.
+    fields:
+
+      host:
+        name: Transmission Host
+        description: >
+          The IP address or hostname of the Transmission service.
+          Example: 172.30.32.1 or addon_core_transmission.
+
+      port:
+        name: Port
+        description: >
+          The Transmission RPC port (default: 9091).
+
+      username:
+        name: Username
+        description: >
+          Username for Transmission authentication (if enabled).
+
+      password:
+        name: Password
+        description: >
+          Password for Transmission authentication.
+
+      watch_folder:
+        name: Watch Folder
+        description: >
+          Folder where .torrent files will be saved.
+          Transmission will automatically pick them up from this directory.
+          Default: /share/watch
