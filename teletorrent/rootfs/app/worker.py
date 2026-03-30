@@ -17,7 +17,6 @@ OFFSET_FILE = "/config/offset.txt"
 
 user_last_send = {}
 last_send_time = 0
-error_count = 0
 
 # ------------------------------------------------------------------
 # Logging
@@ -380,6 +379,8 @@ def main():
 
     processed_updates = set()
 
+    error_count = 0
+
     while True:
         try:
             offset = get_offset()
@@ -398,7 +399,7 @@ def main():
             )
 
             error_count = 0
-            
+
             # elapsed = time.time() - start_time
             # logger.info(f"getUpdates END (took {elapsed:.2f}s)")
 
