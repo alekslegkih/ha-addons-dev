@@ -234,7 +234,7 @@ def handle_document(token, msg, user_name):
 
     send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
 
-    emit("event", {
+    emit({
         "reason": "torrent_added",
         "name": filename,
         "user_name": user_name
