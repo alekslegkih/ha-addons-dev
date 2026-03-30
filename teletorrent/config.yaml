@@ -1,0 +1,55 @@
+name: Torrent Bridge
+description: "Receive torrents from external sources and forward them to a torrent client"
+version: "0.1.22"
+slug: teletorrent
+url: "https://github.com/alekslegkih/ha-addons/tree/main/teletorrent"
+
+image: ghcr.io/alekslegkih/teletorrent-dev
+arch:
+  - amd64
+  - aarch64
+
+startup: application
+boot: auto
+init: false
+homeassistant_api: true
+
+map:
+  - share:rw
+
+schema:
+  token: str?
+  user_ids:
+    - u_name: str?
+      u_id: int?
+  proxy:
+    enabled: bool?
+    type: list(socks|http)?
+    host: str?
+    port: port?
+    username: str?
+    password: password?
+  transmission:
+    host: str
+    port: port?
+    username: str?
+    password: password?
+    watch_folder: str?
+
+options:
+  token: ""
+  user_ids: []
+  proxy:
+    enabled: false
+    type: socks
+    host: ""
+    port: 1080
+    username: ""
+    password: ""
+  transmission:
+    host: ""
+    port: 9091
+    username: ""
+    password: ""
+    watch_folder: "/share/watch"
+

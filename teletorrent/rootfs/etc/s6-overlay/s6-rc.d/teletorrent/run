@@ -1,0 +1,5 @@
+#!/usr/bin/with-contenv bash
+
+echo "[teletorrent] starting worker"
+
+exec python3 /app/worker.py
