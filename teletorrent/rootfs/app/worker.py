@@ -181,55 +181,107 @@ def send_message(token, chat_id, text):
 
 
 # ------------------------------------------------------------------
-# Transmission (magnet)
+# Transmission (unified)
 # ------------------------------------------------------------------
 
 session_id = None
 
-def transmission_add(magnet):
+def transmission_add_any(magnet=None, torrent_bytes=None, max_retries=2):
     global session_id
 
-    payload = {
-        "method": "torrent-add",
-        "arguments": {
-            "filename": magnet
-        }
-    }
+    if not magnet and not torrent_bytes:
+        raise ValueError("magnet or torrent_bytes required")
+
+    import base64
+    import re
+
+    torrent_hash = None
+
+    if magnet:
+        m = re.search(r"btih:([a-fA-F0-9]+)", magnet)
+        if m:
+            torrent_hash = m.group(1).lower()
+
+    def build_payload():
+        if magnet:
+            return {
+                "method": "torrent-add",
+                "arguments": {
+                    "filename": magnet
+                }
+            }
+        else:
+            return {
+                "method": "torrent-add",
+                "arguments": {
+                    "metainfo": base64.b64encode(torrent_bytes).decode()
+                }
+            }
 
     headers = {}
 
-    for _ in range(2):
-        if session_id:
-            headers["X-Transmission-Session-Id"] = session_id
+    for attempt in range(max_retries):
+        payload = build_payload()
 
-        r = local_session.post(
-            TRANSMISSION_URL,
-            json=payload,
-            headers=headers,
-            auth=trans_auth,
-            timeout=10
-        )
+        for _ in range(2):
+            if session_id:
+                headers["X-Transmission-Session-Id"] = session_id
 
-        if r.status_code == 409:
-            session_id = r.headers.get("X-Transmission-Session-Id")
-            continue
+            r = local_session.post(
+                TRANSMISSION_URL,
+                json=payload,
+                headers=headers,
+                auth=trans_auth,
+                timeout=10
+            )
 
-        r.raise_for_status()
-        return True
+            if r.status_code == 409:
+                session_id = r.headers.get("X-Transmission-Session-Id")
+                continue
 
-    return False
+            r.raise_for_status()
+            data = r.json()
 
-# ------------------------------------------------------------------
-# Transmission helpers
-# ------------------------------------------------------------------
+            result = data.get("arguments", {})
 
-def transmission_list():
+            if "torrent-added" in result:
+                status = "success"
+            elif "torrent-duplicate" in result:
+                status = "duplicate"
+            else:
+                break
+
+            # --- 🔥 ПРОВЕРКА ---
+            time.sleep(1)
+
+            torrents = transmission_list_full()
+
+            if torrent_hash:
+                # проверка по hash (магнет)
+                for t in torrents:
+                    if t["hashString"].lower() == torrent_hash:
+                        return status
+            else:
+                # для torrent — просто проверяем, что список не пустой
+                # (или можно сравнивать длину, но это уже избыточно)
+                if torrents:
+                    return status
+
+            # если не нашли — retry
+            time.sleep(1)
+
+        time.sleep(1)
+
+    return "error"
+
+
+def transmission_list_full():
     global session_id
 
     payload = {
         "method": "torrent-get",
         "arguments": {
-            "fields": ["hashString"]
+            "fields": ["hashString", "name", "status"]
         }
     }
 
@@ -254,16 +306,9 @@ def transmission_list():
         r.raise_for_status()
         data = r.json()
 
-        torrents = data.get("arguments", {}).get("torrents", [])
-        return {t["hashString"].lower() for t in torrents}
+        return data.get("arguments", {}).get("torrents", [])
 
-    return set()
-
-
-def extract_hash(magnet):
-    import re
-    m = re.search(r"btih:([a-fA-F0-9]+)", magnet)
-    return m.group(1).lower() if m else None
+    return []
 
 # ------------------------------------------------------------------
 # Handlers
@@ -295,22 +340,32 @@ def handle_document(token, msg, user_name):
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
     file_data = tg_session.get(file_url, timeout=35).content
 
-    Path(watch_folder).mkdir(parents=True, exist_ok=True)
+    # --- ОСНОВНОЙ путь: RPC ---
+    result = transmission_add_any(torrent_bytes=file_data)
 
-    save_path = os.path.join(watch_folder, filename)
+    if result in ("success", "duplicate"):
+        logger.info(f"{user_name}: torrent added ({result})")
 
-    with open(save_path, "wb") as f:
-        f.write(file_data)
+        send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
 
-    logger.info(f"{user_name}: torrent saved → {filename}")
+        emit("event", {
+            "reason": "torrent_added",
+            "name": filename,
+            "user_name": user_name
+        })
 
-    send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
+    else:
+        logger.warning(f"{user_name}: RPC failed, fallback to watch_folder")
 
-    emit("event", {
-        "reason": "torrent_added",
-        "name": filename,
-        "user_name": user_name
-    })
+        # --- fallback ---
+        Path(watch_folder).mkdir(parents=True, exist_ok=True)
+
+        save_path = os.path.join(watch_folder, filename)
+
+        with open(save_path, "wb") as f:
+            f.write(file_data)
+
+        send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: добавлен через fallback")
 
 
 def handle_text(token, msg, user_name):
@@ -319,36 +374,23 @@ def handle_text(token, msg, user_name):
     if not text.startswith("magnet:?xt=urn:btih:"):
         return False
 
-    torrent_hash = extract_hash(text)
+    result = transmission_add_any(magnet=text)
 
-    ok = transmission_add(text)
-
-    if ok and torrent_hash:
-        time.sleep(1)  # даём Transmission время обработать
-
-        torrents = transmission_list()
-
-        if torrent_hash not in torrents:
-            logger.warning(f"{user_name}: retry add magnet")
-
-            ok = transmission_add(text)
-
-    if ok:
-        logger.info(f"{user_name}: magnet added")
+    if result in ("success", "duplicate"):
+        logger.info(f"{user_name}: magnet added ({result})")
 
         send_message(token, msg["chat"]["id"], f"🧲 {user_name}: magnet добавлен")
 
         emit("event", {
             "reason": "magnet_added",
             "user_name": user_name
-})
+        })
     else:
         logger.warning(f"{user_name}: magnet failed")
 
         send_message(token, msg["chat"]["id"], f"❌ {user_name}: ошибка добавления magnet")
 
     return True
-
 
 # ------------------------------------------------------------------
 # Main loop

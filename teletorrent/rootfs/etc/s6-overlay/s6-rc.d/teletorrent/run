@@ -1,12 +1,16 @@
 #!/command/with-contenv bashio
 # shellcheck shell=bash
 
-# bashio::log.notice "========================================"
-# bashio::log.notice "=== STeleTorrent addon starting ==="
-# bashio::log.notice "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
-# bashio::log.notice "========================================"
+# Addon startup info
+# Prints version, name and startup timestamp
+ADDON_VERSION="$(bashio::addon.version)"
+ADDON_NAME=$(bashio::addon.name)
 
-bashio::log.info "Starting Worker starting ..."
+bashio::log "============================================="
+bashio::log.blue "=== ${ADDON_NAME} ==="
+bashio::log.blue "=== Version:  ${ADDON_VERSION} ==="
+bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
+bashio::log.info "Worker starting ..."
 
 exec python3 /app/worker.py
 
