@@ -1,0 +1,92 @@
+configuration:
+
+  token:
+    name: Telegram Bot Token
+    description: >
+      Токен Telegram-бота, полученный через @BotFather.
+      Используется для получения сообщений и отправки ответов.
+
+  user_ids:
+    name: Разрешённые пользователи
+    description: >
+      Список пользователей Telegram, которым разрешено использовать аддон.
+
+    name:
+      name: Имя пользователя
+      description: >
+        Произвольное имя для удобства (например: Iam, Wife, Kid).
+
+    id:
+      name: Telegram User ID
+      description: >
+        Уникальный ID пользователя Telegram.
+        Только эти пользователи смогут отправлять торренты и magnet-ссылки.
+
+  proxy:
+    name: Прокси
+    description: >
+      Настройки прокси для доступа к Telegram API.
+      Требуется в сетях с ограничениями.
+
+    enabled:
+      name: Включить прокси
+      description: >
+        Включает использование прокси для Telegram.
+
+    type:
+      name: Тип прокси
+      description: >
+        Тип прокси сервера (socks или http).
+
+    host:
+      name: Хост прокси
+      description: >
+        IP-адрес или доменное имя прокси-сервера.
+
+    port:
+      name: Порт прокси
+      description: >
+        Порт прокси-сервера.
+
+    username:
+      name: Пользователь
+      description: >
+        Имя пользователя для авторизации (если требуется).
+
+    password:
+      name: Пароль
+      description: >
+        Пароль для авторизации на прокси.
+
+  transmission:
+    name: Transmission
+    description: >
+      Настройки подключения к Transmission.
+
+    host:
+      name: Хост Transmission
+      description: >
+        IP-адрес или имя сервиса Transmission.
+        Например: 172.30.32.1 или addon_core_transmission.
+
+    port:
+      name: Порт
+      description: >
+        Порт RPC интерфейса Transmission (обычно 9091).
+
+    username:
+      name: Пользователь
+      description: >
+        Имя пользователя для доступа к Transmission (если включена авторизация).
+
+    password:
+      name: Пароль
+      description: >
+        Пароль для доступа к Transmission.
+
+    watch_folder:
+      name: Папка для .torrent файлов
+      description: >
+        Папка, куда будут сохраняться .torrent файлы.
+        Transmission автоматически подхватит их из этой директории.
+        По умолчанию: /share/watch

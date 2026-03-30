@@ -341,7 +341,7 @@ def main():
         except Exception as e:
             logger.warning(f"Error: {e}")
 
-        time.sleep(10)
+        time.sleep(2)
 
 
 if __name__ == "__main__":
