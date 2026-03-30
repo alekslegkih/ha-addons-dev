@@ -276,6 +276,9 @@ def main():
     raw_user_ids = cfg("user_ids", [])
 
     users = {}
+
+    logger.info(f"AUTHORIZED USERS: {users}")
+
     for u in raw_user_ids:
         if not isinstance(u, dict):
             continue
@@ -283,8 +286,15 @@ def main():
         uid = u.get("u_id")
         name = u.get("u_name", str(uid))
 
-        if isinstance(uid, int):
-            users[uid] = name
+        # --- защита от строки ---
+        try:
+            uid = int(uid)
+        except (TypeError, ValueError):
+            continue
+
+        users[uid] = name
+
+    logger.info(f"AUTHORIZED USERS: {users}")
 
     logger.info("Worker started")
 
