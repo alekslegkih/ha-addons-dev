@@ -141,7 +141,7 @@ def set_offset(offset):
 # Telegram API
 # ------------------------------------------------------------------
 
-def telegram_api(token, method, params=None, timeout=10):
+def telegram_api(token, method, params=None, timeout=35):
     url = f"https://api.telegram.org/bot{token}/{method}"
     r = tg_session.post(url, json=params or {}, timeout=timeout)
     r.raise_for_status()
@@ -388,10 +388,13 @@ def main():
                 "getUpdates",
                 {
                     "offset": offset + 1,
-                    "timeout": 35
+                    "timeout": 30
                 },
                 timeout=35
             )
+
+            elapsed = time.time() - start_time
+            logger.info(f"getUpdates END (took {elapsed:.2f}s)")
 
             last_update_id = None
 
