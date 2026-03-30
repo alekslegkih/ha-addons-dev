@@ -1,10 +1,10 @@
 #!/command/with-contenv bashio
 # shellcheck shell=bash
 
-bashio::log "========================================"
-bashio::log.green "=== STeleTorrent addon starting ==="
-bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
-bashio::log "========================================"
+bashio::log.notice "========================================"
+bashio::log.notice "=== STeleTorrent addon starting ==="
+bashio::log.notice "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
+bashio::log.notice "========================================"
 
 bashio::log.info "Starting worker"
 

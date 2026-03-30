@@ -10,13 +10,13 @@ emit() {
 
 if [ "$exit_code" -eq 256 ]; then
     emit event '{"reason":"stopping"}'
-    bashio::log.green "Stopped at: $(date)"
-    bashio::log.green "Service terminated normally. Good-bye!"
+    bashio::log.info "Stopped at: $(date)"
+    bashio::log.info "Service terminated normally. Good-bye!"
 else
     bashio::log "========================================"
-    bashio::log.red "Fail at: $(date)"
+    bashio::log.fatal "Fail at: $(date)"
     emit event '{"reason":"crashed"}'
-    bashio::log.red "Service crashed (exit code: ${exit_code}) — halting container"
+    bashio::log.fatal "Service crashed (exit code: ${exit_code}) — halting container"
 
     if [ -f /run/s6-linux-init-container-results/exitcode ]; then
         echo 0 > /run/s6-linux-init-container-results/exitcode

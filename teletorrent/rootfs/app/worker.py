@@ -13,7 +13,7 @@ from events import emit
 # ------------------------------------------------------------------
 
 CONFIG_PATH = "/data/options.json"
-OFFSET_FILE = "/config/offset.txt"
+OFFSET_FILE = "/config/offset"
 
 user_last_send = {}
 last_send_time = 0
