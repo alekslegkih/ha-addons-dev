@@ -159,7 +159,6 @@ def send_message(token, chat_id, text):
 
 session_id = None
 
-
 def transmission_add(magnet):
     global session_id
 
@@ -193,6 +192,51 @@ def transmission_add(magnet):
 
     return False
 
+# ------------------------------------------------------------------
+# Transmission helpers
+# ------------------------------------------------------------------
+
+def transmission_list():
+    global session_id
+
+    payload = {
+        "method": "torrent-get",
+        "arguments": {
+            "fields": ["hashString"]
+        }
+    }
+
+    headers = {}
+
+    for _ in range(2):
+        if session_id:
+            headers["X-Transmission-Session-Id"] = session_id
+
+        r = local_session.post(
+            TRANSMISSION_URL,
+            json=payload,
+            headers=headers,
+            auth=trans_auth,
+            timeout=10
+        )
+
+        if r.status_code == 409:
+            session_id = r.headers.get("X-Transmission-Session-Id")
+            continue
+
+        r.raise_for_status()
+        data = r.json()
+
+        torrents = data.get("arguments", {}).get("torrents", [])
+        return {t["hashString"].lower() for t in torrents}
+
+    return set()
+
+
+def extract_hash(magnet):
+    import re
+    m = re.search(r"btih:([a-fA-F0-9]+)", magnet)
+    return m.group(1).lower() if m else None
 
 # ------------------------------------------------------------------
 # Handlers
@@ -247,7 +291,19 @@ def handle_text(token, msg, user_name):
     if not text.startswith("magnet:?xt=urn:btih:"):
         return False
 
+    torrent_hash = extract_hash(text)
+
     ok = transmission_add(text)
+
+    if ok and torrent_hash:
+        time.sleep(1)  # даём Transmission время обработать
+
+        torrents = transmission_list()
+
+        if torrent_hash not in torrents:
+            logger.warning(f"{user_name}: retry add magnet")
+
+            ok = transmission_add(text)
 
     if ok:
         logger.info(f"{user_name}: magnet added")
@@ -315,27 +371,41 @@ def main():
 
                 last_update_id = update_id
 
-                user_id = msg.get("from", {}).get("id")
+                for update in updates.get("result", []):
+                    update_id = update["update_id"]
 
-                if user_id not in users:
-                    logger.info(f"Unauthorized user: {user_id}")
+                    if "message" not in update:
+                        continue
 
-                    send_message(token, msg["chat"]["id"], "❌ не авторизован")
+                    msg = update["message"]
 
-                    emit("event", {
-                        "reason": "unauthorized_user",
-                        "user_id": user_id
-                    })
-                    continue
+                    chat_id = msg.get("chat", {}).get("id")
+                    user_id = msg.get("from", {}).get("id")
 
-                user_name = users.get(user_id, str(user_id))
+                    if not chat_id or not user_id:
+                        continue
 
-                if "document" in msg:
-                    handle_document(token, msg, user_name)
+                    last_update_id = update_id
 
-                elif "text" in msg:
-                    if not handle_text(token, msg, user_name):
-                        send_message(token, msg["chat"]["id"], "⚠️ неизвестный ввод")
+                    if user_id not in users:
+                        logger.info(f"Unauthorized user: {user_id}")
+
+                        send_message(token, chat_id, "❌ не авторизован")
+
+                        emit("event", {
+                            "reason": "unauthorized_user",
+                            "user_id": user_id
+                        })
+                        continue
+
+                    user_name = users.get(user_id, str(user_id))
+
+                    if "document" in msg:
+                        handle_document(token, msg, user_name)
+
+                    elif "text" in msg:
+                        if not handle_text(token, msg, user_name):
+                            send_message(token, chat_id, "⚠️ неизвестный ввод")
 
             if last_update_id is not None:
                 set_offset(last_update_id)
