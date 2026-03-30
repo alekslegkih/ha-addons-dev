@@ -1,4 +1,4 @@
-# Torrent Bridge
+# # TeleTorrent
 
 [Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/teletorrent/README_RU.md)
 

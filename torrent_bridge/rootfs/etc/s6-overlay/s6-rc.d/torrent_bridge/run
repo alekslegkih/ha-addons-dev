@@ -1,5 +1,0 @@
-#!/usr/bin/with-contenv bash
-
-echo "[torrent_bridge] starting worker"
-
-exec python3 /app/worker.py
