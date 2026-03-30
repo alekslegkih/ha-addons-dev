@@ -11,12 +11,12 @@ configuration:
     description: >
       A list of Telegram users who are allowed to interact with the add-on.
 
-    name:
+    user_name:
       name: User Name
       description: >
         A friendly name for easier identification (e.g. Iam, Wife, Kid).
 
-    id:
+    user_id:
       name: Telegram User ID
       description: >
         The unique Telegram user ID.
