@@ -280,8 +280,8 @@ def main():
         if not isinstance(u, dict):
             continue
 
-        uid = u.get("id")
-        name = u.get("name", str(uid))
+        uid = u.get("u_id")
+        name = u.get("u_name", str(uid))
 
         if isinstance(uid, int):
             users[uid] = name

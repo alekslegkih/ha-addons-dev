@@ -11,12 +11,12 @@ configuration:
     description: >
       Список пользователей Telegram, которым разрешено использовать аддон.
 
-    user_name:
+    u_name:
       name: Имя пользователя
       description: >
         Произвольное имя для удобства (например: Iam, Wife, Kid).
 
-    user_id:
+    u_id:
       name: Telegram User ID
       description: >
         Уникальный ID пользователя Telegram.

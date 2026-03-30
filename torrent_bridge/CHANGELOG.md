@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.1.18
+
+- Fix: config
+
 ## v0.1.15
 
 - Add: documentation
