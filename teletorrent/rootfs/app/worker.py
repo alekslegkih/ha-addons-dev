@@ -171,6 +171,7 @@ def send_message(token, chat_id, text):
 
     except Exception as e:
         logger.warning(f"send_message failed: {e}")
+        time.sleep(0.5)
 
 
 # ------------------------------------------------------------------
@@ -246,6 +247,9 @@ def transmission_list():
 
         r.raise_for_status()
         data = r.json()
+        if not data.get("ok"):
+            raise RuntimeError(f"Telegram API error: {data}")
+        return data
 
         torrents = data.get("arguments", {}).get("torrents", [])
         return {t["hashString"].lower() for t in torrents}
@@ -260,6 +264,7 @@ def extract_hash(magnet):
 
 # ------------------------------------------------------------------
 # Handlers
+
 # ------------------------------------------------------------------
 
 def handle_document(token, msg, user_name):
@@ -285,7 +290,7 @@ def handle_document(token, msg, user_name):
     file_path = file_info["result"]["file_path"]
 
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
-    file_data = tg_session.get(file_url, timeout=30).content
+    file_data = tg_session.get(file_url, timeout=35).content
 
     Path(watch_folder).mkdir(parents=True, exist_ok=True)
 
@@ -380,7 +385,7 @@ def main():
                 "getUpdates",
                 {
                     "offset": offset + 1,
-                    "timeout": 30
+                    "timeout": 35
                 },
                 timeout=35
             )
@@ -424,6 +429,7 @@ def main():
 
                 except Exception as e:
                     logger.warning(f"Handler error: {e}")
+                    time.sleep(1)
 
             if len(processed_updates) > 10000:
                 processed_updates.clear()
@@ -432,11 +438,12 @@ def main():
                 set_offset(last_update_id)
 
         except requests.exceptions.ReadTimeout:
+            time.sleep(1)
             continue
 
         except Exception as e:
             logger.warning(f"Error: {e}")
-
+            time.sleep(1)
 
 if __name__ == "__main__":
     main()
