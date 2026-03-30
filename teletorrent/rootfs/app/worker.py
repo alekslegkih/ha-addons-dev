@@ -8,14 +8,15 @@ import requests
 
 from events import emit
 
-
 # ------------------------------------------------------------------
 # Constants
 # ------------------------------------------------------------------
 
 CONFIG_PATH = "/data/options.json"
-OFFSET_FILE = "/data/telegram_offset.txt"
+OFFSET_FILE = "/config/offset.txt"
 
+user_last_send = {}
+last_send_time = 0
 
 # ------------------------------------------------------------------
 # Logging
@@ -123,20 +124,24 @@ if proxy_cfg.get("enabled"):
 
 def get_offset():
     if os.path.exists(OFFSET_FILE):
-        return int(open(OFFSET_FILE).read().strip())
+        try:
+            return int(open(OFFSET_FILE).read().strip())
+        except Exception:
+            return 0
     return 0
 
 
 def set_offset(offset):
-    with open(OFFSET_FILE, "w") as f:
+    tmp_file = OFFSET_FILE + ".tmp"
+    with open(tmp_file, "w") as f:
         f.write(str(offset))
-
+    os.replace(tmp_file, OFFSET_FILE)
 
 # ------------------------------------------------------------------
 # Telegram API
 # ------------------------------------------------------------------
 
-def telegram_api(token, method, params=None, timeout=10):
+def telegram_api(token, method, params=None, timeout=35):
     url = f"https://api.telegram.org/bot{token}/{method}"
     r = tg_session.post(url, json=params or {}, timeout=timeout)
     r.raise_for_status()
@@ -144,11 +149,26 @@ def telegram_api(token, method, params=None, timeout=10):
 
 
 def send_message(token, chat_id, text):
+    global last_send_time, user_last_send
+
+    now = time.time()
+
+    # глобальный лимит
+    if now - last_send_time < 0.05:
+        time.sleep(0.05)
+
+    if now - user_last_send.get(chat_id, 0) < 0.5:
+        return
+
     try:
         telegram_api(token, "sendMessage", {
             "chat_id": chat_id,
             "text": text
         })
+
+        last_send_time = time.time()
+        user_last_send[chat_id] = last_send_time
+
     except Exception as e:
         logger.warning(f"send_message failed: {e}")
 

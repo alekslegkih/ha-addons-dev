@@ -1,6 +1,6 @@
 name: TeleTorrent
 description: "Receive torrents from external sources and forward them to a torrent client"
-version: "0.1.25"
+version: "0.1.26"
 slug: teletorrent
 url: "https://github.com/alekslegkih/ha-addons/tree/main/teletorrent"
 
@@ -15,6 +15,7 @@ init: false
 homeassistant_api: true
 
 map:
+  - addon_config:rw
   - share:rw
 
 schema:
