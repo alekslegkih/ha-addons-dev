@@ -1,12 +1,12 @@
 #!/command/with-contenv bashio
 # shellcheck shell=bash
 
-bashio::log.notice "========================================"
-bashio::log.notice "=== STeleTorrent addon starting ==="
-bashio::log.notice "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
-bashio::log.notice "========================================"
+# bashio::log.notice "========================================"
+# bashio::log.notice "=== STeleTorrent addon starting ==="
+# bashio::log.notice "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
+# bashio::log.notice "========================================"
 
-bashio::log.info "Starting worker"
+bashio::log.info "Starting Worker starting ..."
 
 exec python3 /app/worker.py
 
