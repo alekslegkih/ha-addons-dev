@@ -234,7 +234,7 @@ def handle_document(token, msg, user_name):
 
     send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
 
-    emit({
+    emit("event", {
         "reason": "torrent_added",
         "name": filename,
         "user_name": user_name
@@ -244,7 +244,7 @@ def handle_document(token, msg, user_name):
 def handle_text(token, msg, user_name):
     text = msg.get("text", "")
 
-    if not text.startswith("magnet:?"):
+    if not text.startswith("magnet:?xt=urn:btih:"):
         return False
 
     ok = transmission_add(text)
@@ -302,7 +302,7 @@ def main():
                 "getUpdates",
                 {
                     "offset": offset + 1,
-                    "timeout": 0
+                    "timeout": 30
                 },
                 timeout=10
             )
@@ -345,8 +345,6 @@ def main():
 
         except Exception as e:
             logger.warning(f"Error: {e}")
-
-        time.sleep(2)
 
 
 if __name__ == "__main__":
