@@ -1,6 +1,6 @@
 name: TeleTorrent
 description: "Receive torrents from external sources and forward them to a torrent client"
-version: "0.1.28"
+version: "0.1.29"
 slug: teletorrent
 url: "https://github.com/alekslegkih/ha-addons/tree/main/teletorrent"
 

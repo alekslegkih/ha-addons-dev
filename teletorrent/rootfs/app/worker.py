@@ -141,11 +141,17 @@ def set_offset(offset):
 # Telegram API
 # ------------------------------------------------------------------
 
-def telegram_api(token, method, params=None, timeout=35):
+def telegram_api(token, method, params=None, timeout=10):
     url = f"https://api.telegram.org/bot{token}/{method}"
     r = tg_session.post(url, json=params or {}, timeout=timeout)
     r.raise_for_status()
-    return r.json()
+
+    data = r.json()
+
+    if not data.get("ok"):
+        raise RuntimeError(f"Telegram API error: {data}")
+
+    return data
 
 
 def send_message(token, chat_id, text):
@@ -247,9 +253,6 @@ def transmission_list():
 
         r.raise_for_status()
         data = r.json()
-        if not data.get("ok"):
-            raise RuntimeError(f"Telegram API error: {data}")
-        return data
 
         torrents = data.get("arguments", {}).get("torrents", [])
         return {t["hashString"].lower() for t in torrents}
