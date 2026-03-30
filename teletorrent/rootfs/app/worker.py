@@ -383,6 +383,9 @@ def main():
         try:
             offset = get_offset()
 
+            start_time = time.time()
+            logger.info("getUpdates START")
+
             updates = telegram_api(
                 token,
                 "getUpdates",
