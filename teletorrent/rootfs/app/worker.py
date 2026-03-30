@@ -464,5 +464,9 @@ def main():
 
             time.sleep(sleep_time)
 
+            if error_count >= 10:
+                logger.error("Too many errors, exiting")
+                exit(1)
+
 if __name__ == "__main__":
     main()
