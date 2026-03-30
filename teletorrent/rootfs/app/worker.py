@@ -382,7 +382,7 @@ def main():
                     "offset": offset + 1,
                     "timeout": 30
                 },
-                timeout=10
+                timeout=35
             )
 
             last_update_id = None
