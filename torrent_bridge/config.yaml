@@ -1,6 +1,6 @@
 name: Torrent Bridge
 description: "Receive torrents from external sources and forward them to a torrent client"
-version: "0.1.19"
+version: "0.1.20"
 slug: torrent_bridge
 url: "https://github.com/alekslegkih/ha-addons/tree/main/torrent_bridge"
 
