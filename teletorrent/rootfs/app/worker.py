@@ -340,10 +340,9 @@ def handle_document(token, msg, user_name):
     file_url = f"https://api.telegram.org/file/bot{token}/{file_path}"
     file_data = tg_session.get(file_url, timeout=35).content
 
-    # --- ОСНОВНОЙ путь: RPC ---
     result = transmission_add_any(torrent_bytes=file_data)
 
-    if result in ("success", "duplicate"):
+    if result == "success":
         logger.info(f"{user_name}: torrent added ({result})")
 
         send_message(token, msg["chat"]["id"], f"✅ {user_name}: torrent добавлен")
@@ -354,10 +353,22 @@ def handle_document(token, msg, user_name):
             "user_name": user_name
         })
 
+    elif result == "duplicate":
+        logger.info(f"{user_name}: torrent added ({result})")
+
+        send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: torrent уже существует")
+
+        emit("event", {
+            "reason": "torrent_duplicate",
+            "name": filename,
+            "user_name": user_name
+        })
+
     else:
+        send_message(token, msg["chat"]["id"], f"❌ {user_name}: ошибка добавления torrent")
+
         logger.warning(f"{user_name}: RPC failed, fallback to watch_folder")
 
-        # --- fallback ---
         Path(watch_folder).mkdir(parents=True, exist_ok=True)
 
         save_path = os.path.join(watch_folder, filename)
@@ -367,16 +378,36 @@ def handle_document(token, msg, user_name):
 
         send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: добавлен через fallback")
 
+        emit("event", {
+            "reason": "torrent_error",
+            "name": filename,
+            "user_name": user_name,
+            "add": "fallback"
+        })
+
 
 def handle_text(token, msg, user_name):
     text = msg.get("text", "")
+
+    if text in ("/start", "/help"):
+        send_message(
+            token,
+            msg["chat"]["id"],
+            "📡 Teletorrent bot\n\n"
+            "Отправь:\n"
+            "🧲 magnet-ссылку\n"
+            "📁 .torrent файл\n\n"
+            "Я добавлю их в Transmission"
+        )
+        return True
+
 
     if not text.startswith("magnet:?xt=urn:btih:"):
         return False
 
     result = transmission_add_any(magnet=text)
 
-    if result in ("success", "duplicate"):
+    if result == "success":
         logger.info(f"{user_name}: magnet added ({result})")
 
         send_message(token, msg["chat"]["id"], f"🧲 {user_name}: magnet добавлен")
@@ -385,10 +416,26 @@ def handle_text(token, msg, user_name):
             "reason": "magnet_added",
             "user_name": user_name
         })
+
+    elif result == "duplicate":
+        logger.info(f"{user_name}: magnet added ({result})")
+
+        send_message(token, msg["chat"]["id"], f"⚠️ {user_name}: magnet уже существует")
+
+        emit("event", {
+            "reason": "magnet_duplicate",
+            "user_name": user_name
+        })
+
     else:
         logger.warning(f"{user_name}: magnet failed")
 
         send_message(token, msg["chat"]["id"], f"❌ {user_name}: ошибка добавления magnet")
+
+        emit("event", {
+            "reason": "magnet_failed",
+            "user_name": user_name
+        })
 
     return True
 
@@ -468,8 +515,17 @@ def main():
 
                 last_update_id = update_id
 
+                text = msg.get("text", "").strip()
+
                 if user_id not in users:
-                    logger.info(f"Unauthorized user: {user_id}")
+                    if text in ("/start", "/help"):
+                        send_message(
+                            token,
+                            chat_id,
+                            "🚫 У вас нет доступа к этому боту"
+                        )
+                    else:
+                        logger.info(f"Unauthorized user: {user_id}")
                     continue
 
                 user_name = users.get(user_id, str(user_id))
