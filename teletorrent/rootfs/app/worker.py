@@ -17,6 +17,7 @@ OFFSET_FILE = "/config/offset.txt"
 
 user_last_send = {}
 last_send_time = 0
+error_count = 0
 
 # ------------------------------------------------------------------
 # Logging
@@ -383,8 +384,8 @@ def main():
         try:
             offset = get_offset()
 
-            start_time = time.time()
-            logger.info("getUpdates START")
+            # start_time = time.time()
+            # logger.info("getUpdates START")
 
             updates = telegram_api(
                 token,
@@ -396,8 +397,10 @@ def main():
                 timeout=35
             )
 
-            elapsed = time.time() - start_time
-            logger.info(f"getUpdates END (took {elapsed:.2f}s)")
+            error_count = 0
+            
+            # elapsed = time.time() - start_time
+            # logger.info(f"getUpdates END (took {elapsed:.2f}s)")
 
             last_update_id = None
 
@@ -452,7 +455,13 @@ def main():
 
         except Exception as e:
             logger.warning(f"Error: {e}")
-            time.sleep(1)
+
+            error_count += 1
+
+            sleep_time = min(error_count, 10)
+            logger.warning(f"Backoff sleep: {sleep_time}s")
+
+            time.sleep(sleep_time)
 
 if __name__ == "__main__":
     main()
