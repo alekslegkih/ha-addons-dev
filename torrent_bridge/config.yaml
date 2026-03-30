@@ -1,6 +1,6 @@
 name: Torrent Bridge
 description: "Receive torrents from external sources and forward them to a torrent client"
-version: "0.1.16"
+version: "0.1.17"
 slug: torrent_bridge
 url: "https://github.com/alekslegkih/ha-addons/tree/main/torrent_bridge"
 
@@ -43,7 +43,7 @@ options:
     enabled: false
     type: socks
     host: ""
-    port: null
+    port: 1080
     username: ""
     password: ""
   transmission:
