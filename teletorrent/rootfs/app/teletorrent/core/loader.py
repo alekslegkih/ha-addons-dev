@@ -174,6 +174,8 @@ def load_lang():
     # ------------------------------------------------------------------
     # 1. Создание файла (если отсутствует)
     # ------------------------------------------------------------------
+    os.makedirs(LANG_DIR, exist_ok=True)
+
     if not os.path.exists(LANG_FILE):
         with open(LANG_FILE, "w", encoding="utf-8") as f:
             f.write(DEFAULT_LANG)
