@@ -1,9 +1,5 @@
-#!/command/with-contenv bashio
-# shellcheck shell=bash
-
+#!/usr/bin/with-contenv sh
 export PYTHONPATH=/app
-
-bashio::log.info "Worker starting ..."
 
 exec python3 /app/worker.py
 

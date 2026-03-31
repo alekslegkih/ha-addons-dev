@@ -1,17 +1,5 @@
-#!/command/with-contenv bashio
-# shellcheck shell=bash
+#!/usr/bin/with-contenv sh
 
 export PYTHONPATH=/app
-
-# Addon startup info
-# Prints version, name and startup timestamp
-# ADDON_VERSION="$(bashio::addon.version)"
-# ADDON_NAME=$(bashio::addon.name)
-
-# bashio::log "============================================="
-# bashio::log.blue "=== ${ADDON_NAME} ==="
-# bashio::log.blue "=== Version:  ${ADDON_VERSION} ==="
-#b ashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
-# bashio::log.info "Configuration loading ..."
 
 exec python3 /app/teletorrent/core/config.py
