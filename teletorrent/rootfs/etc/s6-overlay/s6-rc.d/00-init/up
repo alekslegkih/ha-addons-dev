@@ -1,3 +1,5 @@
 #!/usr/bin/with-contenv sh
 
+export PYTHONPATH=/app
+
 exec python3 /app/teletorrent/core/config.py
