@@ -1,3 +1,2 @@
 #!/usr/bin/with-contenv sh
-echo: "Контейнер пересобрался"
 exec python3 /app/teletorrent/core/config.py
