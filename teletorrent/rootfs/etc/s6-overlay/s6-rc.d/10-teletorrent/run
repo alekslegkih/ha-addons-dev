@@ -1,2 +1,3 @@
 #!/usr/bin/with-contenv sh
-exec python3 /app/teletorrent/app/worker.py
+
+exec env PYTHONPATH=/app python3 /app/teletorrent/app/worker.py
