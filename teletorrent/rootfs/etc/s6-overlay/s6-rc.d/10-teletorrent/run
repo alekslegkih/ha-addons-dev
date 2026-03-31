@@ -1,7 +1,2 @@
 #!/usr/bin/with-contenv sh
-
-export PYTHONPATH=/app
-
-exec python3 /app/worker.py
-
-
+exec python3 /app/teletorrent/app/worker.py
