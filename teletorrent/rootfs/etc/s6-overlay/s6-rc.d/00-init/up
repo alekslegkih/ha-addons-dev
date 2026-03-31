@@ -1,6 +1,8 @@
 #!/command/with-contenv bashio
 # shellcheck shell=bash
 
+export PYTHONPATH=/app
+
 # Addon startup info
 # Prints version, name and startup timestamp
 # ADDON_VERSION="$(bashio::addon.version)"
