@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.2.1
+
+Modification: Changed the method of downloading torrent files from a folder on RPC.
+
+## v0.2.0
+
+- Fix: telegram bot spam error critical
+
 ## v0.1.20
 
 - Fix: Correcting variable names

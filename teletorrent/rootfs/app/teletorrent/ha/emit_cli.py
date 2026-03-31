@@ -4,7 +4,7 @@ import sys
 import json
 import logging
 
-from events import emit
+from teletorrent.rootfs.app.teletorrent.ha.events import emit
 
 
 # ------------------------------------------------------------------

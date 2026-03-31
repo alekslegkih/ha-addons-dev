@@ -1,0 +1,8 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+bashio::log.info "Worker starting ..."
+
+exec python3 /app/worker.py
+
+

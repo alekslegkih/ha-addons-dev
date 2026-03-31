@@ -10,8 +10,6 @@ bashio::log "============================================="
 bashio::log.blue "=== ${ADDON_NAME} ==="
 bashio::log.blue "=== Version:  ${ADDON_VERSION} ==="
 bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
-bashio::log.info "Worker starting ..."
+bashio::log.info "Configuration loading ..."
 
-exec python3 /app/worker.py
-
-
+exec python3 /app/teletorrent/core/config.py
