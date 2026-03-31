@@ -48,3 +48,28 @@ def setup_logger(name=None, level=logging.INFO):
 
     logger.addHandler(handler)
     return logger
+
+# ------------------------------------------------------------------------------
+# Public API
+# ------------------------------------------------------------------------------
+
+_initialized = False
+
+def get_logger(name=None, level=logging.INFO):
+    """
+    Возвращает logger.
+
+    Первый вызов:
+    - настраивает логгер через setup_logger()
+
+    Дальше:
+    - просто возвращает logging.getLogger(name)
+    """
+
+    global _initialized
+
+    if not _initialized:
+        setup_logger(level=level)
+        _initialized = True
+
+    return logging.getLogger(name)
