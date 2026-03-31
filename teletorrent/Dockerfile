@@ -22,4 +22,5 @@ RUN pip3 install --no-cache-dir requests[socks]
 
 RUN chmod +x \
     /etc/s6-overlay/s6-rc.d/10-teletorrent/run \
-    /etc/s6-overlay/s6-rc.d/10-teletorrent/finish
+    /etc/s6-overlay/s6-rc.d/10-teletorrent/finish \
+    /etc/s6-overlay/s6-rc.d/00-init/up
