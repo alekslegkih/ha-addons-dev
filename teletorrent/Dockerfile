@@ -22,7 +22,10 @@ RUN apk add --no-cache \
     ca-certificates \
     && update-ca-certificates
 
-RUN pip3 install --no-cache-dir requests[socks]
+RUN python3 -m pip install --no-cache-dir \
+    --break-system-packages \
+    --root-user-action=ignore \
+    requests[socks]
 
 RUN chmod +x \
     /etc/s6-overlay/s6-rc.d/10-teletorrent/run \
