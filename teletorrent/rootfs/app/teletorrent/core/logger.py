@@ -1,109 +1,59 @@
-import os
+import logging
 import sys
-from datetime import datetime
 
-# --- Levels ---
-CRITICAL = 50
-ERROR = 40
-WARNING = 30
-INFO = 20
-DEBUG = 10
-NOTSET = 0
-
-LEVEL_NAMES = {
-    DEBUG: "DEBUG",
-    INFO: "INFO",
-    WARNING: "WARNING",
-    ERROR: "ERROR",
-    CRITICAL: "CRITICAL",
-    NOTSET: "",
-}
-
-# --- Colors ---
+# ANSI color codes
 class Colors:
-    RESET = "\033[0m"
-    GREEN = "\033[32m"
-    YELLOW = "\033[33m"
-    RED = "\033[31m"
-    MAGENTA = "\033[35m"
-    BRIGHT_BLACK = "\033[90m"
-    WHITE = "\033[97m"
+    RESET = '\033[0m'
+    GREEN = '\033[92m'
+    YELLOW = '\033[93m'
+    RED = '\033[91m'
+    WHITE = '\033[97m'
+    BRIGHT_BLACK = '\033[90m'
 
-LEVEL_COLORS = {
-    DEBUG: Colors.BRIGHT_BLACK,
-    INFO: Colors.GREEN,
-    WARNING: Colors.YELLOW,
-    ERROR: Colors.MAGENTA,
-    CRITICAL: Colors.RED,
-    NOTSET: Colors.WHITE,
-}
+class ColoredFormatter(logging.Formatter):
+    LEVEL_COLORS = {
+        logging.DEBUG: Colors.BRIGHT_BLACK,
+        logging.INFO: Colors.GREEN,
+        logging.WARNING: Colors.YELLOW,
+        logging.ERROR: Colors.RED,
+        logging.CRITICAL: Colors.RED,
+    }
 
-# --- Debug flag ---
-DEBUG_FLAG = os.environ.get("DEBUG_FLAG")
-DEBUG_ENABLED = DEBUG_FLAG and os.path.exists(DEBUG_FLAG)
+    def format(self, record):
+        # Форматируем время
+        timestamp = self.formatTime(record, self.datefmt)
+        levelname = record.levelname
 
-def _supports_color():
-    if os.environ.get("NO_COLOR"):
-        return False
-    return True
+        # Цветное сообщение
+        color = self.LEVEL_COLORS.get(record.levelno, Colors.WHITE)
+        colored_message = f"{color}{record.getMessage()}{Colors.RESET}"
 
-USE_COLOR = _supports_color()
+        # Формат: [HH:MM:SS] LEVEL: colored_message
+        return f"[{timestamp}] {levelname}: {colored_message}"
 
+def setup_logger(name=None, level=logging.INFO):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
 
-def _timestamp():
-    return datetime.now().strftime("%H:%M:%S")
+    # Очищаем старые handlers если есть
+    logger.handlers.clear()
 
+    # Создаем handler для вывода в консоль
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(level)
 
-def _log(level, msg):
-    if level == DEBUG and not DEBUG_ENABLED:
-        return
+    # Настраиваем форматтер
+    formatter = ColoredFormatter(datefmt='%H:%M:%S')
+    handler.setFormatter(formatter)
 
-    ts = _timestamp()
+    logger.addHandler(handler)
+    return logger
 
-    if not USE_COLOR:
-        level_name = LEVEL_NAMES.get(level, "")
-        if level_name:
-            base = f"[{ts}] {level_name}: {msg}"
-        else:
-            base = f"[{ts}] {msg}"
-        print(base, flush=True)
-        return
+# Использование
+if __name__ == "__main__":
+    log = setup_logger()
 
-    color = LEVEL_COLORS.get(level, Colors.WHITE)
-    base = f"[{ts}] {msg}"
-    print(f"{color}{base}{Colors.RESET}", flush=True)
-
-
-# --- Logger class (совместим с logging API) ---
-class SimpleLogger:
-    def __init__(self, name=None):
-        self.name = name
-
-    def debug(self, msg):
-        _log(DEBUG, msg)
-
-    def info(self, msg):
-        _log(INFO, msg)
-
-    def warning(self, msg):
-        _log(WARNING, msg)
-
-    def error(self, msg):
-        _log(ERROR, msg)
-
-    def critical(self, msg):
-        _log(CRITICAL, msg)
-
-    def exception(self, msg):
-        import traceback
-        _log(ERROR, msg)
-        traceback.print_exc()
-
-
-# --- Public API ---
-_loggers = {}
-
-def get_logger(name=None):
-    if name not in _loggers:
-        _loggers[name] = SimpleLogger(name)
-    return _loggers[name]
+    log.info("Worker starting")
+    log.warning("Something suspicious")
+    log.error("Something went wrong")
+    log.debug("Debug message")

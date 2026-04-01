@@ -2,7 +2,7 @@ import os
 import json
 import sys
 
-from teletorrent.core.logger import get_logger
+from teletorrent.core.logger import setup_logger
 from teletorrent.core.loader import load_lang
 
 # ------------------------------------------------------------------------------

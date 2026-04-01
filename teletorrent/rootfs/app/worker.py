@@ -3,7 +3,7 @@ import json
 import time
 import requests
 
-from teletorrent.core.logger import get_logger
+from teletorrent.core.logger import setup_logger
 from teletorrent.core.loader import load_lang_file
 
 from teletorrent.telegram import api
