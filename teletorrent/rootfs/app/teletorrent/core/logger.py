@@ -16,11 +16,11 @@ class Logger:
         Инициализация логгера
 
         Args:
-            name: имя логгера (__name__)
+            name: имя логгера (не используется, оставлено для совместимости)
             show_timestamp: показывать ли временную метку
             timestamp_format: формат временной метки
         """
-        self.name = name
+        self.name = name  # Сохраняем но не используем
         self.show_timestamp = show_timestamp
         self.timestamp_format = timestamp_format
 
@@ -31,40 +31,35 @@ class Logger:
             return f"{self.WHITE}[{timestamp}]{self.RESET} "
         return ""
 
-    def _get_prefix(self):
-        """Получить префикс с именем логгера"""
-        if self.name:
-            return f"[{self.name}] "
-        return ""
-
     def _print(self, color, msg):
         """Печать сообщения с цветным текстом и белым таймштампом"""
         timestamp = self._get_timestamp()
-        prefix = self._get_prefix()
-        print(f"{timestamp}{prefix}{color}{msg}{self.RESET}", flush=True)
+        print(f"{timestamp}{color}{msg}{self.RESET}", flush=True)
 
     def log(self, msg):
         """Обычное сообщение без цвета"""
         timestamp = self._get_timestamp()
-        prefix = self._get_prefix()
-        print(f"{timestamp}{prefix}{msg}", flush=True)
+        print(f"{timestamp}{msg}", flush=True)
 
-    def info(self, msg):
+    def green(self, msg):
         self._print(self.GREEN, msg)
 
-    def warning(self, msg):
+    def yellow(self, msg):
         self._print(self.YELLOW, msg)
 
-    def error(self, msg):
+    def red(self, msg):
         self._print(self.RED, msg)
 
-    def debug(self, msg):
+    def blue(self, msg):
+        self._print(self.BLUE, msg)
+
+    def magenta(self, msg):
         self._print(self.MAGENTA, msg)
 
-# Фабричная функция для создания логгеров
-def get_logger(name=None, show_timestamp=True, timestamp_format="%H:%M:%S"):
-    """Создает и возвращает новый экземпляр логгера"""
-    return Logger(name=name, show_timestamp=show_timestamp, timestamp_format=timestamp_format)
+# Фабричная функция для создания логгеров (имя игнорируется)
+def get_logger(name=None):
+    """Создает и возвращает новый экземпляр логгера (имя не используется)"""
+    return Logger()
 
 # Создаем глобальный экземпляр для простого использования
 logger = Logger()

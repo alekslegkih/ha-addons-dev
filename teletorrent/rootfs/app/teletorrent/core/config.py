@@ -43,7 +43,7 @@ def fail(msg):
     s6 one-shot сервис НЕ перезапускается,
     поэтому exit(1) = контейнер не поднимется
     """
-    log.error(msg)
+    log.red(msg)
     sys.exit(1)
 
 
@@ -144,7 +144,7 @@ def build_telegram(cfg):
 
     # если список пуст — не ошибка, предупреждение
     if not users:
-        log.warning("No authorized users configured")
+        log.yellow("No authorized users configured")
 
     return {
         "token": token,
@@ -228,12 +228,12 @@ def build_proxy(cfg):
 
     # проверка типа
     if not ptype or ptype not in ("socks", "http"):
-        log.warning("proxy enabled but invalid type → disabling")
+        log.yellow("proxy enabled but invalid type → disabling")
         return {"enabled": False, "url": None}
 
     # проверка host/port
     if not host or not port:
-        log.warning("proxy enabled but host/port missing → disabling")
+        log.yellow("proxy enabled but host/port missing → disabling")
         return {"enabled": False, "url": None}
 
     scheme = "socks5h" if ptype == "socks" else "http"
@@ -272,7 +272,7 @@ def main():
     Этот процесс выполняется ОДИН раз при старте контейнера
     """
 
-    log.info("Config init started")
+    log.green("Config init started...")
 
     # ------------------------------------------------------------------
     # 1. Загружаем сырой конфиг
@@ -320,7 +320,7 @@ def main():
     write_env("TT_LANG_FILE", LANG_FILE)
     write_env("TT_OFFSET_FILE", OFFSET_FILE)
 
-    log.info("Config init completed successfully")
+    log.green("Config init completed successfully")
 
     # ------------------------------------------------------------------
     # 6. Завершение

@@ -40,11 +40,11 @@ def main() -> int:
             data = json.loads(raw_payload)
 
             if not isinstance(data, dict):
-                log.debug("Payload must be JSON object")
+                log("Payload must be JSON object")
                 return 1
 
         except json.JSONDecodeError as exc:
-            log.debug(f"Invalid JSON payload: {exc}")
+            log(f"Invalid JSON payload: {exc}")
             return 1
     else:
         data = {}
