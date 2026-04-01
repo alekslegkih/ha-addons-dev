@@ -2,13 +2,14 @@ import os
 import json
 import sys
 
-from teletorrent.core.logger import setup_logger
+from teletorrent.core.logger import logger
 from teletorrent.core.loader import load_lang
 
 # ------------------------------------------------------------------------------
 # Logger
 # ------------------------------------------------------------------------------
-log = setup_logger("teletorrent.config")
+log = logger(__name__)
+
 
 # ------------------------------------------------------------------------------
 # Paths (все пути централизованы здесь)

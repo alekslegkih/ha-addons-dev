@@ -1,11 +1,11 @@
 import os
 
-from teletorrent.core.logger import setup_logger
+from teletorrent.core.logger import logger
 
 # ------------------------------------------------------------------------------
 # Logger
 # ------------------------------------------------------------------------------
-log = setup_logger(__name__)
+log = logger(__name__)
 
 
 # ------------------------------------------------------------------------------

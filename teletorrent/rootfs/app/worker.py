@@ -5,7 +5,7 @@ import requests
 
 import sys
 
-from teletorrent.core.logger import setup_logger
+from teletorrent.core.logger import logger
 from teletorrent.core.loader import load_lang_file
 
 from teletorrent.telegram import api
@@ -19,9 +19,7 @@ from teletorrent.ha.events import emit
 # ------------------------------------------------------------------------------
 # Logger
 # ------------------------------------------------------------------------------
-# log = setup_logger(__name__)
-if __name__ == "__main__":
-    log = setup_logger()
+log = logger(__name__)
 
 # ------------------------------------------------------------------------------
 # Main
@@ -36,17 +34,6 @@ def main():
     - инициализирует модули
     - запускает polling loop (getUpdates)
     """
-
-
-    # Проверяем, что sys.stdout.isatty() возвращает True
-    print(f"isatty: {sys.stdout.isatty()}")
-    print(f"Терминал: {sys.stdout}")
-
-    # Прямая печать ANSI
-    print("\033[92mЭто должно быть зеленым\033[0m")
-    print("\033[93mЭто должно быть желтым\033[0m")
-    print("\033[91mЭто должно быть красным\033[0m")
-
     # ------------------------------------------------------------------
     # 1. Загрузка config из ENV
     # ------------------------------------------------------------------
