@@ -89,7 +89,7 @@ def main():
         "watch_folder": cfg["transmission"].get("watch_folder", "/share/watch"),
     }
 
-    log.green("Worker started")
+    log.log("Worker started...")
 
     # ------------------------------------------------------------------
     # 7. Runtime состояние
@@ -202,7 +202,7 @@ def main():
         # Общие ошибки
         # --------------------------------------------------------------
         except Exception as e:
-            log.yellow(f"Worker error: {e}")
+            log.red(f"Worker error: {e}")
 
             error_count += 1
 
