@@ -274,6 +274,8 @@ def main():
     """
     ADDON_VERSION = os.environ.get("BUILD_VERSION", "dev")
 
+    logger.info(f"INIT BUILD_VERSION={os.environ.get('BUILD_VERSION')!r}")
+
     logger.blue("========================================")
     logger.green("=== TeleTorrent ===")
     logger.green(f"=== Version:  {ADDON_VERSION} ===")
