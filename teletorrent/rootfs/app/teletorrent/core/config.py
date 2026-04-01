@@ -1,6 +1,8 @@
 import os
 import json
 import sys
+import subprocess
+import json
 
 from teletorrent.core.logger import get_logger
 from teletorrent.core.loader import load_lang
@@ -255,6 +257,19 @@ def build_proxy(cfg):
 
 
 # ------------------------------------------------------------------------------
+# Bashino
+# ------------------------------------------------------------------------------
+def bashio(cmd):
+    try:
+        return subprocess.check_output(
+            ["bash", "-c", cmd],
+            stderr=subprocess.DEVNULL
+        ).decode().strip()
+    except Exception:
+        return None
+
+
+# ------------------------------------------------------------------------------
 # Main (entrypoint)
 # ------------------------------------------------------------------------------
 
@@ -272,12 +287,11 @@ def main():
     Важно:
     Этот процесс выполняется ОДИН раз при старте контейнера
     """
-    ADDON_VERSION = os.environ.get("BUILD_VERSION", "dev")
-
-    logger.log(f"INIT BUILD_VERSION={os.environ.get('BUILD_VERSION')!r}")
+    ADDON_VERSION = bashio("bashio::addon.version") or "dev"
+    ADDON_NAME = bashio("bashio::addon.name") or "TeleTorrent"
 
     logger.blue("========================================")
-    logger.green("=== TeleTorrent ===")
+    logger.green(f"=== {ADDON_NAME} ===")
     logger.green(f"=== Version:  {ADDON_VERSION} ===")
     logger.green(f"Starting at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     logger.blue("========================================")

@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/base:3.22
+ARG BUILD_FROM=ghcr.io/home-assistant/base-python:3.13-alpine3.23
 FROM ${BUILD_FROM}
 
 ARG BUILD_ARCH
@@ -16,16 +16,9 @@ LABEL \
 
 COPY rootfs /
 
-RUN apk add --no-cache \
-    python3 \
-    py3-pip \
-    ca-certificates \
-    && update-ca-certificates
+RUN apk add --no-cache ca-certificates && update-ca-certificates
 
-RUN python3 -m pip install --no-cache-dir \
-    --break-system-packages \
-    --root-user-action=ignore \
-    requests[socks]
+RUN pip3 install --no-cache-dir requests[socks]
 
 RUN chmod +x \
     /etc/s6-overlay/s6-rc.d/10-teletorrent/run \
