@@ -2,4 +2,4 @@
 
 
 
-exec env PYTHONPATH=/app python3 /app/worker.py
+exec  python3 /app/worker.py

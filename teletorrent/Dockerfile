@@ -10,14 +10,14 @@ ENV PYTHONUNBUFFERED=1 \
     BUILD_VERSION="${BUILD_VERSION}"
 
 LABEL \
-    io.hass.version="${BUILD_VERSION}" \
+    io.hass.version="${VERSION}" \
     io.hass.type="addon" \
     io.hass.arch="${BUILD_ARCH}" \
     org.opencontainers.image.version="${BUILD_VERSION}"
 
 COPY rootfs /
 
-RUN apk add --no-cache ca-certificates && update-ca-certificates
+RUN apk add --no-cache ca-certificates && update-ca-certificates mc
 
 RUN pip3 install --no-cache-dir requests[socks]
 
