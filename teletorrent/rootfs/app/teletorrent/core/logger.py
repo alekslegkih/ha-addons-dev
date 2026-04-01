@@ -42,13 +42,10 @@ LEVEL_COLORS = {
 DEBUG_FLAG = os.environ.get("DEBUG_FLAG")
 DEBUG_ENABLED = DEBUG_FLAG and os.path.exists(DEBUG_FLAG)
 
-# --- Detect color support ---
 def _supports_color():
     if os.environ.get("NO_COLOR"):
         return False
-    if os.environ.get("FORCE_COLOR"):
-        return True
-    return sys.stdout.isatty()
+    return True
 
 USE_COLOR = _supports_color()
 
@@ -82,27 +79,24 @@ class SimpleLogger:
     def __init__(self, name=None):
         self.name = name
 
-    def _fmt(self, msg):
-        return f"{self.name}: {msg}" if self.name else msg
-
     def debug(self, msg):
-        _log(DEBUG, self._fmt(msg))
+        _log(DEBUG, msg)
 
     def info(self, msg):
-        _log(INFO, self._fmt(msg))
+        _log(INFO, msg)
 
     def warning(self, msg):
-        _log(WARNING, self._fmt(msg))
+        _log(WARNING, msg)
 
     def error(self, msg):
-        _log(ERROR, self._fmt(msg))
+        _log(ERROR, msg)
 
     def critical(self, msg):
-        _log(CRITICAL, self._fmt(msg))
+        _log(CRITICAL, msg)
 
     def exception(self, msg):
         import traceback
-        _log(ERROR, self._fmt(msg))
+        _log(ERROR, msg)
         traceback.print_exc()
 
 
