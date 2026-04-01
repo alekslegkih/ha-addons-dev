@@ -74,8 +74,6 @@ def main():
         for u in raw_users
     }
 
-    log.info(f"CFG: {cfg}")
-
     if not users:
         log.warning("User list is empty — no one is authorized")
 

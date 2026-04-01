@@ -1,75 +1,115 @@
-import logging
+import os
 import sys
+from datetime import datetime
 
-# ANSI color codes
+# --- Levels ---
+CRITICAL = 50
+ERROR = 40
+WARNING = 30
+INFO = 20
+DEBUG = 10
+NOTSET = 0
+
+LEVEL_NAMES = {
+    DEBUG: "DEBUG",
+    INFO: "INFO",
+    WARNING: "WARNING",
+    ERROR: "ERROR",
+    CRITICAL: "CRITICAL",
+    NOTSET: "",
+}
+
+# --- Colors ---
 class Colors:
-    RESET = '\033[0m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    WHITE = '\033[97m'
-    BRIGHT_BLACK = '\033[90m'
+    RESET = "\033[0m"
+    GREEN = "\033[32m"
+    YELLOW = "\033[33m"
+    RED = "\033[31m"
+    MAGENTA = "\033[35m"
+    BRIGHT_BLACK = "\033[90m"
+    WHITE = "\033[97m"
 
-class ColoredFormatter(logging.Formatter):
-    LEVEL_COLORS = {
-        logging.DEBUG: Colors.BRIGHT_BLACK,
-        logging.INFO: Colors.GREEN,
-        logging.WARNING: Colors.YELLOW,
-        logging.ERROR: Colors.RED,
-        logging.CRITICAL: Colors.RED,
-    }
+LEVEL_COLORS = {
+    DEBUG: Colors.BRIGHT_BLACK,
+    INFO: Colors.GREEN,
+    WARNING: Colors.YELLOW,
+    ERROR: Colors.MAGENTA,
+    CRITICAL: Colors.RED,
+    NOTSET: Colors.WHITE,
+}
 
-    def format(self, record):
-        # Форматируем время
-        timestamp = self.formatTime(record, self.datefmt)
-        levelname = record.levelname
+# --- Debug flag ---
+DEBUG_FLAG = os.environ.get("DEBUG_FLAG")
+DEBUG_ENABLED = DEBUG_FLAG and os.path.exists(DEBUG_FLAG)
 
-        # Цветное сообщение
-        color = self.LEVEL_COLORS.get(record.levelno, Colors.WHITE)
-        colored_message = f"{color}{record.getMessage()}{Colors.RESET}"
+# --- Detect color support ---
+def _supports_color():
+    if os.environ.get("NO_COLOR"):
+        return False
+    if os.environ.get("FORCE_COLOR"):
+        return True
+    return sys.stdout.isatty()
 
-        # Формат: [HH:MM:SS] LEVEL: colored_message
-        return f"[{timestamp}] {levelname}: {colored_message}"
+USE_COLOR = _supports_color()
 
-def setup_logger(name=None, level=logging.INFO):
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
 
-    # Очищаем старые handlers если есть
-    logger.handlers.clear()
+def _timestamp():
+    return datetime.now().strftime("%H:%M:%S")
 
-    # Создаем handler для вывода в консоль
-    handler = logging.StreamHandler(sys.stdout)
-    handler.setLevel(level)
 
-    # Настраиваем форматтер
-    formatter = ColoredFormatter(datefmt='%H:%M:%S')
-    handler.setFormatter(formatter)
+def _log(level, msg):
+    if level == DEBUG and not DEBUG_ENABLED:
+        return
 
-    logger.addHandler(handler)
-    return logger
+    ts = _timestamp()
 
-# ------------------------------------------------------------------------------
-# Public API
-# ------------------------------------------------------------------------------
+    if not USE_COLOR:
+        level_name = LEVEL_NAMES.get(level, "")
+        if level_name:
+            base = f"[{ts}] {level_name}: {msg}"
+        else:
+            base = f"[{ts}] {msg}"
+        print(base, flush=True)
+        return
 
-_initialized = False
+    color = LEVEL_COLORS.get(level, Colors.WHITE)
+    base = f"[{ts}] {msg}"
+    print(f"{color}{base}{Colors.RESET}", flush=True)
 
-def get_logger(name=None, level=logging.INFO):
-    """
-    Возвращает logger.
 
-    Первый вызов:
-    - настраивает логгер через setup_logger()
+# --- Logger class (совместим с logging API) ---
+class SimpleLogger:
+    def __init__(self, name=None):
+        self.name = name
 
-    Дальше:
-    - просто возвращает logging.getLogger(name)
-    """
+    def _fmt(self, msg):
+        return f"{self.name}: {msg}" if self.name else msg
 
-    global _initialized
+    def debug(self, msg):
+        _log(DEBUG, self._fmt(msg))
 
-    if not _initialized:
-        setup_logger(level=level)
-        _initialized = True
+    def info(self, msg):
+        _log(INFO, self._fmt(msg))
 
-    return logging.getLogger(name)
+    def warning(self, msg):
+        _log(WARNING, self._fmt(msg))
+
+    def error(self, msg):
+        _log(ERROR, self._fmt(msg))
+
+    def critical(self, msg):
+        _log(CRITICAL, self._fmt(msg))
+
+    def exception(self, msg):
+        import traceback
+        _log(ERROR, self._fmt(msg))
+        traceback.print_exc()
+
+
+# --- Public API ---
+_loggers = {}
+
+def get_logger(name=None):
+    if name not in _loggers:
+        _loggers[name] = SimpleLogger(name)
+    return _loggers[name]
