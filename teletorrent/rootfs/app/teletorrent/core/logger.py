@@ -7,7 +7,6 @@ class Colors:
     GREEN = '\033[92m'
     YELLOW = '\033[93m'
     RED = '\033[91m'
-    WHITE = '\033[97m'
     BRIGHT_BLACK = '\033[90m'
 
 class ColoredFormatter(logging.Formatter):
@@ -20,32 +19,22 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def format(self, record):
-        # Форматируем время
         timestamp = self.formatTime(record, self.datefmt)
         levelname = record.levelname
+        message = record.getMessage()
 
-        # Цветное сообщение
-        color = self.LEVEL_COLORS.get(record.levelno, Colors.WHITE)
-        colored_message = f"{color}{record.getMessage()}{Colors.RESET}"
+        color = self.LEVEL_COLORS.get(record.levelno, Colors.RESET)
 
-        # Формат: [HH:MM:SS] LEVEL: colored_message
-        return f"[{timestamp}] {levelname}: {colored_message}"
+        return f"[{timestamp}] {levelname}: {color}{message}{Colors.RESET}"
 
 def setup_logger(name=None, level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)
-
-    # Очищаем старые handlers если есть
     logger.handlers.clear()
 
-    # Создаем handler для вывода в консоль
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(level)
-
-    # Настраиваем форматтер
-    formatter = ColoredFormatter(datefmt='%H:%M:%S')
-    handler.setFormatter(formatter)
+    handler.setFormatter(ColoredFormatter(datefmt='%H:%M:%S'))
 
     logger.addHandler(handler)
     return logger
-
