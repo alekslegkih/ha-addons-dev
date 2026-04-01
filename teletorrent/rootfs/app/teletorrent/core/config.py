@@ -8,7 +8,7 @@ from teletorrent.core.loader import load_lang
 # ------------------------------------------------------------------------------
 # Logger_
 # ------------------------------------------------------------------------------
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 # ------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ def fail(msg):
     s6 one-shot сервис НЕ перезапускается,
     поэтому exit(1) = контейнер не поднимется
     """
-    log.red(msg)
+    loger.red(msg)
     sys.exit(1)
 
 
@@ -144,7 +144,7 @@ def build_telegram(cfg):
 
     # если список пуст — не ошибка, предупреждение
     if not users:
-        log.yellow("No authorized users configured")
+        loger.yellow("No authorized users configured")
 
     return {
         "token": token,
@@ -228,12 +228,12 @@ def build_proxy(cfg):
 
     # проверка типа
     if not ptype or ptype not in ("socks", "http"):
-        log.yellow("proxy enabled but invalid type → disabling")
+        loger.yellow("proxy enabled but invalid type → disabling")
         return {"enabled": False, "url": None}
 
     # проверка host/port
     if not host or not port:
-        log.yellow("proxy enabled but host/port missing → disabling")
+        loger.yellow("proxy enabled but host/port missing → disabling")
         return {"enabled": False, "url": None}
 
     scheme = "socks5h" if ptype == "socks" else "http"
@@ -272,7 +272,7 @@ def main():
     Этот процесс выполняется ОДИН раз при старте контейнера
     """
 
-    log.log("Config init started...")
+    loger.log("Config init started...")
 
     # ------------------------------------------------------------------
     # 1. Загружаем сырой конфиг
@@ -320,7 +320,7 @@ def main():
     write_env("TT_LANG_FILE", LANG_FILE)
     write_env("TT_OFFSET_FILE", OFFSET_FILE)
 
-    log.green("Config init completed successfully")
+    loger.green("Config init completed successfully")
 
     # ------------------------------------------------------------------
     # 6. Завершение

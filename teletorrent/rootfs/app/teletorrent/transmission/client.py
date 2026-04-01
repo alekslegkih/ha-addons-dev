@@ -8,7 +8,7 @@ from teletorrent.core.logger import get_logger
 # ------------------------------------------------------------------------------
 # Logger_
 # ------------------------------------------------------------------------------
-log = get_logger(__name__)
+logger = get_logger(__name__)
 
 
 # ------------------------------------------------------------------------------
@@ -51,7 +51,7 @@ def init(config):
 
     _session_id = None
 
-    log.green(f"Transmission client initialized: {_url}")
+    loger.log(f"Transmission client initialized: {_url}")
 
 
 # ------------------------------------------------------------------------------
@@ -203,15 +203,15 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
                     return status
 
             # если не нашли — retry
-            log.yellow("Torrent not found after add, retrying...")
+            loger.yellow("Torrent not found after add, retrying...")
 
         except Exception as e:
             if attempt == max_retries:
-                log.yellow(f"Transmission add failed: {e}")
+                loger.yellow(f"Transmission add failed: {e}")
                 return "error"
 
             delay = 1 + attempt
-            log.yellow(f"Transmission error (attempt {attempt+1}): {e}, retry in {delay}s")
+            loger.yellow(f"Transmission error (attempt {attempt+1}): {e}, retry in {delay}s")
             time.sleep(delay)
 
     return "error"
