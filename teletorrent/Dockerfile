@@ -8,7 +8,7 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
     S6_VERBOSITY=1
 LABEL \
-    io.hass.version="${VERSION}" \
+    io.hass.version="${BUILD_VERSION}" \
     io.hass.type="addon" \
     io.hass.arch="${BUILD_ARCH}" \
     org.opencontainers.image.version="${BUILD_VERSION}"
