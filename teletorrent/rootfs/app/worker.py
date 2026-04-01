@@ -40,7 +40,7 @@ def main():
     try:
         cfg = json.loads(os.environ["TT_CONFIG_JSON"])
     except Exception as e:
-        loger.red(f"Failed to load config from ENV: {e}")
+        logger.red(f"Failed to load config from ENV: {e}")
         exit(1)
 
     # ------------------------------------------------------------------
@@ -50,7 +50,7 @@ def main():
         lang_path = os.environ["TT_LANG_FILE"]
         lang = load_lang_file(lang_path)
     except Exception as e:
-        loger.red(f"Failed to load lang file: {e}")
+        logger.red(f"Failed to load lang file: {e}")
         exit(1)
 
     # ------------------------------------------------------------------
@@ -75,7 +75,7 @@ def main():
     }
 
     if not users:
-        loger.yellow("User list is empty — no one is authorized")
+        logger.yellow("User list is empty — no one is authorized")
 
     # ------------------------------------------------------------------
     # 6. Сборка ctx (контекст для handlers)
@@ -89,7 +89,7 @@ def main():
         "watch_folder": cfg["transmission"].get("watch_folder", "/share/watch"),
     }
 
-    loger.log("Worker started...")
+    logger.log("Worker started...")
 
     # ------------------------------------------------------------------
     # 7. Runtime состояние
@@ -156,7 +156,7 @@ def main():
                             ctx["lang"]["global"]["no_access"]
                         )
                     else:
-                        loger.yellow(f"Unauthorized user: {user_id}")
+                        logger.yellow(f"Unauthorized user: {user_id}")
                     continue
 
                 user_name = users.get(user_id, str(user_id))
@@ -176,7 +176,7 @@ def main():
                             )
 
                 except Exception as e:
-                    loger.yellow(f"Handler error: {e}")
+                    logger.yellow(f"Handler error: {e}")
                     time.sleep(1)
 
             # ----------------------------------------------------------
@@ -202,17 +202,17 @@ def main():
         # Общие ошибки
         # --------------------------------------------------------------
         except Exception as e:
-            loger.red(f"Worker error: {e}")
+            logger.red(f"Worker error: {e}")
 
             error_count += 1
 
             sleep_time = min(error_count, 10)
-            loger.yellow(f"Backoff sleep: {sleep_time}s")
+            logger.yellow(f"Backoff sleep: {sleep_time}s")
 
             time.sleep(sleep_time)
 
             if error_count >= 10:
-                loger.red("Too many errors, exiting")
+                logger.red("Too many errors, exiting")
                 exit(1)
 
 

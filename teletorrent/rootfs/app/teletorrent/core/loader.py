@@ -179,7 +179,7 @@ def load_lang():
         with open(LANG_FILE, "w", encoding="utf-8") as f:
             f.write(DEFAULT_LANG)
 
-        loger.log("Created default message.lang")
+        logger.log("Created default message.lang")
 
     # ------------------------------------------------------------------
     # 2. Проверка и валидация
@@ -188,26 +188,26 @@ def load_lang():
         data = load_lang_file(LANG_FILE)
         validate_lang(data)
 
-        loger.green("Language validated successfully")
+        logger.green("Language validated successfully")
         return data
 
     # ------------------------------------------------------------------
     # 3. Авто-ремонт (если файл сломан)
     # ------------------------------------------------------------------
     except Exception as e:
-        loger.red(f"Language validation failed: {e}")
+        logger.red(f"Language validation failed: {e}")
 
         # сохраняем сломанный файл (не теряем пользовательские правки)
         err_file = LANG_FILE + ".err"
         os.replace(LANG_FILE, err_file)
 
-        loger.yellow(f"Broken lang file renamed to {err_file}")
+        logger.yellow(f"Broken lang file renamed to {err_file}")
 
         # создаём новый дефолтный файл
         with open(LANG_FILE, "w", encoding="utf-8") as f:
             f.write(DEFAULT_LANG)
 
-        loger.yellow("New default message.lang created")
+        logger.yellow("New default message.lang created")
 
         # возвращаем уже гарантированно валидный файл
         return load_lang_file(LANG_FILE)

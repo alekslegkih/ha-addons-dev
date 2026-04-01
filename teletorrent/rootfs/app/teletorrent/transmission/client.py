@@ -51,7 +51,7 @@ def init(config):
 
     _session_id = None
 
-    loger.log(f"Transmission client initialized: {_url}")
+    logger.log(f"Transmission client initialized: {_url}")
 
 
 # ------------------------------------------------------------------------------
@@ -203,15 +203,15 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
                     return status
 
             # если не нашли — retry
-            loger.yellow("Torrent not found after add, retrying...")
+            logger.yellow("Torrent not found after add, retrying...")
 
         except Exception as e:
             if attempt == max_retries:
-                loger.yellow(f"Transmission add failed: {e}")
+                logger.yellow(f"Transmission add failed: {e}")
                 return "error"
 
             delay = 1 + attempt
-            loger.yellow(f"Transmission error (attempt {attempt+1}): {e}, retry in {delay}s")
+            logger.yellow(f"Transmission error (attempt {attempt+1}): {e}, retry in {delay}s")
             time.sleep(delay)
 
     return "error"

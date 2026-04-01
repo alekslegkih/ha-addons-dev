@@ -52,13 +52,13 @@ def init(config):
             "https": proxy_cfg["url"],
         }
 
-        loger.log(f"Proxy enabled: {_mask_proxy(proxy_cfg['url'])}")
+        logger.log(f"Proxy enabled: {_mask_proxy(proxy_cfg['url'])}")
 
     # сбрасываем лимиты
     _last_send_time = 0.0
     _user_last_send = {}
 
-    loger.green("Telegram API initialized")
+    logger.green("Telegram API initialized")
 
 def _mask_proxy(url):
     """
@@ -195,14 +195,14 @@ def send_message(chat_id, text, max_retries=2):
         except Exception as e:
             # если это последняя попытка — логируем и выходим
             if attempt == max_retries:
-                loger.yellow(f"send_message failed after retries: {e}")
+                logger.yellow(f"send_message failed after retries: {e}")
                 return False
 
             # --------------------------------------------------------------
             # retry с задержкой
             # --------------------------------------------------------------
             delay = 0.5 * (attempt + 1)
-            loger.yellow(f"send_message error (attempt {attempt+1}): {e}, retry in {delay}s")
+            logger.yellow(f"send_message error (attempt {attempt+1}): {e}, retry in {delay}s")
 
             time.sleep(delay)
 
