@@ -1,4 +1,9 @@
-#!/usr/bin/with-contenv sh
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
 
 cd /app
+
+export ADDON_VERSION="$(bashio::addon.version)"
+export ADDON_NAME="$(bashio::addon.name)"
+
 python3 -m teletorrent.core.config

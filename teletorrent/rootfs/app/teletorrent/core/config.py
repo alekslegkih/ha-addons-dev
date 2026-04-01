@@ -287,8 +287,9 @@ def main():
     Важно:
     Этот процесс выполняется ОДИН раз при старте контейнера
     """
-    ADDON_VERSION = bashio("bashio::addon.version") or "dev"
-    ADDON_NAME = bashio("bashio::addon.name") or "name"
+
+    ADDON_NAME = os.getenv("ADDON_NAME", "unknown")
+    ADDON_VERSION = os.getenv("ADDON_VERSION", "unknown")
 
     logger.blue("========================================")
     logger.green(f"=== {ADDON_NAME} ===")
