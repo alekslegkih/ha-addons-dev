@@ -9,7 +9,7 @@ from teletorrent.core.loader import load_lang
 # Logger
 # ------------------------------------------------------------------------------
 # Единый логгер проекта
-log = get_logger("teletorrent.config")
+log = setup_logger("teletorrent.config")
 
 # ------------------------------------------------------------------------------
 # Paths (все пути централизованы здесь)

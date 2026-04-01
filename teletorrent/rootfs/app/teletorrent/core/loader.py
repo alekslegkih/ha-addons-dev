@@ -1,12 +1,12 @@
 import os
 
-from teletorrent.core.logger import get_logger
+from teletorrent.core.logger import setup_logger
 
 # ------------------------------------------------------------------------------
 # Logger
 # ------------------------------------------------------------------------------
 # Единый логгер проекта
-log = get_logger(__name__)
+log = setup_logger(__name__)
 
 
 # ------------------------------------------------------------------------------

@@ -49,11 +49,3 @@ def setup_logger(name=None, level=logging.INFO):
     logger.addHandler(handler)
     return logger
 
-# Использование
-if __name__ == "__main__":
-    log = setup_logger()
-
-    log.info("Worker starting")
-    log.warning("Something suspicious")
-    log.error("Something went wrong")
-    log.debug("Debug message")
