@@ -6,9 +6,7 @@ ARG BUILD_VERSION
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    S6_VERBOSITY=1 \
-    BUILD_VERSION="${BUILD_VERSION}"
-
+    S6_VERBOSITY=1 
 LABEL \
     io.hass.version="${VERSION}" \
     io.hass.type="addon" \
