@@ -1,12 +1,3 @@
-#!/usr/bin/with-contenv bashio
-# shellcheck shell=bash
-
-cd /app
-
-ADDON_VERSION="$(bashio::addon.version)"
-ADDON_NAME="$(bashio::addon.name)"
-
-export ADDON_VERSION
-export ADDON_NAME
-
-python3 -m teletorrent.core.config
+#!/usr/bin/execlineb -P
+with-contenv
+bash /etc/s6-overlay/s6-rc.d/00-init/up.sh
