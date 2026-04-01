@@ -69,6 +69,8 @@ def main():
     # ------------------------------------------------------------------
     raw_users = cfg.get("user_ids", [])
 
+    log.info(f"CFG: {cfg}")
+    
     users = {}
 
     for u in raw_users:

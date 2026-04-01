@@ -53,7 +53,7 @@ def init(config):
             "https": proxy_cfg["url"],
         }
 
-        log.info(f"Proxy enabled: {proxy_cfg['url']}")
+        log.info(f"Proxy enabled: {_mask_proxy(proxy_cfg['url'])}")
 
     # сбрасываем лимиты
     _last_send_time = 0.0
@@ -61,7 +61,24 @@ def init(config):
 
     log.info("Telegram API initialized")
 
+def _mask_proxy(url):
+    """
+    Маскирует пароль в proxy URL:
+    socks5h://user:pass@host → socks5h://user:***@host
+    """
+    try:
+        if "@" not in url:
+            return url
 
+        creds, rest = url.split("@", 1)
+
+        if ":" in creds:
+            scheme_and_user, _ = creds.rsplit(":", 1)
+            return f"{scheme_and_user}:***@{rest}"
+
+        return url
+    except Exception:
+        return url
 # ------------------------------------------------------------------------------
 # Low-level API
 # ------------------------------------------------------------------------------
