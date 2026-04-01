@@ -3,7 +3,10 @@
 
 cd /app
 
-export ADDON_VERSION="$(bashio::addon.version)"
-export ADDON_NAME="$(bashio::addon.name)"
+ADDON_VERSION="$(bashio::addon.version)"
+ADDON_NAME="$(bashio::addon.name)"
+
+export ADDON_VERSION
+export ADDON_NAME
 
 python3 -m teletorrent.core.config
