@@ -4,6 +4,7 @@ import sys
 
 from teletorrent.core.logger import get_logger
 from teletorrent.core.loader import load_lang
+from datetime import datetime
 
 # ------------------------------------------------------------------------------
 # Logger_
@@ -271,6 +272,13 @@ def main():
     Важно:
     Этот процесс выполняется ОДИН раз при старте контейнера
     """
+    ADDON_VERSION = os.environ.get("BUILD_VERSION", "dev")
+
+    logger.blue("========================================")
+    logger.green("=== TeleTorrent ===")
+    logger.green(f"=== Version:  {ADDON_VERSION} ===")
+    logger.green(f"Starting at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.blue("========================================")
 
     logger.log("Config init started...")
 
