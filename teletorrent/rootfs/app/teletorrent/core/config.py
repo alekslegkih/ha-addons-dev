@@ -288,7 +288,7 @@ def main():
     Этот процесс выполняется ОДИН раз при старте контейнера
     """
     ADDON_VERSION = bashio("bashio::addon.version") or "dev"
-    ADDON_NAME = bashio("bashio::addon.name") or "TeleTorrent"
+    ADDON_NAME = bashio("bashio::addon.name") or "name"
 
     logger.blue("========================================")
     logger.green(f"=== {ADDON_NAME} ===")
