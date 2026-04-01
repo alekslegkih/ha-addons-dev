@@ -3,6 +3,8 @@ import json
 import time
 import requests
 
+import sys
+
 from teletorrent.core.logger import setup_logger
 from teletorrent.core.loader import load_lang_file
 
@@ -35,7 +37,6 @@ def main():
     - запускает polling loop (getUpdates)
     """
 
-import sys
 
     # Проверяем, что sys.stdout.isatty() возвращает True
     print(f"isatty: {sys.stdout.isatty()}")
