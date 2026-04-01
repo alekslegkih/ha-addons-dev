@@ -1,7 +1,10 @@
 import logging
 import sys
+import os
 
-# ANSI color codes
+# Принудительно включаем цвета для Python
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 class Colors:
     RESET = '\033[0m'
     GREEN = '\033[92m'
@@ -19,19 +22,27 @@ class ColoredFormatter(logging.Formatter):
     }
 
     def format(self, record):
+        # Принудительно получаем сообщение
+        msg = record.getMessage()
+
+        # Форматируем без лишних проверок
         timestamp = self.formatTime(record, self.datefmt)
-        levelname = record.levelname
-        message = record.getMessage()
+        color = self.LEVEL_COLORS.get(record.levelno, '')
 
-        color = self.LEVEL_COLORS.get(record.levelno, Colors.RESET)
+        # Собираем строку с ANSI кодами напрямую
+        if color:
+            result = f"[{timestamp}] {record.levelname}: {color}{msg}{Colors.RESET}"
+        else:
+            result = f"[{timestamp}] {record.levelname}: {msg}"
 
-        return f"[{timestamp}] {levelname}: {color}{message}{Colors.RESET}"
+        return result
 
 def setup_logger(name=None, level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)
     logger.handlers.clear()
 
+    # Используем unbuffered вывод
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(level)
     handler.setFormatter(ColoredFormatter(datefmt='%H:%M:%S'))
