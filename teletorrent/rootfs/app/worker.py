@@ -67,7 +67,12 @@ def main():
     # ------------------------------------------------------------------
     # 5. Подготовка пользователей
     # ------------------------------------------------------------------
-    users = cfg.get("telegram", {}).get("users", {})
+    raw_users = cfg.get("telegram", {}).get("users", [])
+
+    users = {
+        u["id"]: u["name"]
+        for u in raw_users
+    }
 
     log.info(f"CFG: {cfg}")
 

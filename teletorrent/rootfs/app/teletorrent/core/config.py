@@ -123,24 +123,24 @@ def build_telegram(cfg):
 
     raw_users = cfg.get("user_ids", [])
 
-    users = {}
+    users = []
 
     for u in raw_users:
-        # пропускаем мусор
         if not isinstance(u, dict):
             continue
 
         uid = u.get("u_id")
         name = u.get("u_name", str(uid))
 
-        # приводим id к int (валидация)
         try:
             uid = int(uid)
         except (TypeError, ValueError):
             continue
 
-        # в JSON ключи строки → это нормально
-        users[uid] = name
+        users.append({
+            "id": uid,
+            "name": name
+        })
 
     # если список пуст — не ошибка, предупреждение
     if not users:
