@@ -1,4 +1,4 @@
-ARG BUILD_FROM=ghcr.io/home-assistant/base-python:3.13-alpine3.23
+ARG BUILD_FROM=ghcr.io/home-assistant/base:3.22
 FROM ${BUILD_FROM}
 
 ARG BUILD_ARCH
@@ -6,7 +6,6 @@ ARG BUILD_VERSION
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    BUILD_VERSION=$BUILD_VERSION \
     S6_VERBOSITY=1
 
 LABEL \
@@ -17,7 +16,11 @@ LABEL \
 
 COPY rootfs /
 
-RUN apk add --no-cache ca-certificates && update-ca-certificates
+RUN apk add --no-cache \
+    python3 \
+    py3-pip \
+    ca-certificates \
+    && update-ca-certificates
 
 RUN pip3 install --no-cache-dir requests[socks]
 
