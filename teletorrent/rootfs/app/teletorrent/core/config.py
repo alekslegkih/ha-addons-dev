@@ -140,7 +140,7 @@ def build_telegram(cfg):
             continue
 
         # в JSON ключи строки → это нормально
-        users[str(uid)] = name
+        users[uid] = name
 
     # если список пуст — не ошибка, предупреждение
     if not users:

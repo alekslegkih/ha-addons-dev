@@ -67,25 +67,9 @@ def main():
     # ------------------------------------------------------------------
     # 5. Подготовка пользователей
     # ------------------------------------------------------------------
-    raw_users = cfg.get("user_ids", [])
+    users = cfg.get("users", [])
 
     log.info(f"CFG: {cfg}")
-    
-    users = {}
-
-    for u in raw_users:
-        if not isinstance(u, dict):
-            continue
-
-        uid = u.get("u_id")
-        name = u.get("u_name", str(uid))
-
-        try:
-            uid = int(uid)
-        except (TypeError, ValueError):
-            continue
-
-        users[uid] = name
 
     if not users:
         log.warning("User list is empty — no one is authorized")
