@@ -3,12 +3,12 @@ import base64
 import re
 import requests
 
-from teletorrent.core.logger import logger
+from teletorrent.core.logger import get_logger
 
 # ------------------------------------------------------------------------------
-# Logger
+# Logger_
 # ------------------------------------------------------------------------------
-log = logger(__name__)
+log = get_logger(__name__)
 
 
 # ------------------------------------------------------------------------------

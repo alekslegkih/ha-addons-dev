@@ -2,13 +2,13 @@ import os
 import json
 import sys
 
-from teletorrent.core.logger import logger
+from teletorrent.core.logger import get_logger
 from teletorrent.core.loader import load_lang
 
 # ------------------------------------------------------------------------------
-# Logger
+# Logger_
 # ------------------------------------------------------------------------------
-log = logger(__name__)
+log = get_logger(__name__)
 
 
 # ------------------------------------------------------------------------------
