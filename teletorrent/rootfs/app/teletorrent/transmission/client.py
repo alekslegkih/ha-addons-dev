@@ -5,38 +5,29 @@ import requests
 
 from teletorrent.core.logger import get_logger
 
-# ------------------------------------------------------------------------------
-# Logger_
-# ------------------------------------------------------------------------------
 logger = get_logger(__name__)
 
 
 # ------------------------------------------------------------------------------
-# Internal state (инициализируется через init)
+# Internal state
 # ------------------------------------------------------------------------------
 
 _session = None
 _url = None
 _auth = None
 
-# Transmission требует session id (обновляется динамически)
+# Transmission требует session id
 _session_id = None
 
 
 # ------------------------------------------------------------------------------
-# Init
+# Инициализация
 # ------------------------------------------------------------------------------
 def init(config):
-    """
-    Инициализация клиента Transmission.
-
-    Должна вызываться один раз при старте worker.
-
-    Делает:
-    - сохраняет URL
-    - сохраняет auth (или None)
-    - создаёт requests.Session
-    """
+    # Инициализация клиента Transmission.
+    # - сохраняет URL
+    # - сохраняет auth (или None)
+    # - создаёт requests.Session
 
     global _session, _url, _auth, _session_id
 
@@ -55,16 +46,10 @@ def init(config):
 
 
 # ------------------------------------------------------------------------------
-# Internal request helper
+# Cлужба внутренних запросов
 # ------------------------------------------------------------------------------
 def _rpc_call(payload, timeout=10):
-    """
-    Выполняет RPC запрос к Transmission.
-
-    Обрабатывает:
-    - session_id (ошибка 409)
-    - повтор запроса при обновлении session_id
-    """
+    # Выполняет RPC запрос к Transmission.
 
     global _session_id
 
@@ -94,15 +79,11 @@ def _rpc_call(payload, timeout=10):
 
 
 # ------------------------------------------------------------------------------
-# Public API: list torrents
+# Публичный API: список торрентов
 # ------------------------------------------------------------------------------
 def list_full():
-    """
-    Получает список всех торрентов.
-
-    Используется для проверки:
-    действительно ли торрент добавился.
-    """
+    # Получает список всех торрентов.
+    # Используется для проверки действительно ли торрент добавился.
 
     payload = {
         "method": "torrent-get",
@@ -117,30 +98,19 @@ def list_full():
 
 
 # ------------------------------------------------------------------------------
-# Public API: add torrent / magnet
+# Публичный API: ДОбавляем torrent / magnet ссылку
 # ------------------------------------------------------------------------------
 def add(magnet=None, torrent_bytes=None, max_retries=2):
-    """
-    Добавляет torrent или magnet в Transmission.
-
-    Возвращает:
-        "success"
-        "duplicate"
-        "error"
-
-    Делает:
-    - формирует payload
-    - отправляет RPC
-    - проверяет результат через list_full()
-    - делает retry при необходимости
-    """
+    # Добавляет torrent или magnet в Transmission.
+    # Возвращает:
+    # - success
+    # - duplicate
+    # - error
 
     if not magnet and not torrent_bytes:
         raise ValueError("magnet or torrent_bytes required")
 
-    # ------------------------------------------------------------------
     # Определяем hash (для проверки magnet)
-    # ------------------------------------------------------------------
     torrent_hash = None
 
     if magnet:
@@ -148,9 +118,7 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
         if m:
             torrent_hash = m.group(1).lower()
 
-    # ------------------------------------------------------------------
-    # Функция сборки payload
-    # ------------------------------------------------------------------
+    # Собираем payload
     def build_payload():
         if magnet:
             return {
@@ -167,9 +135,7 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
                 }
             }
 
-    # ------------------------------------------------------------------
     # Основной цикл retry
-    # ------------------------------------------------------------------
     for attempt in range(max_retries + 1):
         try:
             payload = build_payload()
@@ -185,9 +151,7 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
             else:
                 raise RuntimeError("Unknown transmission response")
 
-            # ------------------------------------------------------------------
-            # Проверка: реально ли добавился
-            # ------------------------------------------------------------------
+            # Проверяем: реально ли добавился
             time.sleep(1)
 
             torrents = list_full()

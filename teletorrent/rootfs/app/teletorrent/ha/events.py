@@ -4,7 +4,7 @@ import urllib.request
 import logging
 
 # ------------------------------------------------------------------
-# Constants
+# Константы
 # ------------------------------------------------------------------
 
 DOMAIN = "teletorrent"
@@ -21,7 +21,7 @@ _ENABLED = bool(_TOKEN)
 _logger = logging.getLogger("teletorrent.events")
 
 # ------------------------------------------------------------------
-# Internal helpers
+# Helpers
 # ------------------------------------------------------------------
 
 def _build_event_name(name: str) -> str:
@@ -45,7 +45,7 @@ def _post(event_type: str, payload: dict) -> None:
     urllib.request.urlopen(req, timeout=TIMEOUT).close()
 
 # ------------------------------------------------------------------
-# Public API
+# Публичное API
 # ------------------------------------------------------------------
 
 def emit(name: str, data: dict | None = None) -> None:

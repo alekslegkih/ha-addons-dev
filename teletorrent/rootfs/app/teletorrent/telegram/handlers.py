@@ -13,12 +13,10 @@ def t(lang, section, key, **kwargs):
 
 
 # ------------------------------------------------------------------------------
-# Text handler
+# Обработчик текста
 # ------------------------------------------------------------------------------
 def handle_text(ctx, msg, user_name):
-    """
-    Обработка текстовых сообщений.
-    """
+    # Обработка текстовых сообщений.
 
     send = ctx["send"]
     transmission = ctx["transmission"]
@@ -28,16 +26,12 @@ def handle_text(ctx, msg, user_name):
     chat_id = msg["chat"]["id"]
     text = msg.get("text", "").strip()
 
-    # ------------------------------------------------------------------
     # /start и /help
-    # ------------------------------------------------------------------
     if text in ("/start", "/help"):
         send(chat_id, t(lang, "start", "text"))
         return True
 
-    # ------------------------------------------------------------------
     # magnet
-    # ------------------------------------------------------------------
     if not text.startswith("magnet:?xt=urn:btih:"):
         return False
 
@@ -62,12 +56,10 @@ def handle_text(ctx, msg, user_name):
 
 
 # ------------------------------------------------------------------------------
-# Document handler
+# Обработчик torrent
 # ------------------------------------------------------------------------------
 def handle_document(ctx, msg, user_name):
-    """
-    Обработка .torrent файлов.
-    """
+    # Обработка .torrent файлов.
 
     send = ctx["send"]
     transmission = ctx["transmission"]
@@ -81,9 +73,7 @@ def handle_document(ctx, msg, user_name):
     doc = msg["document"]
     filename = doc.get("file_name", "")
 
-    # ------------------------------------------------------------------
     # Проверка расширения
-    # ------------------------------------------------------------------
     if not filename.endswith(".torrent"):
         send(chat_id, t(lang, "errors", "invalid_file", user=user_name))
 
@@ -98,18 +88,14 @@ def handle_document(ctx, msg, user_name):
 
     file_id = doc["file_id"]
 
-    # ------------------------------------------------------------------
     # Скачивание файла через API слой
-    # ------------------------------------------------------------------
     try:
         file_data = download_file(file_id)
     except Exception:
         send(chat_id, t(lang, "errors", "download_failed", user=user_name))
         return
 
-    # ------------------------------------------------------------------
     # Передача в transmission
-    # ------------------------------------------------------------------
     result = transmission(torrent_bytes=file_data)
 
     status_map = {
@@ -128,9 +114,7 @@ def handle_document(ctx, msg, user_name):
         "user_name": user_name
     })
 
-    # ------------------------------------------------------------------
     # Fallback (если transmission не принял)
-    # ------------------------------------------------------------------
     if result == "error":
         try:
             os.makedirs(watch_folder, exist_ok=True)
