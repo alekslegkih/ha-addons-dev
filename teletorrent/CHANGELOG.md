@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.2
+
+- Fix: minor fixes
+
 ## v3.1
 
 - Add: Logging of added torrents (name, status)
