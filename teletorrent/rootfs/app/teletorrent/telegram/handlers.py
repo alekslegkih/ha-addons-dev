@@ -5,9 +5,8 @@ import os
 # ------------------------------------------------------------------------------
 
 def t(lang, section, key, **kwargs):
-    """
-    Удобный доступ к lang.
-    """
+    # Доступ к lang.
+
     text = lang.get(section, {}).get(key, key)
     return text.format(**kwargs)
 

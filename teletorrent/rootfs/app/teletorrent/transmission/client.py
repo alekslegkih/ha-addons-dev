@@ -138,18 +138,30 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
     # Основной цикл retry
     for attempt in range(max_retries + 1):
         try:
+            if attempt == 0:
+                if magnet:
+                    logger.log(f"Add magnet: {magnet[:60]}...")
+                else:
+                    logger.log(f"Add torrent file ({len(torrent_bytes)} bytes)")
+
             payload = build_payload()
 
             data = _rpc_call(payload)
 
             result = data.get("arguments", {})
 
+            torrent_info = None
+
             if "torrent-added" in result:
                 status = "success"
+                torrent_info = result["torrent-added"]
             elif "torrent-duplicate" in result:
                 status = "duplicate"
+                torrent_info = result["torrent-duplicate"]
             else:
                 raise RuntimeError("Unknown transmission response")
+
+            torrent_name = torrent_info.get("name", "unknown")
 
             # Проверяем: реально ли добавился
             time.sleep(1)
@@ -160,10 +172,18 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
                 # проверка по hash (магнет)
                 for t in torrents:
                     if t["hashString"].lower() == torrent_hash:
+                        if status == "success":
+                            logger.green(f"Added: {torrent_name}")
+                        elif status == "duplicate":
+                            logger.yellow(f"Already exists: {torrent_name}")
                         return status
             else:
-                # для torrent файла — просто проверяем что список есть
+                # для torrent файла
                 if torrents:
+                    if status == "success":
+                        logger.green(f"Added: {torrent_name}")
+                    elif status == "duplicate":
+                        logger.yellow(f"Already exists: {torrent_name}")
                     return status
 
             # если не нашли — retry
@@ -171,7 +191,7 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
 
         except Exception as e:
             if attempt == max_retries:
-                logger.yellow(f"Transmission add failed: {e}")
+                logger.red(f"Transmission add failed: {e}")
                 return "error"
 
             delay = 1 + attempt
