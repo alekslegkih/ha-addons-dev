@@ -156,7 +156,7 @@ def send_message(chat_id, text, max_retries=2):
             _last_send_time = now
             _user_last_send[chat_id] = now
 
-            log.magenta(f"Message sent to {chat_id}")
+            logger.magenta(f"Message sent to {chat_id}")
 
             return True
 
