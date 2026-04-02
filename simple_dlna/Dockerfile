@@ -5,7 +5,8 @@ FROM ${BUILD_FROM}
 ARG BUILD_ARCH
 ARG BUILD_VERSION
 
-ENV S6_VERBOSITY=1
+ENV S6_VERBOSITY=1 \
+    WORKDIR=/usr/local/simple_dlna
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -19,7 +20,7 @@ LABEL \
 # Copy root filesystem
 COPY rootfs /
 
-WORKDIR /usr/local/simple_dlna
+
 
 RUN apk add --no-cache \
     bash \
