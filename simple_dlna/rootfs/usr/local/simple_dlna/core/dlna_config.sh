@@ -63,7 +63,7 @@ create_config_if_missing() {
         return
     fi
 
-    log_green "minidlna.conf not found. Creating new configuration."
+    bashio::log.green "minidlna.conf not found. Creating new configuration."
 
     log_debug "Creating DB directory: ${DB_DIR}"
     mkdir -p "${DB_DIR}"
@@ -122,7 +122,7 @@ sync_managed_block() {
         return
     fi
 
-    log_yellow "Managed block differs from expected configuration. Restoring system-managed values."
+    bashio::log.yellow "Managed block differs from expected configuration. Restoring system-managed values."
 
     log_debug "Creating backup ${CONFIG_FILE}.bak"
     cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"
