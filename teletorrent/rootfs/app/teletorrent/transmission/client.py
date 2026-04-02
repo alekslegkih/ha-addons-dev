@@ -173,7 +173,7 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
                 for t in torrents:
                     if t["hashString"].lower() == torrent_hash:
                         if status == "success":
-                            logger.green(f"Added: {torrent_name}")
+                            logger.log(f"Added: {torrent_name}")
                         elif status == "duplicate":
                             logger.yellow(f"Already exists: {torrent_name}")
                         return status
@@ -181,7 +181,7 @@ def add(magnet=None, torrent_bytes=None, max_retries=2):
                 # для torrent файла
                 if torrents:
                     if status == "success":
-                        logger.green(f"Added: {torrent_name}")
+                        logger.log(f"Added: {torrent_name}")
                     elif status == "duplicate":
                         logger.yellow(f"Already exists: {torrent_name}")
                     return status
