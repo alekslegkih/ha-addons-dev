@@ -115,7 +115,7 @@ def build_telegram(cfg):
 
 def build_transmission(cfg):
     # Подготавливаем конфиг для Transmission.
-    
+
     tcfg = cfg.get("transmission", {})
 
     host = tcfg.get("host")
@@ -197,16 +197,6 @@ def build_proxy(cfg):
 
 
 # ------------------------------------------------------------------------------
-# Читаем envdir
-# ------------------------------------------------------------------------------
-def read_env(name: str, default: str = "unknown") -> str:
-    path = Path(ENV_DIR) / name
-    try:
-        return path.read_text().strip()
-    except FileNotFoundError:
-        return os.getenv(name, default)
-
-# ------------------------------------------------------------------------------
 # Main
 # ------------------------------------------------------------------------------
 
@@ -217,16 +207,6 @@ def main():
     # - инициализируем lang (через loader)
     # - пишем ENV
     # - завершаемся
-
-    # Читаем имя и версию аддона
-    ADDON_NAME = read_env("ADDON_NAME")
-    ADDON_VERSION = read_env("ADDON_VERSION")
-
-    logger.blue("========================================")
-    logger.green(f"=== {ADDON_NAME} ===")
-    logger.green(f"=== Version:  {ADDON_VERSION} ===")
-    logger.green(f"Starting at: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.blue("========================================")
 
     logger.log("Config init started...")
 

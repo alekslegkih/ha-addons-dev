@@ -1,0 +1,19 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+set -eu
+
+# Вывод баннера
+ADDON_VERSION="$(bashio::addon.version)"
+ADDON_NAME=$(bashio::addon.name)
+
+bashio::log.blue "============================================="
+bashio::log.green "=== ${ADDON_NAME} ==="
+bashio::log.green "=== Version:  ${ADDON_VERSION} ==="
+bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
+bashio::log.blue "============================================="
+
+
+# Подготовим окружения
+cd /app
+python3 -m teletorrent.core.config

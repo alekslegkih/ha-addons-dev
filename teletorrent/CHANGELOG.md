@@ -1,5 +1,9 @@
 # Changelog
 
+## v3.3
+
+- Modification: launch S6
+
 ## v3.2
 
 - Fix: minor fixes
