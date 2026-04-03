@@ -14,7 +14,7 @@ desktop.ini
 struct.txt
 events.md
 release.ps1
-read.md
+copy.py
 
 # файлы для проекта
 debug.flag
