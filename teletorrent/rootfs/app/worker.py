@@ -197,17 +197,17 @@ def main():
         # --------------------------------------------------------------
         except Exception as e:
             safe_error = api.sanitize_error(e)
-            logger.warning(f"Telegram error: {safe_error}")
+            logger.red(f"Telegram error: {safe_error}")
 
             error_count += 1
 
             sleep_time = min(error_count, 10)
-            logger.warning(f"Backoff sleep: {sleep_time}s")
+            logger.yellow(f"Backoff sleep: {sleep_time}s")
 
             time.sleep(sleep_time)
 
             if error_count >= 10:
-                logger.error("Too many errors, exiting")
+                logger.red("Too many errors, exiting")
                 exit(1)
 
 
