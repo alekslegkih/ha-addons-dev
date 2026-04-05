@@ -2,7 +2,6 @@ import os
 import json
 import time
 import requests
-
 import sys
 
 from teletorrent.core.logger import get_logger
@@ -197,17 +196,18 @@ def main():
         # Общие ошибки
         # --------------------------------------------------------------
         except Exception as e:
-            logger.red(f"Worker error: {e}")
+            safe_error = api.sanitize_error(e)
+            logger.warning(f"Telegram error: {safe_error}")
 
             error_count += 1
 
             sleep_time = min(error_count, 10)
-            logger.yellow(f"Backoff sleep: {sleep_time}s")
+            logger.warning(f"Backoff sleep: {sleep_time}s")
 
             time.sleep(sleep_time)
 
             if error_count >= 10:
-                logger.red("Too many errors, exiting")
+                logger.error("Too many errors, exiting")
                 exit(1)
 
 

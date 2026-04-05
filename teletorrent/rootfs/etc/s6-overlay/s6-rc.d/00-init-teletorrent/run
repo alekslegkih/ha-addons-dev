@@ -5,7 +5,7 @@ set -eu
 
 # Вывод баннера
 ADDON_VERSION="$(bashio::addon.version)"
-ADDON_NAME=$(bashio::addon.name)
+ADDON_NAME="$(bashio::addon.name)"
 
 bashio::log.blue "============================================="
 bashio::log.green "=== ${ADDON_NAME} ==="
