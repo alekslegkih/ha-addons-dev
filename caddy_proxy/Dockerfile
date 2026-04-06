@@ -17,7 +17,15 @@ LABEL \
 
 # Установка Caddy
 RUN apk add --no-cache \
-    caddy
+    caddy \
+    python3 \
+    py3-pip
+
+# Python зависимости
+RUN python3 -m pip install --no-cache-dir \
+    --break-system-packages \
+    --root-user-action=ignore \
+    flask
 
 # Copy root filesystem
 COPY rootfs /
@@ -27,4 +35,5 @@ RUN chmod +x \
     /etc/s6-overlay/s6-rc.d/00-init/up \
     /etc/s6-overlay/s6-rc.d/00-init/init \
     /etc/s6-overlay/s6-rc.d/10-caddy/run \
-    /etc/s6-overlay/s6-rc.d/10-caddy/finish
+    /etc/s6-overlay/s6-rc.d/10-caddy/finish \
+    /etc/s6-overlay/s6-rc.d/20-flask/run 

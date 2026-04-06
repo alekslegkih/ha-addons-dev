@@ -1,12 +1,12 @@
 name: "Caddy Proxy"
-version: "0.0.1"
+version: "0.0.2"
 slug: "caddy_proxy"
 description: "Caddy reverse-proxy"
 arch:
   - aarch64
   - amd64
-
 image: ghcr.io/alekslegkih/caddy_proxy-dev
+
 startup: services
 boot: auto
 init: false
@@ -17,25 +17,8 @@ map:
 
 schema:
   log_level: list(trace|debug|info|warning|error|fatal)
-  domain: str
-  certfile: str
-  keyfile: str
-  enable_tls: bool
-  subdomains:
-    - name: str
-      upstream_host: str
-      enable_tls: bool
-      endpoints:
-        - port: port
-          protocol: list(tcp|udp)
-
 options:
   log_level: "info"
-  domain: "example.com"
-  certfile: "fullchain.pem"
-  keyfile: "privkey.pem"
-  enable_tls: true
-  subdomains: []
 
 ports:
   80/tcp: 80
@@ -43,3 +26,7 @@ ports:
 ports_description:
   80/tcp: "HTTP"
   443/tcp: "HTTPS"
+
+ingress: true
+ingress_port: 5000
+
