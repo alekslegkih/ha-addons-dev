@@ -1,0 +1,4 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+exec /etc/s6-overlay/s6-rc.d/00-init/init

@@ -1,0 +1,324 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+set -euo pipefail
+
+# =============================================================================
+# СКРИПТ ИНИЦИАЛИЗАЦИИ АДДОНА CADDY PROXY
+# =============================================================================
+# Запускается один раз перед основным сервисом Caddy.
+# Читает конфигурацию пользователя из options.json, генерирует файлы
+# конфигурации для каждого поддомена и проверяет их валидность.
+# =============================================================================
+
+bashio::log "============================================="
+bashio::log.green " Запуск инициализации Caddy Proxy"
+bashio::log "============================================="
+
+# -----------------------------------------------------------------------------
+# ПУТИ К ФАЙЛАМ И ПАПКАМ
+# -----------------------------------------------------------------------------
+readonly CONFIG_BASE="/config/caddy_proxy"      # Корень всех конфигов (долговременно)
+readonly DATA_CADDYFILE="/data/Caddyfile"       # Главный файл для Caddy (рабочий)
+readonly SSL_DIR="/ssl"                         # Папка с сертификатами
+
+# -----------------------------------------------------------------------------
+# 1. ЗАГРУЗКА И ПРОВЕРКА ОСНОВНЫХ ОПЦИЙ
+# -----------------------------------------------------------------------------
+bashio::log "Шаг 1: Загрузка основной конфигурации..."
+
+# Проверяем, что домен указан
+if ! bashio::config.has_value "domain"; then
+    bashio::log.red "Обязательная опция 'domain' не задана"
+    exit 1
+fi
+
+# Читаем основные опции
+DOMAIN=$(bashio::config "domain")
+LOG_LEVEL=$(bashio::config "log_level")
+ENABLE_TLS=$(bashio::config "enable_tls")
+
+bashio::log "   Домен: ${DOMAIN}"
+bashio::log "   Уровень логов: ${LOG_LEVEL}"
+bashio::log "   TLS на верхнем уровне: ${ENABLE_TLS}"
+
+# -----------------------------------------------------------------------------
+# 2. ПРОВЕРКА СЕРТИФИКАТОВ (только если TLS включён)
+# -----------------------------------------------------------------------------
+if [[ "${ENABLE_TLS}" == "true" ]]; then
+    bashio::log "Шаг 2: Проверка SSL-сертификатов..."
+
+    # Проверяем, что опции certfile и keyfile заданы
+    if ! bashio::config.has_value "certfile"; then
+        bashio::log.red "Опция 'certfile' обязательна при enable_tls: true"
+        exit 1
+    fi
+    if ! bashio::config.has_value "keyfile"; then
+        bashio::log.red "Опция 'keyfile' обязательна при enable_tls: true"
+        exit 1
+    fi
+
+    CERTFILE=$(bashio::config "certfile")
+    KEYFILE=$(bashio::config "keyfile")
+
+    # Проверяем, что файл сертификата существует
+    if ! bashio::fs.file_exists "${SSL_DIR}/${CERTFILE}"; then
+        bashio::log.red "Файл сертификата не найден: ${SSL_DIR}/${CERTFILE}"
+        exit 1
+    fi
+
+    # Проверяем, что файл ключа существует
+    if ! bashio::fs.file_exists "${SSL_DIR}/${KEYFILE}"; then
+        bashio::log.red "Файл ключа не найден: ${SSL_DIR}/${KEYFILE}"
+        exit 1
+    fi
+
+    bashio::log.green "   Сертификаты найдены"
+else
+    bashio::log.yellow "Шаг 2: TLS отключён, проверка сертификатов пропущена"
+    CERTFILE=""
+    KEYFILE=""
+fi
+
+# -----------------------------------------------------------------------------
+# 3. ЗАГРУЗКА И ПРОВЕРКА СПИСКА ПОДДОМЕНОВ
+# -----------------------------------------------------------------------------
+bashio::log "Шаг 3: Загрузка конфигурации поддоменов..."
+
+# Проверяем, что опция subdomains существует
+if ! bashio::config.has_value "subdomains"; then
+    bashio::log.red "В конфигурации отсутствует массив 'subdomains'"
+    exit 1
+fi
+
+# Получаем количество поддоменов
+SUBDOMAINS_LEN=$(bashio::jq '.subdomains | length')
+if [[ "$SUBDOMAINS_LEN" -eq 0 ]]; then
+    bashio::log.red "Массив 'subdomains' пуст. Должен быть указан хотя бы один поддомен"
+    exit 1
+fi
+
+bashio::log "   Найдено поддоменов: ${SUBDOMAINS_LEN}"
+
+# -----------------------------------------------------------------------------
+# 4. СОЗДАНИЕ СТРУКТУРЫ ПАПОК
+# -----------------------------------------------------------------------------
+bashio::log "Шаг 4: Создание структуры папок в ${CONFIG_BASE}"
+
+# Создаём корневую папку и папку для общих импортов (на будущее)
+mkdir -p "${CONFIG_BASE}"
+mkdir -p "${CONFIG_BASE}/_imports"
+
+bashio::log.green "   Корневая папка создана: ${CONFIG_BASE}"
+
+# -----------------------------------------------------------------------------
+# 4a. СОЗДАНИЕ ФАЙЛА ГЛОБАЛЬНОГО ЛОГИРОВАНИЯ CADDY
+# -----------------------------------------------------------------------------
+bashio::log.info "Шаг 4a: Создание конфигурации логирования Caddy"
+
+LOG_GLOBAL="${CONFIG_BASE}/_imports/00-logging.caddy"
+
+# Создаём папку _imports если ещё не создали
+mkdir -p "${CONFIG_BASE}/_imports"
+
+# Всегда перезаписываем с текущим уровнем логирования
+cat > "${LOG_GLOBAL}" <<EOF
+# ================================================================
+# ГЛОБАЛЬНЫЕ НАСТРОЙКИ ЛОГИРОВАНИЯ CADDY
+# Сгенерировано автоматически из options.json $(date)
+# ================================================================
+{
+    log {
+        level ${LOG_LEVEL}
+        output file /var/log/caddy/access.log {
+            roll_size 10MB
+            roll_keep 5
+        }
+    }
+}
+EOF
+
+bashio::log.green "   Создан файл логирования: ${LOG_GLOBAL} (уровень: ${LOG_LEVEL})"
+
+# -----------------------------------------------------------------------------
+# 5. ГЕНЕРАЦИЯ КОНФИГОВ ДЛЯ КАЖДОГО ПОДДОМЕНА
+# -----------------------------------------------------------------------------
+bashio::log "Шаг 5: Генерация конфигураций для поддоменов..."
+
+for (( i=0; i<SUBDOMAINS_LEN; i++ )); do
+    # Читаем опции текущего поддомена
+    SUB_NAME=$(bashio::config "subdomains[${i}].name")
+    SUB_UPSTREAM_HOST=$(bashio::config "subdomains[${i}].upstream_host")
+    SUB_ENABLE_TLS=$(bashio::config "subdomains[${i}].enable_tls")
+
+    # Проверяем обязательные поля
+    if [[ -z "$SUB_NAME" ]]; then
+        bashio::log.red "У поддомена с индексом ${i} отсутствует поле 'name'"
+        exit 1
+    fi
+    if [[ -z "$SUB_UPSTREAM_HOST" ]]; then
+        bashio::log.red "У поддомена '${SUB_NAME}' отсутствует поле 'upstream_host'"
+        exit 1
+    fi
+
+    # Создаём папку для поддомена
+    SUB_DIR="${CONFIG_BASE}/${SUB_NAME}"
+    mkdir -p "${SUB_DIR}"
+
+    # Полное доменное имя
+    FULL_DOMAIN="${SUB_NAME}.${DOMAIN}"
+
+    bashio::log "   Обработка: ${FULL_DOMAIN} -> ${SUB_UPSTREAM_HOST} (TLS: ${SUB_ENABLE_TLS})"
+
+    # -------------------------------------------------------------------------
+    # 5a. Генерация основного файла (всегда перезаписывается из options.json)
+    # -------------------------------------------------------------------------
+    MAIN_FILE="${SUB_DIR}/${SUB_NAME}.caddy"
+
+    bashio::log "      Генерация основного файла: ${MAIN_FILE}"
+
+    {
+        echo "# ================================================================"
+        echo "# КОНФИГ ДЛЯ ПОДДОМЕНА: ${SUB_NAME}"
+        echo "# Сгенерировано автоматически из options.json $(date)"
+        echo "# НЕ РЕДАКТИРОВАТЬ — изменения будут потеряны при перезапуске"
+        echo "# ================================================================"
+        echo ""
+        echo "${FULL_DOMAIN} {"
+    } > "${MAIN_FILE}"
+
+    # Добавляем директиву tls, если включена (и глобально, и на поддомене)
+    if [[ "${SUB_ENABLE_TLS}" == "true" ]]; then
+        if [[ "${ENABLE_TLS}" == "true" ]]; then
+            echo "    tls ${SSL_DIR}/${CERTFILE} ${SSL_DIR}/${KEYFILE}" >> "${MAIN_FILE}"
+        else
+            bashio::log.yellow "      Предупреждение: у поддомена ${SUB_NAME} включён TLS, но глобальный TLS отключён"
+        fi
+    fi
+
+    # Получаем список endpoint'ов
+    ENDPOINTS_LEN=$(bashio::jq ".subdomains[${i}].endpoints | length")
+
+    if [[ "$ENDPOINTS_LEN" -eq 0 ]]; then
+        bashio::log.yellow "      У поддомена '${SUB_NAME}' нет ни одного endpoint"
+    fi
+
+    # Добавляем reverse_proxy для каждого endpoint
+    for (( j=0; j<ENDPOINTS_LEN; j++ )); do
+        PORT=$(bashio::config "subdomains[${i}].endpoints[${j}].port")
+        PROTOCOL=$(bashio::config "subdomains[${i}].endpoints[${j}].protocol")
+
+        if [[ -z "$PROTOCOL" ]] || [[ "$PROTOCOL" == "tcp" ]]; then
+            echo "    reverse_proxy ${SUB_UPSTREAM_HOST}:${PORT}" >> "${MAIN_FILE}"
+        elif [[ "$PROTOCOL" == "udp" ]]; then
+            echo "    bind 0.0.0.0 ${PORT}" >> "${MAIN_FILE}"
+            echo "    reverse_proxy ${SUB_UPSTREAM_HOST}:${PORT} {" >> "${MAIN_FILE}"
+            echo "        protocol udp" >> "${MAIN_FILE}"
+            echo "    }" >> "${MAIN_FILE}"
+        else
+            bashio::log.yellow "      Неизвестный протокол '${PROTOCOL}' для ${SUB_NAME}:${PORT}, пропускаем"
+        fi
+    done
+
+    # Закрываем блок поддомена
+    echo "}" >> "${MAIN_FILE}"
+
+    bashio::log.green "      Основной файл создан: ${MAIN_FILE}"
+
+    # -------------------------------------------------------------------------
+    # 5b. Создание пользовательского файла (только если отсутствует)
+    # -------------------------------------------------------------------------
+    USER_FILE="${SUB_DIR}/${SUB_NAME}_user.caddy"
+
+    if [[ ! -f "${USER_FILE}" ]]; then
+        bashio::log "      Создание пользовательского файла: ${USER_FILE}"
+        {
+            echo "# ================================================================"
+            echo "# ПОЛЬЗОВАТЕЛЬСКИЙ КОНФИГ ДЛЯ ПОДДОМЕНА: ${SUB_NAME}"
+            echo "# ================================================================"
+            echo "# Этот файл НЕ перезаписывается при обновлении аддона."
+            echo "# Сюда можно добавлять любые дополнительные директивы Caddy."
+            echo "#"
+            echo "# ПРИМЕРЫ:"
+            echo "#   header Content-Security-Policy \"default-src 'self'\""
+            echo "#   handle_path /special/* {"
+            echo "#       reverse_proxy 127.0.0.1:9999"
+            echo "#   }"
+            echo "#"
+            echo "# ВАЖНО: синтаксис Caddy — docs.caddyserver.com"
+            echo "# ================================================================"
+        } > "${USER_FILE}"
+        bashio::log.green "      Пользовательский файл создан: ${USER_FILE}"
+    else
+        bashio::log "      Пользовательский файл уже существует, не трогаем: ${USER_FILE}"
+    fi
+done
+
+# -----------------------------------------------------------------------------
+# 6. ГЕНЕРАЦИЯ ГЛАВНОГО ФАЙЛА /data/Caddyfile
+# -----------------------------------------------------------------------------
+bashio::log "Шаг 6: Генерация главного Caddyfile в ${DATA_CADDYFILE}"
+
+{
+    echo "# ================================================================"
+    echo "# ГЛАВНЫЙ КОНФИГ CADDY"
+    echo "# Автоматически сгенерирован аддоном caddy_proxy $(date)"
+    echo "# НЕ РЕДАКТИРОВАТЬ — все правки в ${CONFIG_BASE}"
+    echo "# ================================================================"
+    echo ""
+    echo "# Импортируем все сгенерированные и пользовательские файлы"
+    echo "import ${CONFIG_BASE}/**/*.caddy"
+} > "${DATA_CADDYFILE}"
+
+bashio::log.green "   Главный файл создан: ${DATA_CADDYFILE}"
+
+# -----------------------------------------------------------------------------
+# 7. ВАЛИДАЦИЯ ВСЕХ КОНФИГУРАЦИОННЫХ ФАЙЛОВ
+# -----------------------------------------------------------------------------
+bashio::log "Шаг 7: Проверка валидности конфигурации Caddy..."
+
+FOUND_ERRORS=0
+
+# Проверяем каждый .caddy файл отдельно
+while IFS= read -r -d '' caddyfile; do
+    bashio::log "   Проверяем: ${caddyfile}"
+    if ! caddy validate --config "${caddyfile}" --adapter caddyfile 2>&1 | while read -r line; do
+        bashio::log.red "      ${line}"
+    done; then
+        bashio::log.red "   ОШИБКА в файле: ${caddyfile}"
+        FOUND_ERRORS=1
+    else
+        bashio::log.green "   OK: ${caddyfile}"
+    fi
+done < <(find "${CONFIG_BASE}" -name "*.caddy" -type f -print0)
+
+# Проверяем также главный файл
+bashio::log "   Проверяем главный файл: ${DATA_CADDYFILE}"
+if ! caddy validate --config "${DATA_CADDYFILE}" --adapter caddyfile 2>&1 | while read -r line; do
+    bashio::log.red "      ${line}"
+done; then
+    bashio::log.red "   ОШИБКА в главном файле: ${DATA_CADDYFILE}"
+    FOUND_ERRORS=1
+else
+    bashio::log.green "   OK: ${DATA_CADDYFILE}"
+fi
+
+# Если есть ошибки — завершаемся с кодом 1 (аддон не запустится)
+if [[ ${FOUND_ERRORS} -eq 1 ]]; then
+    bashio::log.red "============================================="
+    bashio::log.red " ОБНАРУЖЕНЫ ОШИБКИ В КОНФИГУРАЦИИ"
+    bashio::log.red " Запуск Caddy невозможен"
+    bashio::log.red "============================================="
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# 8. ЗАВЕРШЕНИЕ
+# -----------------------------------------------------------------------------
+bashio::log "============================================="
+bashio::log.green " Инициализация Caddy Proxy завершена успешно"
+bashio::log "============================================="
+
+exit 0
