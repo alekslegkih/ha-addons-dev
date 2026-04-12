@@ -167,18 +167,18 @@ emit service_state '{"reason":"addon_started"}'
 
 log_debug "Starting configuration phase"
 
-set +e 
-load_config 
-rc=$? 
-set -e 
+set +e
+load_config
+rc=$?
+set -e
 
-if [ "$rc" -ne 0 ]; then 
-    bashio::log.red "Configuration load failed" 
-    if [ -f /run/s6-linux-init-container-results/exitcode ]; 
-        then echo 0 > /run/s6-linux-init-container-results/exitcode 
-    fi 
-        
-    bashio::log.red "Service crashed (exit code: $rc) —configuration error" 
+if [ "$rc" -ne 0 ]; then
+    bashio::log.red "Configuration load failed"
+    if [ -f /run/s6-linux-init-container-results/exitcode ];
+        then echo 0 > /run/s6-linux-init-container-results/exitcode
+    fi
+
+    bashio::log.red "Service crashed (exit code: $rc) —configuration error"
     exec /run/s6/basedir/bin/halt
 fi
 
