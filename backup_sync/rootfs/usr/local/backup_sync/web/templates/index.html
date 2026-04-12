@@ -1107,7 +1107,7 @@ function refreshFileList() {
                     </tr>
                 `;
             });
-            
+
         tbody.innerHTML = html;
 
         })
@@ -1141,7 +1141,7 @@ let moveSource = null;
 
 function openMoveModal(source) {
     moveSource = source;
-    
+
     const name = source.split("/").pop();
     document.getElementById("moveItemName").innerText = name;
 
@@ -1253,7 +1253,7 @@ function openRenameModal(path) {
     const input = document.getElementById("renameInput");
 
     const lastDot = name.lastIndexOf(".");
-    
+
     if (lastDot > 0) {
         input.value = name.substring(0, lastDot);
     } else {
