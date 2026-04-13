@@ -1,8 +1,4 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/base-python:3.13-alpine3.23
-FROM ${BUILD_FROM}
-
-ARG BUILD_ARCH
-ARG BUILD_VERSION
 
 # Добавим L4 в Caddy
 FROM caddy:builder AS caddy_builder
@@ -11,6 +7,9 @@ RUN xcaddy build \
     --with github.com/mholt/caddy-l4
 
 FROM ${BUILD_FROM}
+
+ARG BUILD_ARCH
+ARG BUILD_VERSION
 
 ENV PYTHONUNBUFFERED=1 \
     S6_VERBOSITY=1
