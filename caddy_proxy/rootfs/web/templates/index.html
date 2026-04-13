@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Caddy Proxy</title>
+    <style>
+
+    /* =========================================================
+    🌗 THEME VARIABLES (LIGHT / DARK)
+    ========================================================= */
+
+    :root {
+        --bg: #f5f7fa;
+        --card: #ffffff;
+        --text: #1f2933;
+        --text-secondary: #52606d;
+        --row-alt: rgba(0,0,0,0.02);
+        --muted: #6b7785;
+        --border: #d0d7de;
+        --header: #f1f3f5;
+        --hover: #e8f2ff;
+        --green: #4caf50;
+        --red: #f44336;
+        --accent: #3b82f6;
+        --blue: #2563eb;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --bg: #121417;
+            --card: #1b1f24;
+            --text: #e6e6e6;
+            --text-secondary: #a0aab4;
+            --row-alt: rgba(255,255,255,0.03);
+            --muted: #7f8a96;
+            --border: #2f3842;
+            --header: #20262d;
+            --hover: #232a31;
+            --green: #4caf50;
+            --red: #ef5350;
+            --accent: #4da3ff;
+            --blue: #3b82f6;
+        }
+    }
+
+    /* =========================================================
+    🔧 BASE
+    ========================================================= */
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        padding: 20px;
+    }
+
+    /* =========================================================
+    🧱 LAYOUT
+    ========================================================= */
+
+    .header,
+    .table-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: var(--card);
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .header {
+        margin-bottom: 20px;
+        padding: 20px;
+    }
+
+    .header h1 {
+        font-size: 24px;
+    }
+
+    /* =========================================================
+    📊 TABLE
+    ========================================================= */
+
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: var(--header);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .table-header h2 {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .table-container {
+        overflow-x: auto;
+    }
+
+    .table-container table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-container th {
+        background: var(--header);
+        color: var(--text-secondary);
+        font-weight: 600;
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+    }
+
+    .table-container td {
+        padding: 12px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .table-container td:last-child {
+        white-space: nowrap;
+        width: 1%;
+    }
+
+    .table-container tbody tr:nth-child(even) {
+        background: var(--row-alt);
+    }
+
+    .table-container tbody tr:hover {
+        background: var(--hover);
+    }
+
+    /* =========================================================
+    🔗 DOMAIN LINK
+    ========================================================= */
+
+    .domain-link {
+        color: var(--accent);
+        text-decoration: none;
+    }
+
+    .domain-link:hover {
+        text-decoration: underline;
+    }
+
+    /* =========================================================
+    🏷 BADGES
+    ========================================================= */
+
+    .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 6px;
+        font-weight: 500;
+    }
+
+    .badge.ssl-on {
+        background: rgba(76,175,80,0.15);
+        color: var(--green);
+    }
+
+    .badge.ssl-off {
+        background: rgba(244,67,54,0.15);
+        color: var(--red);
+    }
+
+    .badge.csp-on {
+        background: rgba(33,150,243,0.15);
+        color: #42a5f5;
+    }
+
+    .badge.status-online {
+        background: rgba(76,175,80,0.15);
+        color: var(--green);
+    }
+
+    .badge.status-offline {
+        background: rgba(244,67,54,0.15);
+        color: var(--red);
+    }
+
+    .badge.l4-on {
+        background: rgba(255, 193, 7, 0.15);
+        color: #f59e0b;
+    }
+
+    /* =========================================================
+    🎯 HA BUTTONS
+    ========================================================= */
+
+    .ha-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 90px;
+        gap: 6px;
+        background: transparent;
+        border: 1px solid var(--border);
+        padding: 8px 14px;
+        border-radius: 10px;
+        color: var(--muted);
+        font-size: 13px;
+        cursor: pointer;
+        transition:
+            background 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+    .ha-btn:hover {
+        background: var(--hover);
+        color: var(--accent);
+        border-color: var(--accent);
+    }
+
+    .ha-btn svg {
+        width: 18px;
+        height: 18px;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    /* =========================================================
+        L4
+    ========================================================= */
+
+    #tab-l4 .form-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 0;
+    }
+
+    .l4-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .switch-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    #tab-l4 {
+        padding-bottom: 5px;
+    }
+
+    .tooltip::after {
+        white-space: pre;
+    }
+
+    /* =========================================================
+    🎯 ICON BUTTONS 
+    ========================================================= */
+
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+
+        width: 28px;
+        height: 28px;
+
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+
+        background: transparent;
+        transition: 0.2s;
+    }
+
+    .btn-icon svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .btn-icon.play { color: var(--green); }
+    .btn-icon.pause { color: var(--blue); }
+    .btn-icon.delete { color: var(--red); }
+
+    .btn-icon:hover {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-icon.play:hover {
+        background: rgba(76, 175, 79, 0.306);
+    }
+
+    .btn-icon.pause:hover {
+        background: rgba(24, 91, 246, 0.306);
+    }
+
+    .btn-icon.delete:hover {
+        background: rgba(229, 68, 56, 0.347);
+    }
+
+    /* =========================================================
+    💬 TOOLTIP
+    ========================================================= */
+
+    .tooltip {
+        position: relative;
+    }
+
+    .tooltip::after {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 120%;
+        left: 50%;
+        transform: translateX(-50%) translateY(5px);
+
+        background: #333;
+        color: #fff;
+        padding: 4px 8px;
+        font-size: 12px;
+        border-radius: 4px;
+
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: 0.2s;
+    }
+
+    .tooltip:hover::after {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    /* =========================================================
+    🧾 MODAL & FORMS
+    ========================================================= */
+
+    .modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 50px;
+    }
+
+    .modal.hidden {
+        display: none;
+    }
+
+    .modal-content {
+        background: var(--card);
+        border-radius: 8px;
+        width: 700px;
+        max-width: 90%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .modal-header {
+        padding: 16px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .modal-footer {
+        padding: 12px 16px;
+        border-top: 1px solid var(--border);
+        border-bottom: none;
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .tabs {
+        display: flex;
+        border-bottom: 1px solid var(--border);
+        padding: 0 16px;
+    }
+
+    .tab-btn {
+        padding: 10px 16px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--text-secondary);
+    }
+
+    .tab-btn.active {
+        color: var(--accent);
+        border-bottom: 2px solid var(--accent);
+    }
+
+    .tab-content {
+        display: none;
+        padding: 16px;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* forms */
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        margin-bottom: 4px;
+        display: block;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        background: var(--card);
+        color: var(--text);
+    }
+
+    textarea {
+        font-family: monospace;
+    }
+
+    /* =========================================================
+    🔌 ENDPOINTS
+    ========================================================= */
+
+    .endpoint-item {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 8px;
+        align-items: center;
+    }
+
+    .endpoint-item input {
+        width: 180px;
+    }
+
+    .endpoint-item select {
+        flex: 1;
+    }
+
+    /* =========================================================
+        FORWARD (NPM-style)
+    ========================================================= */
+    .forward-cell {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        color: var(--text-secondary);
+        font-size: 14px;
+        letter-spacing: 0.2px;
+        transition: color 0.2s;
+        }
+    
+    .forward-cell:hover {
+        color: var(--text);
+    }
+
+    /* =========================================================
+    SWITCH
+    ========================================================= */
+
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 36px;
+        height: 20px;
+        flex-shrink: 0;
+    }
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        inset: 0;
+        background: var(--border);
+        border-radius: 999px;
+        transition: 0.2s;
+    }
+
+    .slider::before {
+        content: "";
+        position: absolute;
+        width: 14px;
+        height: 14px;
+        left: 3px;
+        top: 3px;
+        background: #fff;
+        border-radius: 50%;
+        transition: 0.2s;
+    }
+
+    .switch input:checked + .slider {
+        background: var(--accent);
+    }
+
+    .switch input:checked + .slider::before {
+        transform: translateX(16px);
+    }
+
+    .switch:hover .slider {
+        filter: brightness(1.05);
+    }
+
+    .switch input:disabled + .slider {
+        opacity: 0.4;
+        cursor: not-allowed;
+    }
+
+    /* =========================================================
+    ERROR
+    ========================================================= */
+    .input-error {
+        border-color: var(--red) !important;
+        box-shadow: 0 0 0 1px var(--red);
+    }
+
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Caddy Proxy</h1>
+    </div>
+
+    <div class="table-wrapper">
+        <div class="table-header">
+            <h2>Proxy Hosts</h2>
+            <button id="btn-create" class="ha-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Add Proxy Host
+            </button>
+        </div>
+        <div class="table-container">
+            <table id="sites-table">
+                <thead>
+                    <tr>
+                        <th>Domain</th>
+                        <th>Forward</th>
+                        <th>SSL</th>
+                        <th>L4</th> 
+                        <th>CSP</th>
+                        <th>Status</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="sites-list"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Модальное окно -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Edit Proxy Host</span>
+                <span class="close">&times;</span>
+            </div>
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="general">General</button>
+                <button class="tab-btn" data-tab="ssl">SSL (Domain) </button>
+                <button class="tab-btn" data-tab="l4">Ports (L4)</button>
+                <button class="tab-btn" data-tab="csp">CSP</button>
+                <button class="tab-btn" data-tab="advanced">Advanced</button>
+            </div>
+            <div class="tab-content active" id="tab-general">
+                <div class="form-group">
+                    <label>Domain Names</label>
+                    <input type="text" id="domain" placeholder="subdomain.example.com">
+                </div>
+                <div class="form-group">
+                    <label>Forward</label>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <select id="scheme" style="flex: 1;">
+                            <option value="http">HTTP</option>
+                            <option value="https">HTTPS</option>
+                        </select>
+                        <input type="text" id="upstream-ip" placeholder="Hostname / IP" style="flex: 2;">
+                        <span style="flex-shrink: 0;">:</span>
+                        <input type="number" id="upstream-port" placeholder="Port" style="flex: 1;">
+                    </div>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-ssl">
+                <div id="ssl-fields">
+                    <div class="form-group">
+                        <label>Certificate</label>
+                        <input type="text" id="certfile" placeholder="fullchain.pem" value="fullchain.pem">
+                    </div>
+                    <div class="form-group">
+                        <label>	Private Key</label>
+                        <input type="text" id="keyfile" placeholder="privkey.pem" value="privkey.pem">
+                    </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div>
+                        <label class="switch">
+                            <input type="checkbox" id="force-https" checked>
+                            <span class="slider"></span>
+                        </label>
+                        <span>Force HTTPS</span>
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+                        <div>
+                            <label class="switch">
+                                <input type="checkbox" id="hsts" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <span>HSTS</span>
+                        </div>
+                        <div>
+                            <label class="switch">
+                                <input type="checkbox" id="hsts-subdomains" checked>
+                                <span class="slider"></span>
+                            </label>
+                            <span>HSTS Subdomains</span>
+                        </div>
+                    </div>
+                </div>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-l4">
+                <div class="form-group">
+                    <div id="l4-list"></div>
+                    <div class="l4-toggle">
+                        <label class="switch-row">
+                            <span class="switch">
+                                <input type="checkbox" id="l4-link-upstream" checked>
+                                <span class="slider"></span>
+                            </span>
+                            <span>From General</span>
+                        </label>
+
+                        <button type="button" id="add-l4" class="ha-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Add Port
+                        </button>
+                    </div>
+                </div>
+            </div> 
+            <div class="tab-content" id="tab-csp">
+                <div class="form-group">
+                    <label>Content Security Policy</label>
+                    <textarea id="csp" rows="10" placeholder="default-src 'self'; script-src 'self' 'unsafe-inline';"></textarea>
+                </div>
+            </div>
+            <div class="tab-content" id="tab-advanced">
+                <div class="form-group">
+                    <label>Additional Caddy Directives</label>
+                    <textarea id="advanced" rows="10" placeholder='Additional'></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-cancel" class="ha-btn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                    Cancel
+                </button>
+                <button id="btn-save" class="ha-btn">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M5 5h14v14H5z"/>
+                    </svg>
+                    Save
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================================
+        // CADDY PROXY - ФРОНТЕНД
+        // ============================================================================
+
+        let currentEditId = null;
+
+        // ----------------------------------------------------------------------------
+        // ЗАГРУЗКА СПИСКА САЙТОВ
+        // ----------------------------------------------------------------------------
+        async function loadSites() {
+            const res = await fetch('api/sites');
+            const data = await res.json();
+            const tbody = document.getElementById('sites-list');
+            tbody.innerHTML = '';
+            
+            for (const site of data.sites) {
+                const row = tbody.insertRow();
+                row.setAttribute('data-id', site.id);
+                row.addEventListener('dblclick', () => editSite(site.id));
+
+                // === DOMAIN (кликабельный) ===
+                const domainCell = row.insertCell(0);
+                const link = document.createElement('a');
+                link.textContent = site.domain;
+                link.className = 'domain-link';
+
+                const scheme = site.scheme || 'http';
+                link.href = `${scheme}://${site.domain}`;
+                link.target = '_blank';
+
+                domainCell.appendChild(link);
+
+                // === FORWARD (собираем) ===
+                const forwardCell = row.insertCell(1);
+                forwardCell.textContent = `${site.scheme || 'http'}://${site.upstream_ip}:${site.upstream_port}`;
+                forwardCell.classList.add('forward-cell');
+
+                // === SSL ===
+                row.insertCell(2).innerHTML = site.force_https
+                    ? `<span class="badge ssl-on">SSL</span>`
+                    : `<span class="badge ssl-off">SSL</span>`;
+
+                // === L4 ===
+                const hasL4 = site.l4 && site.l4.length > 0;
+                const l4Tooltip = hasL4
+                    ? `data-tooltip="${site.l4
+                        .map(x => `${x.protocol}: ${x.port} → ${x.upstream_port}`)
+                        .join('\n')}"`
+                    : '';
+
+                row.insertCell(3).innerHTML = hasL4
+                    ? `<span class="badge l4-on tooltip" ${l4Tooltip}>L4</span>`
+                    : '';
+
+                    // === CSP  ===
+                row.insertCell(4).innerHTML = site.csp && site.csp.trim()
+                    ? `<span class="badge csp-on">CSP</span>`
+                    : '';
+
+                // === STATUS ===
+                row.insertCell(5).innerHTML =
+                    `<span class="badge status-${site.status}">${site.status}</span>`;;
+
+                // === ACTIONS ===
+                const actionCell = row.insertCell(6);
+
+                // SVG
+                const playIcon = `
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+                </svg>`;
+
+                const pauseIcon = `
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 19h4V5H6zm8-14v14h4V5z"/>
+                </svg>`;
+
+                const deleteIcon = `
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 7h12v2H6zm2 3h8l-1 9H9zm3-6h2v2h-2z"/>
+                </svg>`;
+
+                // ▶ / ⏸
+                const toggleBtn = document.createElement('button');
+                const isOnline = site.status === 'online';
+
+                toggleBtn.className = `btn-icon ${isOnline ? 'pause' : 'play'} tooltip`;
+                toggleBtn.innerHTML = isOnline ? pauseIcon : playIcon;
+
+                toggleBtn.setAttribute(
+                    'data-tooltip',
+                    isOnline ? 'Stop (running)' : 'Start (stopped)'
+                );
+
+                toggleBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleSite(site.id, site.status !== 'online');
+                };
+
+                // 🗑
+                const delBtn = document.createElement('button');
+
+                delBtn.className = 'btn-icon delete tooltip';
+                delBtn.innerHTML = deleteIcon;
+
+                delBtn.setAttribute('data-tooltip', 'Delete');
+
+                delBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteSite(site.id);
+                };
+
+                actionCell.appendChild(toggleBtn);
+                actionCell.appendChild(delBtn);
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        // УДАЛЕНИЕ САЙТА
+        // ----------------------------------------------------------------------------
+        async function deleteSite(id) {
+            if (!confirm('Delete site?')) return;
+            await fetch(`api/sites/${id}`, { method: 'DELETE' });
+            loadSites();
+        }
+
+        // ----------------------------------------------------------------------------
+        // УПРАВЛЕНИЕ СОСТОЯНИЕМ SSL ПОЛЕЙ
+        // Логика: если Force HTTPS выключен - все SSL поля disabled
+        // Если Force HTTPS включён - поля доступны, но HSTS для субдоменов зависит от HSTS
+        // ----------------------------------------------------------------------------
+        function updateSslFieldsState() {
+            const forceHttps = document.getElementById('force-https');
+            const certfile = document.getElementById('certfile');
+            const keyfile = document.getElementById('keyfile');
+            const hsts = document.getElementById('hsts');
+            const hstsSubdomains = document.getElementById('hsts-subdomains');
+            
+            if (!forceHttps.checked) {
+                // Force HTTPS выключен - всё disabled
+                certfile.disabled = true;
+                keyfile.disabled = true;
+                hsts.checked = false;
+                hstsSubdomains.checked = false;
+                hsts.disabled = true;
+                hstsSubdomains.disabled = true
+            } else {
+                // Force HTTPS включён - базовые поля доступны
+                certfile.disabled = false;
+                keyfile.disabled = false;
+                hsts.disabled = false;
+                
+                // HSTS для субдоменов зависит от HSTS
+                if (hsts.checked) {
+                    hstsSubdomains.disabled = false;
+                } else {
+                    hstsSubdomains.disabled = true;
+                    hstsSubdomains.checked = false;
+                }
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        // ОБРАБОТЧИК ИЗМЕНЕНИЯ HSTS
+        // ----------------------------------------------------------------------------
+        function onHstsChange() {
+            const forceHttps = document.getElementById('force-https');
+            const hsts = document.getElementById('hsts');
+            const hstsSubdomains = document.getElementById('hsts-subdomains');
+            
+            if (forceHttps.checked && !hsts.checked) {
+                hstsSubdomains.disabled = true;
+                hstsSubdomains.checked = false;
+            } else if (forceHttps.checked && hsts.checked) {
+                hstsSubdomains.disabled = false;
+            }
+        }
+
+        // ----------------------------------------------------------------------------
+        // ИНИЦИАЛИЗАЦИЯ ЗАВИСИМОСТЕЙ ФОРМЫ
+        // ----------------------------------------------------------------------------
+        function initFormDependencies() {
+            const forceHttps = document.getElementById('force-https');
+            const hsts = document.getElementById('hsts');
+            
+            updateSslFieldsState();
+            
+            forceHttps.addEventListener('change', () => {
+                updateSslFieldsState();
+            });
+            
+            hsts.addEventListener('change', () => {
+                onHstsChange();
+            });
+        }
+
+        // ----------------------------------------------------------------------------
+        // Проверка пустых полей
+        // ----------------------------------------------------------------------------
+        function highlightError(input) {
+            input.classList.add('input-error');
+
+            setTimeout(() => {
+                input.classList.remove('input-error');
+            }, 1500);
+        }
+        // ----------------------------------------------------------------------------
+        // Отрисовка L4
+        // ----------------------------------------------------------------------------
+        function renderL4(l4) {
+            const container = document.getElementById('l4-list');
+            container.innerHTML = '';
+
+            const removeIcon = `
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+            `;
+            
+            l4.forEach((ep, idx) => {
+                const div = document.createElement('div');
+                div.className = 'endpoint-item';
+
+                div.innerHTML = `
+                    <input type="number" placeholder="Listen Port" value="${ep.port || ''}" data-idx="${idx}" data-field="port" style="width: 140px; flex-shrink: 0;">
+
+                    <select data-idx="${idx}" data-field="protocol" style="flex: 1;">
+                        <option value="tcp" ${ep.protocol === 'tcp' ? 'selected' : ''}>TCP</option>
+                        <option value="udp" ${ep.protocol === 'udp' ? 'selected' : ''}>UDP</option>
+                    </select>
+
+                    <input type="text" placeholder="Upstream IP" value="${ep.upstream_ip || ''}" data-idx="${idx}" data-field="upstream_ip" style="flex: 2;">
+
+                    <span>:</span>
+
+                    <input type="number" placeholder="Port" value="${ep.upstream_port || ''}" data-idx="${idx}" data-field="upstream_port" style="width: 100px;">
+
+                    <button 
+                        type="button" 
+                        class="btn-icon delete tooltip" 
+                        data-tooltip="Delete port"
+                        onclick="removeL4(${idx})"
+                    >
+                        ${removeIcon}
+                    </button>
+                `;
+
+                container.appendChild(div);
+            });
+            applyL4LinkMode();
+        }
+
+        // ----------------------------------------------------------------------------
+        // Удаление L4
+        // ----------------------------------------------------------------------------
+        window.removeL4 = function(idx) {
+            const container = document.getElementById('l4-list');
+            const l4 = [];
+            
+            for (let i = 0; i < container.children.length; i++) {
+                if (i !== idx) {
+                    const port = container.children[i].querySelector('[data-field="port"]').value;
+                    const protocol = container.children[i].querySelector('[data-field="protocol"]').value;
+                    l4.push({ port: parseInt(port), protocol });
+                }
+            }
+            renderL4(l4);
+            applyL4LinkMode();
+        };
+
+        // ----------------------------------------------------------------------------
+        // Добавление L4
+        // ----------------------------------------------------------------------------
+        document.getElementById('add-l4').onclick = () => {
+            const container = document.getElementById('l4-list');
+            const items = container.querySelectorAll('.endpoint-item');
+
+            if (items.length > 0) {
+                const last = items[items.length - 1];
+
+                const port = last.querySelector('[data-field="port"]');
+                const upstream_ip = last.querySelector('[data-field="upstream_ip"]');
+                const upstream_port = last.querySelector('[data-field="upstream_port"]');
+
+                let hasError = false;
+
+                if (!port.value.trim()) {
+                    highlightError(port);
+                    hasError = true;
+                }
+
+                if (!upstream_ip.value.trim()) {
+                    highlightError(upstream_ip);
+                    hasError = true;
+                }
+
+                if (!upstream_port.value.trim()) {
+                    highlightError(upstream_port);
+                    hasError = true;
+                }
+
+                if (hasError) return;
+            }
+
+            const l4 = getL4FromForm();
+
+            const defaultUpstream = document.getElementById('upstream-ip').value;
+            const linked = document.getElementById('l4-link-upstream').checked;
+
+            l4.push({
+                port: '',
+                protocol: 'tcp',
+                upstream_ip: linked ? defaultUpstream : '',
+                upstream_port: ''
+            });
+
+            renderL4(l4);
+        };
+
+        // ----------------------------------------------------------------------------
+        // L4 применение режима
+        // ----------------------------------------------------------------------------
+        document.getElementById('l4-link-upstream').addEventListener('change', () => {
+            applyL4LinkMode();
+        });
+
+        function applyL4LinkMode() {
+            const linked = document.getElementById('l4-link-upstream').checked;
+            const generalValue = document.getElementById('upstream-ip').value;
+
+            document.querySelectorAll('#l4-list [data-field="upstream_ip"]').forEach(input => {
+                if (linked) {
+                    input.value = generalValue;
+                    input.setAttribute('readonly', true);
+                } else {
+                    input.removeAttribute('readonly');
+                }
+            });
+        }
+
+        // ----------------------------------------------------------------------------
+        // Сборка L4 из формы
+        // ----------------------------------------------------------------------------
+        function getL4FromForm() {
+            const container = document.getElementById('l4-list');
+            const l4 = [];
+
+            for (let i = 0; i < container.children.length; i++) {
+                const item = container.children[i];
+
+                const port = item.querySelector('[data-field="port"]').value;
+                const protocol = item.querySelector('[data-field="protocol"]').value;
+                const upstream_ip = item.querySelector('[data-field="upstream_ip"]').value;
+                const upstream_port = item.querySelector('[data-field="upstream_port"]').value;
+
+                if (port && upstream_ip && upstream_port) {
+                    l4.push({
+                        port: parseInt(port),
+                        protocol: protocol,
+                        upstream_ip: upstream_ip,
+                        upstream_port: parseInt(upstream_port)
+                    });
+                }
+            }
+
+            return l4;
+        }
+
+        // ----------------------------------------------------------------------------
+        // ОТКРЫТИЕ ФОРМЫ ДЛЯ НОВОГО САЙТА
+        // ----------------------------------------------------------------------------
+        document.getElementById('btn-create').onclick = () => {
+            currentEditId = null;
+
+            document.querySelector('.tab-btn[data-tab="general"]').click();
+            
+            document.getElementById('domain').value = '';
+            document.getElementById('scheme').value = 'http';
+            document.getElementById('upstream-ip').value = '';
+            document.getElementById('upstream-port').value = '';
+            
+            // По умолчанию все включены
+            document.getElementById('force-https').checked = true;
+            document.getElementById('certfile').value = 'fullchain.pem';
+            document.getElementById('keyfile').value = 'privkey.pem';
+            document.getElementById('hsts').checked = true;
+            document.getElementById('hsts-subdomains').checked = true;
+            document.getElementById('csp').value = '';
+            document.getElementById('advanced').value = '';
+            
+            updateSslFieldsState();
+            renderL4([]);
+            
+            document.getElementById('modal').classList.remove('hidden');
+        };
+
+        // ----------------------------------------------------------------------------
+        // РЕДАКТИРОВАНИЕ САЙТА
+        // ----------------------------------------------------------------------------
+        async function editSite(id) {
+            currentEditId = id;
+
+            document.querySelector('.tab-btn[data-tab="general"]').click();
+
+            const res = await fetch(`api/sites/${id}`);
+            const site = await res.json();
+            
+            document.getElementById('domain').value = site.domain;
+            document.getElementById('scheme').value = site.scheme || 'http';
+            document.getElementById('upstream-ip').value = site.upstream_ip;
+            document.getElementById('upstream-port').value = site.upstream_port;
+            document.getElementById('force-https').checked = site.force_https !== undefined ? site.force_https : true;
+            document.getElementById('certfile').value = site.certfile || '';
+            document.getElementById('keyfile').value = site.keyfile || '';
+            document.getElementById('hsts').checked = site.hsts !== undefined ? site.hsts : true;
+            document.getElementById('hsts-subdomains').checked = site.hsts_subdomains !== undefined ? site.hsts_subdomains : true;
+            document.getElementById('csp').value = site.csp || '';
+            document.getElementById('advanced').value = site.advanced || '';
+            
+            updateSslFieldsState();
+            renderL4(site.l4 || []);
+            
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        // ----------------------------------------------------------------------------
+        // Функция включения/выключения
+        // ----------------------------------------------------------------------------
+        async function toggleSite(id, enable) {
+            const response = await fetch(`api/sites/${id}/toggle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ enabled: enable })
+            });
+            
+            if (response.status === 400) {
+                const result = await response.json();
+                alert(result.error || 'Cannot enable site: config is invalid');
+            }
+            
+            loadSites();
+        }
+
+        // ----------------------------------------------------------------------------
+        // ПРОВЕРКА ВАЛИДНОСТИ ДОМЕНА/СУБДОМЕНА (поддерживает кириллицу и латиницу)
+        // ----------------------------------------------------------------------------
+        function isValidDomain(domain) {
+            if (!domain || domain.length > 253) return false;
+
+            // минимум одна точка (TLD 2 буквы обязателен)
+            const domainRegex = /^(?!-)[a-zа-яё0-9-]{1,63}(?<!-)(\.(?!-)[a-zа-яё0-9-]{2,63}(?<!-))+$/i;
+
+            return domainRegex.test(domain);
+        }
+
+        // ----------------------------------------------------------------------------
+        // Сохранение сайта
+        // ----------------------------------------------------------------------------
+        document.getElementById('btn-save').onclick = async () => {
+
+            let hasError = false;
+
+            const domain = document.getElementById('domain');
+            const upstreamIp = document.getElementById('upstream-ip');
+            const upstreamPort = document.getElementById('upstream-port');
+
+            // GENERAL VALIDATION
+            if (!domain.value.trim()) {
+                highlightError(domain);
+                hasError = true;
+            }
+
+            if (!upstreamIp.value.trim()) {
+                highlightError(upstreamIp);
+                hasError = true;
+            }
+
+            if (!upstreamPort.value.trim()) {
+                highlightError(upstreamPort);
+                hasError = true;
+            }
+
+            if (hasError) {
+                document.querySelector('.tab-btn[data-tab="general"]').click();
+                return;
+            }
+
+            if (!isValidDomain(domain.value.trim())) {
+                document.querySelector('.tab-btn[data-tab="general"]').click();
+                alert('Invalid domain format. Example: example.com, sub.example.com, or домен.рф');
+                return;
+            }
+
+            // SSL VALIDATION
+            const forceHttps = document.getElementById('force-https');
+            const certfile = document.getElementById('certfile');
+            const keyfile = document.getElementById('keyfile');
+
+            if (forceHttps.checked) {
+                let sslError = false;
+
+                if (!certfile.value.trim()) {
+                    highlightError(certfile);
+                    sslError = true;
+                }
+
+                if (!keyfile.value.trim()) {
+                    highlightError(keyfile);
+                    sslError = true;
+                }
+
+                if (sslError) {
+                    document.querySelector('.tab-btn[data-tab="ssl"]').click();
+                    return;
+                }
+            }
+
+            const portNum = parseInt(upstreamPort.value);
+
+            if (isNaN(portNum) || portNum < 1 || portNum > 65535) {
+                highlightError(upstreamPort);
+                document.querySelector('.tab-btn[data-tab="general"]').click();
+                return;
+            }
+
+            const data = {
+                domain: domain.value.trim(),
+                scheme: document.getElementById('scheme').value,
+                upstream_ip: upstreamIp.value.trim(),
+                upstream_port: portNum,
+                force_https: forceHttps.checked,
+                certfile: certfile.value,
+                keyfile: keyfile.value,
+                hsts: document.getElementById('hsts').checked,
+                hsts_subdomains: document.getElementById('hsts-subdomains').checked,
+                csp: document.getElementById('csp').value,
+                advanced: document.getElementById('advanced').value,
+                l4: getL4FromForm()
+            };
+
+            const url = currentEditId ? `api/sites/${currentEditId}` : 'api/sites';
+            const method = currentEditId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.status === 409) {
+                alert('Domain already exists');
+                return;
+            }
+
+            if (!response.ok) {
+                alert('Save error');
+                return;
+            }
+
+            if (response.status === 201) {
+                const result = await response.json();
+                if (result.warning) {
+                    alert(result.warning + ' - Site disabled due to config errors');
+                }
+            }
+
+            document.getElementById('modal').classList.add('hidden');
+            loadSites();
+        };
+
+        // ----------------------------------------------------------------------------
+        // ОТМЕНА / ЗАКРЫТИЕ
+        // ----------------------------------------------------------------------------
+        document.getElementById('btn-cancel').onclick = () => {
+            document.getElementById('modal').classList.add('hidden');
+        };
+
+        document.querySelector('.close').onclick = () => {
+            document.getElementById('modal').classList.add('hidden');
+        };
+
+        // ----------------------------------------------------------------------------
+        // ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК
+        // ----------------------------------------------------------------------------
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.onclick = () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById(`tab-${btn.dataset.tab}`).classList.add('active');
+            };
+        });
+
+        // ----------------------------------------------------------------------------
+        // ИНИЦИАЛИЗАЦИЯ
+        // ----------------------------------------------------------------------------
+        document.addEventListener('DOMContentLoaded', () => {
+            initFormDependencies();
+            loadSites();
+
+            document.getElementById('upstream-ip').addEventListener('input', () => {
+                const linked = document.getElementById('l4-link-upstream').checked;
+                if (!linked) return;
+
+                applyL4LinkMode();
+            });
+        });
+
+    </script>
+</body>
+</html>

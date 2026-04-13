@@ -3,20 +3,17 @@
 
 set -euo pipefail
 
-bashio::log "Старт Caddy Proxy..."
-
 # Путь к главному конфигу
 CADDY_CONFIG="/data/Caddyfile"
 
 # Проверяем, что конфиг существует
 if [[ ! -f "${CADDY_CONFIG}" ]]; then
     bashio::log.red "Конфигурационный файл не найден: ${CADDY_CONFIG}"
-    bashio::log.red "Возможно, инициализация не завершилась успешно"
+    bashio::log.red "Инициализация завершиена с ошибкой"
     exit 1
 fi
 
-bashio::log.green "Конфиг: ${CADDY_CONFIG}"
-
+bashio::log.green "Caddy Proxy запущен"
 # Запускаем Caddy
 # --config - путь к конфигу
 # --adapter caddyfile - указываем формат (хотя он по умолчанию)

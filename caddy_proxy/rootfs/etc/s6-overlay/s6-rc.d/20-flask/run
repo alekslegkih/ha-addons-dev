@@ -1,7 +1,5 @@
 #!/usr/bin/with-contenv bashio
 set -euo pipefail
 
-bashio::log.green "Запуск Flask GUI"
-
 cd /web || exit 1
-exec gunicorn --bind 0.0.0.0:5000 app:app
+exec python3 /web/app.py

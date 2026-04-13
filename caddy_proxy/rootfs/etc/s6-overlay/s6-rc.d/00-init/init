@@ -2,58 +2,202 @@
 # shellcheck shell=bash
 set -euo pipefail
 
+ADDON_VERSION="$(bashio::addon.version)"
+ADDON_NAME=$(bashio::addon.name)
+
 bashio::log "============================================="
-bashio::log.green " Запуск инициализации Caddy Proxy"
-bashio::log "============================================="
+bashio::log.blue "=== ${ADDON_NAME} ==="
+bashio::log.blue "=== Version:  ${ADDON_VERSION} ==="
+bashio::log.green "Starting at: $(date '+%Y-%m-%d %H:%M:%S')"
 
 # -----------------------------------------------------------------------------
 # ПУТИ
 # -----------------------------------------------------------------------------
-CONFIG_BASE="/config/caddy_proxy"
+CONFIG_BASE="/config"
 SITES_DIR="${CONFIG_BASE}/sites"
 META_DIR="${CONFIG_BASE}/meta"
 DATA_CADDYFILE="/data/Caddyfile"
 
 # -----------------------------------------------------------------------------
-# 1. ЧТЕНИЕ ОПЦИЙ
+# ЧТЕНИЕ ОПЦИЙ
 # -----------------------------------------------------------------------------
-bashio::log "Шаг 1: Чтение конфигурации..."
+bashio::log "Инициализация..."
 
 LOG_LEVEL=$(bashio::config 'log_level')
 bashio::log "   Уровень логов Caddy: ${LOG_LEVEL}"
 
 # -----------------------------------------------------------------------------
-# 2. СОЗДАНИЕ СТРУКТУРЫ ПАПОК
+# СОЗДАНИЕ СТРУКТУРЫ ПАПОК
 # -----------------------------------------------------------------------------
-bashio::log "Шаг 2: Создание структуры папок..."
-
-if ! mkdir -p "${SITES_DIR}" 2>/dev/null; then
+mkdir -p "${SITES_DIR}" 2>/dev/null || {
     bashio::log.red "   Ошибка: не удалось создать ${SITES_DIR}"
     exit 1
-fi
+}
 
-if ! mkdir -p "${META_DIR}" 2>/dev/null; then
+mkdir -p "${META_DIR}" 2>/dev/null || {
     bashio::log.red "   Ошибка: не удалось создать ${META_DIR}"
     exit 1
+}
+
+# -----------------------------------------------------------------------------
+# ПРОВЕРКА DISABLED ФАЙЛОВ (были ли исправлены)
+# -----------------------------------------------------------------------------
+bashio::log "Проверяем деактивированные конфигурации..."
+
+if [ -d "${SITES_DIR}" ]; then
+    for disabled_file in "${SITES_DIR}"/*.caddy.disabled; do
+        if [ -f "${disabled_file}" ]; then
+            filename=$(basename "${disabled_file}" .disabled)
+            site_id="${filename%.caddy}"
+            domain=$(head -1 "${disabled_file}" | sed 's/[{ ].*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+
+            meta_file="${META_DIR}/${site_id}.json"
+
+            if [ -f "${meta_file}" ]; then
+                reason=$(jq -r '.reason' "${meta_file}" 2>/dev/null)
+
+                if [ "$reason" = "user" ]; then
+                    bashio::log.yellow "      Домен ${domain} отключен пользователем"
+                    continue
+                fi
+            fi
+            
+            bashio::log "   Проверка: ${filename}.disabled (${domain})"
+            
+            error_file=$(mktemp)
+            
+            if caddy validate --config "${disabled_file}" --adapter caddyfile >/dev/null 2>"${error_file}"; then
+                bashio::log.green "      ✓ Конфигурация валидна, активируем"
+                mv "${disabled_file}" "${SITES_DIR}/${filename}"
+                
+                meta_file="${META_DIR}/${site_id}.json"
+                if [ -f "${meta_file}" ]; then
+                    sed -i 's/"status": "offline"/"status": "online"/' "${meta_file}"
+                    sed -i 's/"reason": "invalid"/"reason": null/' "${meta_file}"
+                    bashio::log "      Статус домена ${domain} - online"
+                fi
+            else
+                bashio::log.red "      ✗ Конфигурация всё ещё невалидна"
+                
+                # Показываем ошибку
+                error_line=$(grep "Error:" "${error_file}" | head -1)
+                if [ -n "$error_line" ]; then
+                    line_num=$(echo "$error_line" | grep -o ':[0-9]*:' | tr -d ':')
+                    error_msg=$(echo "$error_line" | sed 's/.*:[0-9]*: //')
+                    
+                    if [ -n "$line_num" ]; then
+                        bashio::log.yellow "      Ошибка в строке ${line_num}: ${error_msg}"
+                    else
+                        bashio::log.yellow "      ${error_line}"
+                    fi
+                else
+                    last_line=$(tail -1 "${error_file}")
+                    bashio::log.yellow "      ${last_line}"
+                fi
+            fi
+            rm -f "${error_file}"
+        fi
+    done
+    bashio::log.green "      ✓ Деактивированные конфигурации отсутствуют"
 fi
 
-bashio::log.green "   Папки созданы:"
-bashio::log.green "     - ${SITES_DIR}"
-bashio::log.green "     - ${META_DIR}"
+# -----------------------------------------------------------------------------
+# ПРОВЕРКА ВАЛИДНОСТИ КОНФИГОВ САЙТОВ
+# -----------------------------------------------------------------------------
+bashio::log "Проверяем конфигурации сайтов на валидность..."
+
+if [ -d "${SITES_DIR}" ]; then
+    for config_file in "${SITES_DIR}"/*.caddy; do
+        if [ -f "${config_file}" ]; then
+            filename=$(basename "${config_file}")
+            site_id="${filename%.caddy}"
+            
+            # Выдергиваем домен из первой строки
+            domain=$(head -1 "${config_file}" | sed 's/[{ ].*//' | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+            
+            bashio::log "   Проверка: ${filename} (${domain})"
+            
+            valid=true
+            
+            # Проверка баланса скобок
+            open_braces=$(grep -o '{' "${config_file}" | wc -l)
+            close_braces=$(grep -o '}' "${config_file}" | wc -l)
+            
+            if [ "$open_braces" -ne "$close_braces" ]; then
+                bashio::log.yellow "      ✗ Ошибка в коде. Несовпадение скобок ({: $open_braces, }: $close_braces)"
+                valid=false
+            fi
+            
+            # Проверка через caddy validate (если скобки в порядке)
+            if [ "$valid" = true ]; then
+                error_file=$(mktemp)
+                
+                if caddy validate --config "${config_file}" --adapter caddyfile >/dev/null 2>"${error_file}"; then
+                    bashio::log.green "      ✓ Конфигурация валидная"
+                else
+                    bashio::log.red "      ✗ Конфигурация невалидная"
+                    
+                    # Ищем строку с Error:
+                    error_line=$(grep "Error:" "${error_file}" | head -1)
+                    if [ -n "$error_line" ]; then
+                        # Извлекаем номер строки и сообщение
+                        # Формат: .../file.caddy:9: unrecognized directive: й1
+                        line_num=$(echo "$error_line" | grep -o ':[0-9]*:' | tr -d ':')
+                        error_msg=$(echo "$error_line" | sed 's/.*:[0-9]*: //')
+                        
+                        if [ -n "$line_num" ]; then
+                            bashio::log.yellow "      Ошибка в строке ${line_num}: ${error_msg}"
+                        else
+                            bashio::log.yellow "      ${error_line}"
+                        fi
+                    else
+                        # Если нет Error, выводим последнюю строку
+                        last_line=$(tail -1 "${error_file}")
+                        bashio::log.yellow "      ${last_line}"
+                    fi
+                    
+                    valid=false
+                fi
+                
+                rm -f "${error_file}"
+            fi
+            
+            # Если невалидный - отключаем
+            if [ "$valid" = false ]; then
+                bashio::log.yellow "      Деактивируем конфигурацию сайта"
+                mv "${config_file}" "${config_file}.disabled"
+
+                stream_file="${SITES_DIR}/${site_id}.caddy.stream"
+
+                if [ -f "${stream_file}" ]; then
+                    mv "${stream_file}" "${stream_file}.disabled"
+                fi
+                
+                meta_file="${META_DIR}/${site_id}.json"
+                if [ -f "${meta_file}" ]; then
+                    sed -i 's/"status": "online"/"status": "offline"/' "${meta_file}"
+                    sed -i 's/"reason": null/"reason": "invalid"/' "${meta_file}"
+                    bashio::log "      Статус домена ${domain} - offline"
+                fi
+            fi
+        fi
+    done
+else
+    bashio::log "   Нет конфигураций для проверки"
+fi
 
 # -----------------------------------------------------------------------------
-# 3. СОЗДАНИЕ ГЛАВНОГО CADDYFILE (всегда перезаписывается)
+# СОЗДАНИЕ ГЛАВНОГО CADDYFILE (всегда перезаписывается)
 # -----------------------------------------------------------------------------
-bashio::log "Шаг 3: Создание главного Caddyfile..."
+bashio::log "Создаем глобальную конфигурацию Caddyfile..."
 
 if ! cat > "${DATA_CADDYFILE}" <<EOF
 # ================================================================
-# ГЛАВНЫЙ КОНФИГ CADDY
+# +++ CADDY global config +++
 # Сгенерирован аддоном caddy_proxy $(date)
-# НЕ РЕДАКТИРОВАТЬ
 # ================================================================
 
-# Глобальные настройки логирования (из options.json)
+# Глобальный блок
 {
     log {
         level ${LOG_LEVEL}
@@ -62,9 +206,13 @@ if ! cat > "${DATA_CADDYFILE}" <<EOF
             roll_keep 5
         }
     }
+
+    layer4 {
+        import ${SITES_DIR}/*.caddy.stream
+    }
 }
 
-# Импорт всех конфигов сайтов
+# Импорт всех конфигураций
 import ${SITES_DIR}/*.caddy
 EOF
 then
@@ -72,14 +220,11 @@ then
     exit 1
 fi
 
-bashio::log.green "   Создан: ${DATA_CADDYFILE}"
-bashio::log "Уровень логирования: ${LOG_LEVEL})"
+bashio::log.green "   Глобальная конфигурация: ${DATA_CADDYFILE} успешно создана"
 
 # -----------------------------------------------------------------------------
-# 4. ЗАВЕРШЕНИЕ
+# ЗАВЕРШЕНИЕ
 # -----------------------------------------------------------------------------
-bashio::log "============================================="
-bashio::log.green " Инициализация завершена"
-bashio::log "============================================="
+bashio::log.green "Инициализация успешно завершена "
 
 exit 0

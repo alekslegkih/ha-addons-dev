@@ -1,11 +1,10 @@
 name: "Caddy Proxy"
-version: "0.0.2"
+version: "0.2.1"
 slug: "caddy_proxy"
 description: "Caddy reverse-proxy"
 arch:
   - aarch64
   - amd64
-image: ghcr.io/alekslegkih/caddy_proxy-dev
 
 startup: services
 boot: auto
@@ -26,6 +25,9 @@ ports:
 ports_description:
   80/tcp: "HTTP"
   443/tcp: "HTTPS"
+
+panel_icon: mdi:arrow-decision
+panel_title: "Caddy proxy browser"
 
 ingress: true
 ingress_port: 5000
