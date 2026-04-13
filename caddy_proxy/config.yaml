@@ -1,7 +1,11 @@
 name: "Caddy Proxy"
-version: "0.2.2"
-slug: "caddy_proxy"
 description: "Caddy reverse-proxy"
+version: "0.2.3"
+slug: "caddy_proxy"
+
+url: "https://github.com/alekslegkih/ha-addons/tree/main/caddy_proxy"
+image: ghcr.io/alekslegkih/caddy_proxy-dev
+
 arch:
   - aarch64
   - amd64
