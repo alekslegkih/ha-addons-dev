@@ -93,8 +93,10 @@ strict_dlna=no
 album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg
 ```
 
-This section can be edited manually.
-Changes will be applied after restarting the add-on.
+This section can be edited manually. Changes will be applied after restarting the add-on.  
+
+Any valid ReadyMedia configuration option can be added here.  
+Refer to the official ReadyMedia documentation for the complete list of supported parameters.
 
 ## Network and access
 

@@ -89,8 +89,10 @@ strict_dlna=no
 album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg
 ```
 
-Эту секцию пользователь может изменять вручную.
-После перезапуска аддона изменения будут применены.
+Эту секцию пользователь может изменять вручную. После перезапуска аддона изменения будут применены.  
+
+В этот раздел можно добавить любые параметры, поддерживаемые ReadyMedia.  
+Полный список доступных параметров приведен в официальной документации ReadyMedia.
 
 ## Сеть и доступ
 

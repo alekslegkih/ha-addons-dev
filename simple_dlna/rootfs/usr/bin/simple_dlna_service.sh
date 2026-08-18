@@ -33,6 +33,11 @@ log_debug() {
 log_debug "Script started"
 log_debug "BASE_DIR=${BASE_DIR}"
 
+
+is_debug() {
+    [ -n "${DEBUG_FLAG:-}" ] && [ -f "${DEBUG_FLAG}" ]
+}
+
 # ------------------------------------------------------------------
 # Helpers
 # ------------------------------------------------------------------
@@ -55,7 +60,7 @@ fail_and_stop() {
     log_debug "fail_and_stop triggered by ${caller}"
     emit init_failed '{"reason":"fatal_err"}'
 
-    if _is_debug; then
+    if is_debug; then
         bashio::log.yellow "Debug mode enabled — container will stay alive"
         log_debug "Entering infinite sleep (debug mode)"
         sleep infinity
