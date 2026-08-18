@@ -1,18 +1,35 @@
 # Changelog
 
-## v3.3
+## v0.3.7
 
-- Modification: launch S6
+- Changed: Replaced the legacy addon_config mapping type with app_config.
 
-## v3.2
+## v0.3.6
+
+- Improve: Telegram reconnect handling without exiting after repeated errors.
+
+## v0.3.5
+
+- Improve: Telegram reconnect handling
+- Change: Updated base image to Python 3.14 / Alpine 3.23
+
+## v0.3.4
 
 - Fix: minor fixes
 
-## v3.1
+## v0.3.3
+
+- Modification: launch S6
+
+## v0.3.2
+
+- Fix: minor fixes
+
+## v0.3.1
 
 - Add: Logging of added torrents (name, status)
 
-## v3.0
+## v0.3.0
 
 - Refactor: Full project restructuring
 - Refactor: Split project into modules (core, telegram, transmission, etc.)
