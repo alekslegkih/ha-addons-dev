@@ -7,18 +7,21 @@ configuration:
       (for example: dlna), or a UUID
       (for example: 445ceeab-ad36-4624-856d-c562596668a2).
       Leave empty to display available devices.
+
   media_dir:
     name: Media directory
     description: >
       Specify the directory on the connected storage device
       containing media files for the DLNA server.
       For example: dlna.
-      The value must be a directory name without a leading /.
+      The value must be a directory name.
+
   friendly_name:
     name: DLNA server name
     description: >
       The name under which the server will appear
       in DLNA clients and media players.
+      
   log_level:
     name: ReadyMedia log level
     description: >

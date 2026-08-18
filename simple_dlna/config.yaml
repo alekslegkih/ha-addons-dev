@@ -1,6 +1,6 @@
 name: Simple DLNA
 description: "Lightweight DLNA server based on ReadyMedia"
-version: "0.3.0"
+version: "0.3.1"
 slug: simple_dlna
 url: "https://github.com/alekslegkih/ha-addons/tree/main/simple_dlna"
 arch:
