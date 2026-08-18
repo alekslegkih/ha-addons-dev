@@ -14,14 +14,14 @@ configuration:
       Specify the directory on the connected storage device
       containing media files for the DLNA server.
       For example: dlna.
-      The value must be a directory name.
+      The value must be a directory name without a leading /.
 
   friendly_name:
     name: DLNA server name
     description: >
       The name under which the server will appear
       in DLNA clients and media players.
-      
+
   log_level:
     name: ReadyMedia log level
     description: >

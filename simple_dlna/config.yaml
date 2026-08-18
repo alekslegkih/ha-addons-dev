@@ -1,12 +1,12 @@
 name: Simple DLNA
 description: "Lightweight DLNA server based on ReadyMedia"
-version: "0.3.1"
+version: "0.3.2"
 slug: simple_dlna
 url: "https://github.com/alekslegkih/ha-addons/tree/main/simple_dlna"
 arch:
   - amd64
   - aarch64
-image: ghcr.io/alekslegkih/simple_dlna-dev
+image: ghcr.io/alekslegkih/simple_dlna
 startup: application
 boot: auto
 init: false
@@ -45,7 +45,7 @@ homeassistant_api: true
 hassio_role: homeassistant
 host_network: true
 map:
-  - addon_config:rw
+  - app_config:rw
   - media:rw
 options:
   device: ""
