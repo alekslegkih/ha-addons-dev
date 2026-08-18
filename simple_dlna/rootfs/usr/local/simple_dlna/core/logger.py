@@ -41,4 +41,4 @@ def log_magenta(msg):
 
 def log_debug(msg):
     if DEBUG:
-        _print(RESET, f"[DEBUG] {msg}")
+        _print(YELLOW, f"[DEBUG] {msg}")
