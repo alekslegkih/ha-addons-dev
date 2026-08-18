@@ -1151,7 +1151,19 @@ function refreshFileList() {
                 `;
             });
             // Files
+
+            const mediaExtensions = [
+                "mp4", "mkv", "avi", "mov", "webm", "mpeg", "mpg", "m4v", "ts",
+                "mp3", "flac", "wav", "aac", "ogg", "m4a", "wma",
+                "jpg", "jpeg", "png", "gif", "webp", "bmp",
+                "srt", "ass"
+            ];
+
             data.files.forEach(file => {
+                const ext = file.name.includes(".")
+                    ? file.name.split(".").pop().toLowerCase()
+                    : "";
+                if (!mediaExtensions.includes(ext)) return;
                 const fullPath =
                     buildPath(currentPath, file.name);
                 html += `
