@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.3.0
+
+- Fixed: Corrected mount target path handling.
+- Fixed: Media file filtering in the file list to hide non-media files.
+- Added: English and Russian configuration translations.
+
 ## v0.2.24
 
 - Change: Updated base image to 21.0.2
