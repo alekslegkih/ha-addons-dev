@@ -163,7 +163,7 @@ check_target() {
     local mount_name
     mount_name="$(basename "${device}")"
 
-    local target="${TARGET_ROOT}/${mount_name}"
+    local target="/${TARGET_ROOT}/${mount_name}"
     local media_path="${target}/${MEDIA_DIR}"
 
     log_debug "Mount target=${target}"
