@@ -29,7 +29,7 @@ mount_usb() {
 
     local mount_name
     mount_name="$(basename "${device}")"
-    local target="/${TARGET_ROOT}/${mount_name}"
+    local target="${TARGET_ROOT}/${mount_name}"
 
     log_debug "Mount name=${mount_name}"
     log_debug "Mount target=${target}"
