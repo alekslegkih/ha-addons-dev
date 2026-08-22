@@ -893,6 +893,10 @@ async function processNextUpload() {
         if (decision === "cancel") {
             return;
         }
+        if (decision === "overwrite") {
+            startUpload(file, true);
+            return;
+        }
     }
         startUpload(file);
     }
@@ -919,13 +923,14 @@ function resetUploadState() {
         overlayQueueFill.style.transition = "width 0.15s linear";
     });
 }
-function startUpload(file) {
+function startUpload(file, overwrite = false) {
     overlay.classList.remove("conflict");
     overlayCancelBtn.innerText = "Cancel upload";
     overlayTitle.innerText =
         "Uploading file...";
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("overwrite", overwrite ? "1" : "0");
     const xhr = new XMLHttpRequest();
     currentXHR = xhr;
     overlayProgressFill.style.width = "0%";
@@ -1096,6 +1101,14 @@ function getActionButtons(fullPath, isFile) {
         </a>
     `;
 }
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 function refreshFileList() {
     const currentPath =
         currentPathEl.dataset.path;
@@ -1140,7 +1153,7 @@ function refreshFileList() {
                             <span class="folder-icon">📁</span>
                             <a class="name"
                                 data-path="${fullPath}">
-                                ${folder}
+                                ${escapeHtml(folder)}
                             </a>
                         </td>
                         <td>-</td>
@@ -1170,7 +1183,7 @@ function refreshFileList() {
                     <tr>
                         <td>
                             <span class="file-icon">📄</span>
-                            ${file.name}
+                            ${escapeHtml(file.name)}
                         </td>
                         <td>${file.size}</td>
                         <td>
@@ -1260,8 +1273,12 @@ document.getElementById("confirmDeleteBtn")
             closeDeleteModal();
             refreshFileList();
         } else {
-            alert("Delete failed");
+            alert(data.message || "Delete failed");
         }
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Delete failed");
     });
 });
 function openDeleteModal(path) {

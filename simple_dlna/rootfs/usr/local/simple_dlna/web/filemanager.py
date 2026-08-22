@@ -42,12 +42,15 @@ DLNA_DIR = os.path.abspath(DLNA_DIR)
 # Helpers
 # =========================
 
-def safe_path(path):
+def safe_path(path, fallback=True):
     full_path = os.path.abspath(os.path.join(DLNA_DIR, path))
 
-    if not os.path.commonpath([full_path, DLNA_DIR]) == DLNA_DIR:
+    if os.path.commonpath([full_path, DLNA_DIR]) != DLNA_DIR:
         log_yellow(f"Blocked path traversal attempt: {path}")
-        return DLNA_DIR
+
+        if fallback:
+            return DLNA_DIR
+        return None
 
     return full_path
 
@@ -147,9 +150,13 @@ def index():
 
             target = os.path.join(current_dir, filename)
 
+            overwrite = request.form.get("overwrite") == "1"
+
             try:
 
-                with open(target, "xb") as f:
+                mode = "wb" if overwrite else "xb"
+
+                with open(target, mode) as f:
                     file.save(f)
 
                 log(f"Uploaded: {filename}")
@@ -211,7 +218,6 @@ def index():
         free_space=human_size(free)
     )
 
-
 @app.route("/delete/<path:subpath>")
 def delete(subpath):
 
@@ -222,37 +228,69 @@ def delete(subpath):
         try:
             target.rmdir()
             log_yellow(f"Folder removed: {name}")
+
         except OSError as e:
             log_red(f"Failed to remove folder {name}: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }, 400
+
     elif target.is_file():
         try:
             target.unlink()
             log_yellow(f"File removed: {name}")
+
         except Exception as e:
             log_red(f"Failed to remove file {name}: {e}")
+            return {
+                "status": "error",
+                "message": str(e)
+            }, 500
+
+    else:
+        return {
+            "status": "error",
+            "message": "File or folder not found"
+        }, 404
 
     trigger_rescan()
 
     return {"status": "ok"}
 
 
-@app.route("/mkdir/", defaults={"subpath": ""}, methods=["POST"])
+ /mkdir/", defaults={"subpath": ""}, methods=["POST"])
 @app.route("/mkdir/<path:subpath>", methods=["POST"])
 def mkdir(subpath):
 
     dirname = request.form.get("dirname")
+    dirname = smart_filename(dirname)
 
     if not dirname:
         log_debug("mkdir called without dirname")
         return redirect(url_for("index", path=subpath))
 
-    target = safe_path(os.path.join(subpath, dirname))
+    target = safe_path(
+        os.path.join(subpath, dirname),
+        fallback=False
+    )
+
+    if target is None:
+        return {
+            "status": "error",
+            "message": "Invalid folder path"
+        }, 400
 
     try:
         os.makedirs(target, exist_ok=True)
         log_green(f"Folder created: {dirname}")
+
     except Exception as e:
         log_red(f"Failed to create folder {dirname}: {e}")
+        return {
+            "status": "error",
+            "message": str(e)
+        }, 500
 
     return {"status": "ok"}
 
@@ -376,7 +414,12 @@ def rename():
 
     if not new_name:
         return {"status": "error", "message": "Invalid name"}, 400
+
     target_path = parent_dir / new_name
+
+    if not source_path.exists():
+        return {"status": "error", "message": "Source not found"}, 404
+
     try:
         if target_path.exists():
             return {"status": "error", "message": "Already exists"}, 400
@@ -404,7 +447,7 @@ def download(subpath):
         as_attachment=True,
         download_name=target.name
     )
-    
+
 @app.route("/api/check-file", methods=["POST"])
 def check_file():
 
