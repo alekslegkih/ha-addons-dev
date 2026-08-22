@@ -135,7 +135,19 @@ def index():
 
     if request.method == "POST":
 
-        file = request.files.get("file")
+        try:
+            file = request.files.get("file")
+
+        except OSError as e:
+            log_yellow(f"Upload interrupted: {e}")
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return {
+                    "status": "error",
+                    "message": "Upload interrupted"
+                }, 400
+
+            return redirect(url_for("index", path=rel_path))
 
         if file:
 
