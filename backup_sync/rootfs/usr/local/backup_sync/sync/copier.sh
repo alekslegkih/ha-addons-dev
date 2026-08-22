@@ -174,7 +174,7 @@ while true; do
     file=$(queue_pop || true)
 
     if [ -z "${file:-}" ]; then
-        sleep 10
+        sleep 5
         continue
     fi
 

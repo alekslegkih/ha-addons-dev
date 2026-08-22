@@ -113,8 +113,8 @@ write_runtime_env() {
 # ------------------------------------------------------------------
 # Start
 # ------------------------------------------------------------------
-ADDON_VERSION="$(bashio::addon.version)"
-ADDON_NAME=$(bashio::addon.name)
+ADDON_VERSION="$(bashio::app.version)"
+ADDON_NAME="$(bashio::app.name)"
 
 bashio::log "========================================"
 bashio::log.green "=== ${ADDON_NAME} ==="

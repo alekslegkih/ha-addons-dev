@@ -14,8 +14,8 @@ LOG_DIR="/var/log/apcupsd"
 RUNTIME_CONFIG="${RUNTIME_DIR}/options.env"
 
 # Информация об аддоне
-ADDON_NAME="$(bashio::addon.name)"
-ADDON_VERSION="$(bashio::addon.version)"
+ADDON_VERSION="$(bashio::app.version)"
+ADDON_NAME="$(bashio::app.name)"
 
 # Логирование
 # Вывод базовой информации о запуске аддона

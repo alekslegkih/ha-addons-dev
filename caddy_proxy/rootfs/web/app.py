@@ -266,11 +266,11 @@ def validate_caddy_config(caddy_content):
     """Проверяет Caddy конфиг через caddy adapt --validate"""
     import tempfile
     import subprocess
-    
+
     with tempfile.NamedTemporaryFile(mode='w', suffix='.caddy', delete=False) as f:
         f.write(caddy_content)
         temp_path = f.name
-    
+
     try:
         result = subprocess.run(
             ['caddy', 'adapt', '--config', temp_path, '--adapter', 'caddyfile', '--validate'],
@@ -287,27 +287,27 @@ def validate_caddy_config(caddy_content):
 def save_caddy_config(site_id, caddy_content):
     """Сохраняет конфиг. Если невалидный — сохраняет как .disabled"""
     ensure_dirs()
-    
+
     caddy_path = os.path.join(SITES_DIR, f"{site_id}.caddy")
     disabled_path = os.path.join(SITES_DIR, f"{site_id}.caddy.disabled")
-    
+
     # Проверяем валидность
     is_valid, error = validate_caddy_config(caddy_content)
-    
+
     # Всегда сохраняем контент в соответствующий файл
     target_path = caddy_path if is_valid else disabled_path
     with open(target_path, 'w') as fp:
         fp.write(caddy_content)
-    
+
     # Удаляем противоположный файл если существует
     if is_valid and os.path.exists(disabled_path):
         os.remove(disabled_path)
     elif not is_valid and os.path.exists(caddy_path):
         os.remove(caddy_path)
-    
+
     if not is_valid:
         print(f"Site {site_id} config invalid: {error}")
-        
+
     return is_valid
 
 def save_stream_config(site_id, stream_content):
@@ -324,32 +324,31 @@ def save_stream_config(site_id, stream_content):
         f.write(stream_content)
 
 def delete_caddy_config(site_id):
-    """Удаляет конфиг сайта (и обычный, и disabled)"""
-    caddy_path = os.path.join(SITES_DIR, f"{site_id}.caddy")
-    disabled_path = os.path.join(SITES_DIR, f"{site_id}.caddy.disabled")
-    
-    if os.path.exists(caddy_path):
-        os.remove(caddy_path)
-    if os.path.exists(disabled_path):
-        os.remove(disabled_path)
+    """Удаляет все файлы конфигурации сайта"""
+    paths = [
+        os.path.join(SITES_DIR, f"{site_id}.caddy"),
+        os.path.join(SITES_DIR, f"{site_id}.caddy.disabled"),
+        os.path.join(SITES_DIR, f"{site_id}.caddy.stream"),
+        os.path.join(SITES_DIR, f"{site_id}.caddy.stream.disabled"),
+    ]
 
-    stream_path = os.path.join(SITES_DIR, f"{site_id}.caddy.stream")
-    if os.path.exists(stream_path):
-        os.remove(stream_path)
+    for path in paths:
+        if os.path.exists(path):
+            os.remove(path)
 
 def enable_site(site_id, enabled=True):
     """Включает или выключает сайт с проверкой валидности при включении"""
     caddy_path = os.path.join(SITES_DIR, f"{site_id}.caddy")
     disabled_path = os.path.join(SITES_DIR, f"{site_id}.caddy.disabled")
-    
+
     if enabled:
         # При включении — проверяем валидность disabled файла
         if os.path.exists(disabled_path):
             with open(disabled_path, 'r') as fp:
                 caddy_content = fp.read()
-            
+
             is_valid, _ = validate_caddy_config(caddy_content)
-            
+
             if is_valid:
                 os.rename(disabled_path, caddy_path)
                 return True
@@ -378,18 +377,18 @@ def reload_caddy():
             capture_output=True,
             text=True
         )
-        
+
         if check_result.returncode != 0:
             print(f"Caddy config validation failed: {check_result.stderr}")
             return False
-        
+
         # Если валидация прошла, перезагружаем
         result = subprocess.run(
             ['caddy', 'reload', '--config', '/data/Caddyfile'],
             capture_output=True,
             text=True
         )
-        
+
         if result.returncode == 0:
             print("Caddy reloaded successfully")
             return True
@@ -421,18 +420,18 @@ def create_site():
     """Создать новый сайт"""
     data = request.json
     domain = data.get('domain')
-    
+
     # Проверка уникальности
     if is_domain_exists(domain):
         return jsonify({'error': 'Domain already exists'}), 409
-    
+
     site_id = get_next_id()
-    
+
     # Добавляем статус и ID
     data['status'] = 'online'
     data['reason'] = None
     data['id'] = site_id
-    
+
     # Устанавливаем значения по умолчанию, если их нет
     if 'force_https' not in data:
         data['force_https'] = True
@@ -440,10 +439,10 @@ def create_site():
         data['hsts'] = True
     if 'hsts_subdomains' not in data:
         data['hsts_subdomains'] = True
-    
+
     # Сохраняем метаданные
     save_meta(site_id, data)
-    
+
     # Генерируем и сохраняем Caddy конфиг
     caddy_config = generate_caddy_config(data)
     is_valid = save_caddy_config(site_id, caddy_config)
@@ -469,7 +468,7 @@ def create_site():
     if not is_valid:
         # Можно вернуть предупреждение, но не ошибку
         return jsonify({'warning': 'Config saved but invalid, site disabled', 'id': site_id}), 201
-    
+
     return jsonify({'id': site_id, 'status': 'ok'})
 
 @app.route('/api/sites/<int:site_id>', methods=['GET'])
@@ -485,18 +484,18 @@ def update_site(site_id):
     """Обновить сайт"""
     data = request.json
     domain = data.get('domain')
-    
+
     # Проверка уникальности (исключая текущий ID)
     if is_domain_exists(domain, exclude_id=site_id):
         return jsonify({'error': 'Domain already exists'}), 409
-    
+
     data['status'] = 'online'
     data['reason'] = None
     data['id'] = site_id
-    
+
     # Сохраняем метаданные
     save_meta(site_id, data)
-    
+
     # Генерируем и сохраняем Caddy конфиг
     caddy_config = generate_caddy_config(data)
     is_valid = save_caddy_config(site_id, caddy_config)
@@ -522,7 +521,7 @@ def update_site(site_id):
     if not is_valid:
         # Можно вернуть предупреждение, но не ошибку
         return jsonify({'warning': 'Config saved but invalid, site disabled', 'id': site_id}), 201
-    
+
     return jsonify({'status': 'ok'})
 
 @app.route('/api/sites/<int:site_id>', methods=['DELETE'])
@@ -531,26 +530,19 @@ def delete_site(site_id):
     delete_meta(site_id)
     delete_caddy_config(site_id)
 
-    stream_path = os.path.join(SITES_DIR, f"{site_id}.caddy.stream")
-    stream_disabled = f"{stream_path}.disabled"
-
-    if os.path.exists(stream_path):
-        os.remove(stream_path)
-
-    if os.path.exists(stream_disabled):
-        os.remove(stream_disabled)
-
     reload_caddy()
+
+    return jsonify({'status': 'deleted'}), 200
 
 @app.route('/api/sites/<int:site_id>/toggle', methods=['POST'])
 def toggle_site(site_id):
     """Включить/выключить сайт"""
     data = request.json
     enabled = data.get('enabled', False)
-    
+
     # Пытаемся включить/выключить
     success = enable_site(site_id, enabled)
-        
+
     # Управляем L4
     # если конфиг невалидный — отключаем L4
     stream_path = os.path.join(SITES_DIR, f"{site_id}.caddy.stream")
@@ -571,7 +563,7 @@ def toggle_site(site_id):
     if not success and enabled:
         # Не удалось включить из-за невалидности
         return jsonify({'error': 'Cannot enable: config is invalid'}), 400
-    
+
     # Обновляем статус в метаданных
     site = get_site_by_id(site_id)
     if site:
@@ -582,10 +574,10 @@ def toggle_site(site_id):
             site['status'] = 'offline'
             site['reason'] = 'user'
         save_meta(site_id, site)
-    
+
     # Перезагружаем Caddy
     reload_caddy()
-    
+
     return jsonify({'status': 'ok'})
 
 @app.route('/api/reload', methods=['POST'])

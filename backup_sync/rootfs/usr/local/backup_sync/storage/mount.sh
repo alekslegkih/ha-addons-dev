@@ -14,7 +14,7 @@ mount_usb() {
     device="$(resolve_device "${DEVICE}")" || {
         bashio::log.red "Device ${DEVICE} not found"
         log_debug "resolve_device() failed"
-        emit storage_failed '{"reason":"device_not_found"}'
+        emit storage_failed '{\"reason\":\"device_not_found\"}'
         return 1
     }
 
@@ -23,7 +23,7 @@ mount_usb() {
     if [ ! -b "${device}" ]; then
         bashio::log.red "Resolved path is not a block device: ${device}"
         log_debug "ls -l ${device}: $(ls -l "${device}" 2>/dev/null || echo 'not accessible')"
-        emit storage_failed '{"reason":"device_error", "error":"not_block_device"}'
+        emit storage_failed '{\"reason\":\"device_error\", \"error\":\"not_block_device\"}'
         return 1
     fi
 
@@ -37,7 +37,7 @@ mount_usb() {
     if ! mkdir -p "${target}"; then
         bashio::log.red "Cannot create ${target}"
         log_debug "mkdir failed with exit code=$?"
-        emit storage_failed '{"reason":"device_error", "error":"mkdir_failed"}'
+        emit storage_failed '{\"reason\":\"device_error\", \"error\":\"mkdir_failed\"}'
         return 1
     fi
 
@@ -46,7 +46,7 @@ mount_usb() {
     if mountpoint -q "${target}"; then
         bashio::log.red "Target ${target} is already a real mountpoint"
         log_debug "Existing mount: $(findmnt "${target}" || echo 'unknown')"
-        emit storage_failed '{"reason":"device_error", "error":"already_mounted"}'
+        emit storage_failed '{\"reason\":\"device_error\", \"error\":\"already_mounted\"}'
         return 1
     else
         log_debug "Target is not an active mountpoint"
@@ -71,7 +71,7 @@ mount_usb() {
         else
             bashio::log.red "Bind mount failed"
             log_debug "Bind mount exit code=$?"
-            emit storage_failed '{"reason":"device_error", "error":"bind_failed"}'
+            emit storage_failed '{\"reason\":\"device_error\", \"error\":\"bind_failed\"}'
             return 1
         fi
     else
@@ -93,7 +93,7 @@ mount_usb() {
     if [ -z "${fstype}" ]; then
         bashio::log.red "Filesystem type not detected"
         log_debug "blkid output empty for ${device}"
-        emit storage_failed '{"reason":"device_error", "error":"unknown_fs"}'
+        emit storage_failed '{\"reason\":\"device_error\", \"error\":\"unknown_fs\"}'
         return 1
     fi
 
@@ -124,7 +124,7 @@ mount_usb() {
                 log_debug "ntfs-3g mount failed with code=${second_exit}"
 
                 bashio::log.red "Direct mount failed (ntfs + ntfs-3g)"
-                emit storage_failed "{\"reason\":\"device_error\",\"error\":\"fs=ntfs\"}"
+                emit storage_failed "{\"reason\":\"device_error\",  \"error\":\"fs=ntfs\"}"
                 return 1
             fi
         fi

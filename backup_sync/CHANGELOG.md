@@ -1,28 +1,45 @@
 # Changelog
 
+## v0.6.1
+
+- Changed: Updated Bashio API calls.
+
+## v0.6.0
+
+- Changed: Updated base image to 21.0.2.
+- Changed: Replaced the legacy addon_config mapping type with app_config.
+
+## v0.5.5
+
+- Changed: Updated base image to 20.1.1.
+
+## v0.5.4
+
+- Fixed: Event message view.
+
 ## v0.5.3
 
-- Changed logging of ru modules
+- Changed: Logging of ru modules.
 
 ## v0.5.2
 
-- Minor bug fixes
+- Fixed: Minor bug fixes.
 
 ## v0.5.1
 
-- Minor bug fixes
+- Fixed: Minor bug fixes.
 
 ## v0.5.0
 
-- Added file browser for managing backups (create folders, rename, delete, download)
-- Added free space check before copying to USB
-- Fixed queue processing stability
-- Fixed rare race conditions in file stabilization
-- Updated documentation
+- Added: File browser for managing backups (create folders, rename, delete, download).
+- Added: Free space check before copying to USB.
+- Fixed: Queue processing stability.
+- Fixed: Rare race conditions in file stabilization.
+- Updated documentation.
 
 ## v0.4.1
 
-- Fixed image
+- Fixed: image.
 
 ## v0.4.0
 
@@ -30,13 +47,13 @@
 
 ## v0.3.1
 
-- Fixed errors code
+- Fixed: Errors code.
 
 ## v0.3.0
 
-- Changed completely redesigned USB mounting logic
-- Changed improved storage validation and device detection
-- Improved more stable copy worker with detailed transfer logs
+- Changed: completely redesigned USB mounting logic.
+- Changed: improved storage validation and device detection.
+- Improved more stable copy worker with detailed transfer logs.
 
 ## 0.2.5
 
