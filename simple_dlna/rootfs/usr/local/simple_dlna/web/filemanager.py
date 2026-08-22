@@ -271,7 +271,7 @@ def delete(subpath):
     return {"status": "ok"}
 
 
- /mkdir/", defaults={"subpath": ""}, methods=["POST"])
+@app.route("/mkdir/", defaults={"subpath": ""}, methods=["POST"])
 @app.route("/mkdir/<path:subpath>", methods=["POST"])
 def mkdir(subpath):
 
