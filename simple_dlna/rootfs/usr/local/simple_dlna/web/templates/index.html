@@ -1201,11 +1201,6 @@ function refreshFileList() {
 folderInput.addEventListener("input", function() {
     createBtn.disabled = folderInput.value.trim() === "";
 });
-folderInput.addEventListener("keypress", function(e) {
-    if (e.key === "Enter" && folderInput.value.trim() !== "") {
-        createBtn.click();
-    }
-});
 uploadTrigger.addEventListener("click", function() {
     fileInput.click();
 });
@@ -1266,7 +1261,9 @@ let deleteTarget = null;
 document.getElementById("confirmDeleteBtn")
 .addEventListener("click", function() {
     if (!deleteTarget) return;
-    fetch("delete/" + encodeURIComponent(deleteTarget))
+    fetch("delete/" + encodeURIComponent(deleteTarget), {
+        method: "POST"
+    })
     .then(res => res.json())
     .then(data => {
         if (data.status === "ok") {
