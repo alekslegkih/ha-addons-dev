@@ -76,16 +76,12 @@ def trigger_rescan():
 
 def smart_filename(filename: str) -> str:
     filename = os.path.basename(filename)
-
     filename = re.sub(r"[^0-9A-Za-zА-Яа-яЁё._\- ]", "", filename)
-
     filename = filename.strip()
-
     return filename
 
 
 def list_directory(rel_path):
-
     current_dir = safe_path(rel_path)
 
     try:
@@ -104,20 +100,16 @@ def list_directory(rel_path):
     files = []
 
     for e in entries:
-
         full_path = os.path.join(current_dir, e)
 
         if os.path.isfile(full_path):
-
             size_bytes = os.path.getsize(full_path)
-
             files.append({
                 "name": e,
                 "size": human_size(size_bytes)
             })
 
     files = sorted(files, key=lambda x: x["name"].lower())
-
     parent = "/".join(rel_path.split("/")[:-1]) if rel_path else None
 
     return folders, files, parent
@@ -163,7 +155,6 @@ def index():
                     }, 400
 
                 return redirect(url_for("index", path=rel_path))
-
             target = os.path.join(current_dir, filename)
 
             overwrite = request.form.get("overwrite") == "1"
@@ -186,16 +177,32 @@ def index():
                         url_for("index", path=rel_path)
                     )
 
+                log(
+                    f"Upload started: {filename}"
+                    + (" (overwrite)" if overwrite else "")
+                )
+
                 fd, temp_path = tempfile.mkstemp(
                     prefix=f".{filename}.",
                     suffix=".upload",
                     dir=current_dir
                 )
 
+                log_debug(
+                    f"Temporary upload file created: "
+                    f"{os.path.basename(temp_path)}"
+                )
+
                 with os.fdopen(fd, "wb") as f:
                     file.save(f)
 
+                log_debug(f"Upload data completed: {filename}")
+
                 if overwrite:
+
+                    log_debug(
+                        f"Replacing existing file: {filename}"
+                    )
 
                     os.replace(temp_path, target)
 
@@ -215,6 +222,11 @@ def index():
                 if temp_path and os.path.exists(temp_path):
                     os.unlink(temp_path)
 
+                    log_debug(
+                        f"Temporary upload file removed: "
+                        f"{os.path.basename(temp_path)}"
+                    )
+
                 log_yellow(
                     f"Upload skipped (already exists): {filename}"
                 )
@@ -233,7 +245,12 @@ def index():
                 if temp_path and os.path.exists(temp_path):
                     os.unlink(temp_path)
 
-                log_red(f"Upload failed: {e}")
+                    log_debug(
+                        f"Temporary upload file removed: "
+                        f"{os.path.basename(temp_path)}"
+                    )
+
+                log_red(f"Upload failed: {filename}: {e}")
 
                 if request.headers.get(
                     "X-Requested-With"
