@@ -300,7 +300,7 @@ def delete(subpath):
             log_yellow(f"Folder removed: {name}")
 
         except OSError as e:
-                log_red(f"Delete failed for '{name}' ({target}): {e}")
+            log_red(f"Delete failed for '{name}' ({target}): {e}")
 
             if e.errno == 39:
                 return {
