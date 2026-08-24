@@ -1,1 +1,1 @@
-/usr/bin/simple_dlna_init.sh
+/etc/s6-overlay/scripts/init.sh
