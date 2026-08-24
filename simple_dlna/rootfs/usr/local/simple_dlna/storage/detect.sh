@@ -12,47 +12,34 @@ detect_devices() {
     log_debug "detect_devices(): start"
 
     bashio::log "Available Disks for mounting:"
-
-    log_debug "Running lsblk (formatted view)"
-
-    lsblk -o NAME,LABEL,UUID,SIZE,FSTYPE
-
     echo
 
-    log_debug "Scanning raw lsblk output"
+    printf '%-10s %-16s %-38s %-8s %-10s\n' \
+        "NAME" "LABEL" "UUID" "SIZE" "FSTYPE"
 
-    while read -r line; do
+    printf '%s\n' \
+        "--------------------------------------------------------------------------------"
+
+    while IFS= read -r line; do
 
         eval "${line}"
 
-        log_debug \
-            "RAW: name=${NAME} type=${TYPE} fstype=${FSTYPE:-none} size=${SIZE:-none} label=${LABEL:-none} uuid=${UUID:-none}"
-
-        [ "${TYPE}" != "part" ] && continue
-
-        base_name="$(basename "${NAME}")"
-
-        if [ -z "${LABEL}" ]; then
-            log_debug "Label missing for ${base_name}, using blkid fallback"
-
-            LABEL="$(blkid -o value -s LABEL "${NAME}" 2>/dev/null || true)"
-
-            log_debug "blkid fallback label=${LABEL:-none}"
-        fi
-
-        if [ -z "${UUID}" ]; then
-            log_debug "UUID missing for ${base_name}, using blkid fallback"
-
-            UUID="$(blkid -o value -s UUID "${NAME}" 2>/dev/null || true)"
-
-            log_debug "blkid fallback uuid=${UUID:-none}"
-        fi
-
-        log_debug "Detected device: ${base_name}"
+        case "${TYPE}" in
+            disk|part)
+                printf '%-10s %-16s %-38s %-8s %-10s\n' \
+                    "${NAME}" \
+                    "${LABEL}" \
+                    "${UUID}" \
+                    "${SIZE}" \
+                    "${FSTYPE}"
+                ;;
+        esac
 
     done < <(
-        lsblk -rpnP -o NAME,TYPE,FSTYPE,SIZE,LABEL,UUID
+        lsblk -P -n -o NAME,LABEL,UUID,SIZE,FSTYPE,TYPE
     )
+
+    echo
 
     log_debug "detect_devices(): completed"
 }
