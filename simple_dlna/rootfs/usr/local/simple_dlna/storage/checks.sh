@@ -88,30 +88,33 @@ resolve_device() {
 is_system_device() {
 
     local device="$1"
-    local data_source
+    local data_partition
     local data_disk
     local device_disk
 
     log_debug "is_system_device(): device=${device}"
 
     # ----------------------------------------------------------
-    # Determine Home Assistant data source
+    # Find Home Assistant data partition
     # ----------------------------------------------------------
 
-    data_source="$(findmnt -n -o SOURCE /mnt/data 2>/dev/null || true)"
+    data_partition="$(
+        lsblk -rpn -o NAME,PARTLABEL 2>/dev/null \
+            | awk '$2 == "hassos-data" { print $1; exit }'
+    )"
 
-    if [ -z "${data_source}" ]; then
-        log_debug "Unable to determine /mnt/data source"
+    log_debug "Home Assistant data partition=${data_partition:-none}"
+
+    if [ -z "${data_partition}" ]; then
+        log_debug "Unable to determine Home Assistant data partition"
         return 2
     fi
-
-    log_debug "Home Assistant data source=${data_source}"
 
     # ----------------------------------------------------------
     # Resolve Home Assistant physical disk
     # ----------------------------------------------------------
 
-    data_disk="$(lsblk -no PKNAME "${data_source}" 2>/dev/null || true)"
+    data_disk="$(lsblk -no PKNAME "${data_partition}" 2>/dev/null || true)"
 
     if [ -z "${data_disk}" ]; then
         log_debug "Unable to determine Home Assistant data disk"
@@ -147,7 +150,6 @@ is_system_device() {
 
     return 1
 }
-
 # ------------------------------------------------------------------
 # Storage validation
 # ------------------------------------------------------------------

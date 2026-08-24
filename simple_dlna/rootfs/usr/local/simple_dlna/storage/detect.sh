@@ -18,6 +18,7 @@ print_table_row() {
         "$5"
 }
 
+
 # ------------------------------------------------------------------
 # Device detection
 # ------------------------------------------------------------------
@@ -42,15 +43,22 @@ detect_devices() {
 
     local first_disk=true
 
+    log_debug "Running lsblk device scan"
+
     while IFS= read -r line; do
 
+        log_debug "lsblk raw: ${line}"
+
         eval "${line}"
+
+        log_debug "Parsed: NAME=${NAME:-none} TYPE=${TYPE:-none} LABEL=${LABEL:-none} UUID=${UUID:-none} SIZE=${SIZE:-none} FSTYPE=${FSTYPE:-none}"
 
         case "${TYPE}" in
             disk)
 
                 case "${NAME}" in
                     zram*)
+                        log_debug "Skipping zram device: ${NAME}"
                         continue
                         ;;
                 esac
@@ -58,6 +66,8 @@ detect_devices() {
                 if [ "${first_disk}" = false ]; then
                     printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
                 fi
+
+                log_debug "Printing disk: ${NAME}"
 
                 print_table_row \
                     "${NAME}" \
@@ -73,9 +83,12 @@ detect_devices() {
 
                 case "${NAME}" in
                     zram*)
+                        log_debug "Skipping zram partition: ${NAME}"
                         continue
                         ;;
                 esac
+
+                log_debug "Printing partition: ${NAME}"
 
                 print_table_row \
                     "${NAME}" \
@@ -83,6 +96,10 @@ detect_devices() {
                     "${UUID}" \
                     "${SIZE}" \
                     "${FSTYPE}"
+                ;;
+
+            *)
+                log_debug "Skipping unsupported device type: ${TYPE:-none} (${NAME:-unknown})"
                 ;;
         esac
 
