@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.3.4
+
+- Fixed: Corrected loading of addon configuration values that could cause configured media directory settings to be ignored.
+
+## v0.3.3
+
+- Fixed: Improved file manager stability and error handling.
+- Change: General code cleanup.
+
 ## v0.3.2
 
 - Change: Replaced the legacy addon_config mapping type with app_config.

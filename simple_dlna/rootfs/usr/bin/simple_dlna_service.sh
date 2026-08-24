@@ -134,7 +134,7 @@ bashio::log.green "Сonfiguration ready"
 log_debug "DLNA config initialized"
 
 # ------------------------------------------------------------------
-# Flag barier
+# Flag barrier
 # ------------------------------------------------------------------
 touch "/run/simple_dlna/service.ready"
 

@@ -36,7 +36,12 @@ if not DLNA_DIR:
 WATCH_DIR = Path(DLNA_DIR).resolve()
 
 
-VALID_SUFFIXES = (".mkv", ".srt", ".ass", ".mp4", ".avi", ".mp3", ".flac", ".jpg", ".png")
+VALID_SUFFIXES = (
+    ".mp4", ".mkv", ".avi", ".mov", ".webm", ".mpeg", ".mpg", ".m4v", ".ts",
+    ".mp3", ".flac", ".wav", ".aac", ".ogg", ".m4a", ".wma",
+    ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp",
+    ".srt", ".ass"
+)
 
 CHECK_INTERVAL = 2
 STABLE_TIME = 5

@@ -1,6 +1,6 @@
 name: Simple DLNA
 description: "Lightweight DLNA server based on ReadyMedia"
-version: "0.3.9"
+version: "0.4.0"
 slug: simple_dlna
 url: "https://github.com/alekslegkih/ha-addons/tree/main/simple_dlna"
 arch:
@@ -14,32 +14,105 @@ privileged:
   - SYS_ADMIN
   - DAC_READ_SEARCH
 devices:
+  - /dev/sda
+  - /dev/sda1
+  - /dev/sda2
+  - /dev/sda3
+  - /dev/sda4
+  - /dev/sda5
+  - /dev/sda6
+  - /dev/sda7
+  - /dev/sda8
+  - /dev/sdb
   - /dev/sdb1
-  - /dev/sdc1
-  - /dev/sdd1
-  - /dev/sde1
-  - /dev/sdf1
   - /dev/sdb2
-  - /dev/sdc2
-  - /dev/sdd2
-  - /dev/sde2
-  - /dev/sdf2
   - /dev/sdb3
-  - /dev/sdc3
-  - /dev/sdd1
-  - /dev/sde3
-  - /dev/sdf3
   - /dev/sdb4
+  - /dev/sdb5
+  - /dev/sdb6
+  - /dev/sdb7
+  - /dev/sdb8
+  - /dev/sdc
+  - /dev/sdc1
+  - /dev/sdc2
+  - /dev/sdc3
   - /dev/sdc4
+  - /dev/sdc5
+  - /dev/sdc6
+  - /dev/sdc7
+  - /dev/sdc8
+  - /dev/sdd
+  - /dev/sdd1
+  - /dev/sdd2
+  - /dev/sdd3
   - /dev/sdd4
+  - /dev/sdd5
+  - /dev/sdd6
+  - /dev/sdd7
+  - /dev/sdd8
+  - /dev/sde
+  - /dev/sde1
+  - /dev/sde2
+  - /dev/sde3
   - /dev/sde4
+  - /dev/sde5
+  - /dev/sde6
+  - /dev/sde7
+  - /dev/sde8
+  - /dev/sdf
+  - /dev/sdf1
+  - /dev/sdf2
+  - /dev/sdf3
   - /dev/sdf4
-  - /dev/nvme0
-  - /dev/nvme1
-  - /dev/nvme2
+  - /dev/sdf5
+  - /dev/sdf6
+  - /dev/sdf7
+  - /dev/sdf8
+  - /dev/nvme0n1
+  - /dev/nvme0n1p1
+  - /dev/nvme0n1p2
+  - /dev/nvme0n1p3
+  - /dev/nvme0n1p4
+  - /dev/nvme0n1p5
+  - /dev/nvme0n1p6
+  - /dev/nvme0n1p7
+  - /dev/nvme0n1p8
+  - /dev/nvme1n1
+  - /dev/nvme1n1p1
+  - /dev/nvme1n1p2
+  - /dev/nvme1n1p3
+  - /dev/nvme1n1p4
+  - /dev/nvme1n1p5
+  - /dev/nvme1n1p6
+  - /dev/nvme1n1p7
+  - /dev/nvme1n1p8
+  - /dev/nvme2n1
+  - /dev/nvme2n1p1
+  - /dev/nvme2n1p2
+  - /dev/nvme2n1p3
+  - /dev/nvme2n1p4
+  - /dev/nvme2n1p5
+  - /dev/nvme2n1p6
+  - /dev/nvme2n1p7
+  - /dev/nvme2n1p8
   - /dev/mmcblk0
+  - /dev/mmcblk0p1
+  - /dev/mmcblk0p2
+  - /dev/mmcblk0p3
+  - /dev/mmcblk0p4
+  - /dev/mmcblk0p5
+  - /dev/mmcblk0p6
+  - /dev/mmcblk0p7
+  - /dev/mmcblk0p8
   - /dev/mmcblk1
-  - /dev/fuse
+  - /dev/mmcblk1p1
+  - /dev/mmcblk1p2
+  - /dev/mmcblk1p3
+  - /dev/mmcblk1p4
+  - /dev/mmcblk1p5
+  - /dev/mmcblk1p6
+  - /dev/mmcblk1p7
+  - /dev/mmcblk1p8
 hassio_api: true
 homeassistant_api: true
 hassio_role: homeassistant

@@ -81,6 +81,72 @@ resolve_device() {
     return 1
 }
 
+# ------------------------------------------------------------------
+# System device detection
+# ------------------------------------------------------------------
+
+is_system_device() {
+
+    local device="$1"
+    local data_source
+    local data_disk
+    local device_disk
+
+    log_debug "is_system_device(): device=${device}"
+
+    # ----------------------------------------------------------
+    # Determine Home Assistant data source
+    # ----------------------------------------------------------
+
+    data_source="$(findmnt -n -o SOURCE /mnt/data 2>/dev/null || true)"
+
+    if [ -z "${data_source}" ]; then
+        log_debug "Unable to determine /mnt/data source"
+        return 2
+    fi
+
+    log_debug "Home Assistant data source=${data_source}"
+
+    # ----------------------------------------------------------
+    # Resolve Home Assistant physical disk
+    # ----------------------------------------------------------
+
+    data_disk="$(lsblk -no PKNAME "${data_source}" 2>/dev/null || true)"
+
+    if [ -z "${data_disk}" ]; then
+        log_debug "Unable to determine Home Assistant data disk"
+        return 2
+    fi
+
+    # ----------------------------------------------------------
+    # Resolve selected physical disk
+    # ----------------------------------------------------------
+
+    device_disk="$(lsblk -no PKNAME "${device}" 2>/dev/null || true)"
+
+    # If selected device is a whole disk, PKNAME is empty.
+    if [ -z "${device_disk}" ]; then
+        device_disk="$(basename "$(readlink -f "${device}")")"
+    fi
+
+    if [ -z "${device_disk}" ]; then
+        log_debug "Unable to determine selected device disk"
+        return 2
+    fi
+
+    log_debug "Home Assistant data disk=${data_disk}"
+    log_debug "Selected device disk=${device_disk}"
+
+    # ----------------------------------------------------------
+    # Compare physical disks
+    # ----------------------------------------------------------
+
+    if [ "${device_disk}" = "${data_disk}" ]; then
+        return 0
+    fi
+
+    return 1
+}
 
 # ------------------------------------------------------------------
 # Storage validation
@@ -108,13 +174,15 @@ check_storage() {
 
     log_debug "Resolved device=${device}"
 
-    case "${device}" in
-        /dev/sda*|/dev/mmcblk0*|/dev/nvme0n1*)
-            bashio::log.red "Refusing to use system device: ${device}"
-            emit storage_failed '{"reason":"system_device_blocked"}'
-            return 1
-            ;;
-    esac
+    if is_system_device "${device}"; then
+        bashio::log.red "Refusing to use Home Assistant data disk: ${device}"
+        emit storage_failed '{"reason":"system_device_blocked"}'
+        return 1
+    elif [ "$?" -eq 2 ]; then
+        bashio::log.red "Unable to determine Home Assistant data disk"
+        emit storage_failed '{"reason":"system_device_check_failed"}'
+        return 1
+    fi
 
     log_debug "Detecting filesystem via lsblk"
 

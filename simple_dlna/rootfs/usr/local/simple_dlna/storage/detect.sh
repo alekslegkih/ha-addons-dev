@@ -3,14 +3,6 @@
 
 set -euo pipefail
 
-
-# ------------------------------------------------------------------
-# Constants
-# ------------------------------------------------------------------
-
-SYSTEM_DISKS_REGEX="^(sda|mmcblk0|zram)"
-
-
 # ------------------------------------------------------------------
 # Device detection
 # ------------------------------------------------------------------
@@ -18,7 +10,6 @@ SYSTEM_DISKS_REGEX="^(sda|mmcblk0|zram)"
 detect_devices() {
 
     log_debug "detect_devices(): start"
-    log_debug "System disk regex=${SYSTEM_DISKS_REGEX}"
 
     bashio::log "Available Disks for mounting:"
 
@@ -27,7 +18,7 @@ detect_devices() {
     lsblk -o NAME,LABEL,UUID,SIZE,FSTYPE,TYPE \
         | awk -v regex="${SYSTEM_DISKS_REGEX}" '
             NR==1 { print $1, $2, $3, $4, $5; next }
-            $6=="part" && $5!="" && $1 !~ regex {
+            $6=="part" && $5!="" {
                 print $1, $2, $3, $4, $5
             }
         ' \
@@ -44,11 +35,6 @@ detect_devices() {
         [ "${type}" != "part" ] && continue
 
         base_name="$(basename "${name}")"
-
-        if [[ "${base_name}" =~ ${SYSTEM_DISKS_REGEX} ]]; then
-            log_debug "Skipping system device ${base_name}"
-            continue
-        fi
 
         if [ -z "${fstype}" ]; then
             log_debug "Skipping ${base_name} (no filesystem)"

@@ -28,18 +28,15 @@ load_config() {
     bashio::log "Loading config..."
 
     DEVICE=$(bashio::config 'device')
-    MOUNT_POINT=$(bashio::config 'mount_point')
-    MAX_COPIES=$(bashio::config 'max_copies')
-
-    if bashio::config.true 'sync_exist_start'; then
-        SYNC_EXIST_START=true
-    fi
+    MEDIA_DIR=$(bashio::config 'media_dir')
+    FRIENDLY_NAME=$(bashio::config 'friendly_name')
+    LOG_LEVEL=$(bashio::config 'log_level')
 
     log_debug "Raw config values:"
     log_debug "  DEVICE=${DEVICE:-empty}"
-    log_debug "  MOUNT_POINT=${MOUNT_POINT:-empty}"
-    log_debug "  MAX_COPIES=${MAX_COPIES:-empty}"
-    log_debug "  SYNC_EXIST_START=${SYNC_EXIST_START:-empty}"
+    log_debug "  MEDIA_DIR=${MEDIA_DIR:-empty}"
+    log_debug "  FRIENDLY_NAME=${FRIENDLY_NAME:-empty}"
+    log_debug "  LOG_LEVEL=${LOG_LEVEL:-empty}"
 
     # ------------------------------------------------------------------
     # Information output
@@ -66,7 +63,7 @@ load_config() {
     bashio::log "  Device     : ${usb_value}"
     bashio::log "  Media dir  : ${media_value}"
     bashio::log "  DLNA name  : ${name_value}"
-
+    bashio::log "  Log level  : \033[0;34m${LOG_LEVEL}\033[0m"
 
     # ------------------------------------------------------------------
     # Validating target directory

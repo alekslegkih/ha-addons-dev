@@ -153,7 +153,9 @@ mount_usb() {
 
         log_debug "Executing mount with args: ${mount_args[*]}"
 
-        if ! mount "${mount_args[@]}"; then
+        if mount "${mount_args[@]}"; then
+            :
+        else
             local exit_code=$?
             bashio::log.red "Direct mount failed"
             log_debug "Mount failed with exit code=${exit_code}"
