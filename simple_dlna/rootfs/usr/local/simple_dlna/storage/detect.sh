@@ -16,7 +16,7 @@ detect_devices() {
     log_debug "Running lsblk (formatted view)"
 
     lsblk -o NAME,LABEL,UUID,SIZE,FSTYPE,TYPE \
-        | awk -v regex="${SYSTEM_DISKS_REGEX}" '
+        | awk '
             NR==1 { print $1, $2, $3, $4, $5; next }
             $6=="part" && $5!="" {
                 print $1, $2, $3, $4, $5
