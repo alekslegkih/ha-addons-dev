@@ -5,6 +5,7 @@
 - Fixed: Configuration and media watcher issues.
 - Improved: DLNA configuration handling and validation.
 - Improved: Storage device detection and system disk protection.
+- Changed: Updated s6-overlay user bundle configuration.
 - Changed: Improved logging and general code stability.
 
 ## v0.3.4
