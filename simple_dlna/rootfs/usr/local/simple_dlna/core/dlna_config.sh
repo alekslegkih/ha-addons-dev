@@ -30,7 +30,7 @@ friendly_name=${FRIENDLY_NAME}
 media_dir=${DLNA_DIR}
 db_dir=${DB_DIR}
 port=8200
-log_level=general=${LOG_LEVEL}
+log_level=general,artwork,database,inotify,scanner,metadata,http,ssdp,tivo=${LOG_LEVEL}
 #
 # <<< SIMPLE_DLNA-MANAGED-END >>>
 EOF
