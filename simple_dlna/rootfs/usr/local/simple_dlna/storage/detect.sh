@@ -14,11 +14,16 @@ detect_devices() {
     bashio::log "Available Disks for mounting:"
     echo
 
-    printf '%-10s %-16s %-38s %-8s %-10s\n' \
-        "NAME" "LABEL" "UUID" "SIZE" "FSTYPE"
+    printf '+-------+--------+--------------------------------------+--------+----------+\n'
 
-    printf '%s\n' \
-        "--------------------------------------------------------------------------------"
+    print_table_row \
+        "NAME" \
+        "LABEL" \
+        "UUID" \
+        "SIZE" \
+        "FSTYPE"
+
+    printf '+-------+--------+--------------------------------------+--------+----------+\n'
 
     while IFS= read -r line; do
 
@@ -26,7 +31,7 @@ detect_devices() {
 
         case "${TYPE}" in
             disk|part)
-                printf '%-10s %-16s %-38s %-8s %-10s\n' \
+                print_table_row \
                     "${NAME}" \
                     "${LABEL}" \
                     "${UUID}" \
@@ -38,6 +43,8 @@ detect_devices() {
     done < <(
         lsblk -P -n -o NAME,LABEL,UUID,SIZE,FSTYPE,TYPE
     )
+
+    printf '+-------+--------+--------------------------------------+--------+----------+\n'
 
     echo
 
