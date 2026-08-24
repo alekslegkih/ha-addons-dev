@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.4.1
+
+- Improved: Updated service lifecycle configuration and code structure.
+
 ## v0.4.0
 
 - Fixed: Configuration and media watcher issues.
