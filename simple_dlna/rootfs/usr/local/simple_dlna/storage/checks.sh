@@ -242,8 +242,8 @@ check_storage() {
         0)
             log_debug "Selected device is part of Home Assistant data disk"
 
-            bashio::log.red \
-                "Refusing to use Home Assistant data disk: ${device}"
+            bashio::log.red "Home Assistant system disk cannot be used: ${device}"
+            bashio::log.yellow "Please select another disk for media storage\n"
 
             emit storage_failed '{"reason":"system_device_blocked"}'
 
@@ -258,8 +258,7 @@ check_storage() {
         2)
             log_debug "System disk detection failed"
 
-            bashio::log.red \
-                "Unable to determine Home Assistant data disk"
+            bashio::log.red "Unable to determine Home Assistant data disk"
 
             emit storage_failed '{"reason":"system_device_check_failed"}'
 
@@ -268,16 +267,13 @@ check_storage() {
             ;;
 
         *)
-            log_debug \
-                "Unexpected return code from is_system_device(): ${system_check}"
+            log_debug "Unexpected return code from is_system_device(): ${system_check}"
 
-            bashio::log.red \
-                "Unable to determine Home Assistant data disk"
+            bashio::log.red "Unable to determine Home Assistant data disk"
 
             emit storage_failed '{"reason":"system_device_check_failed"}'
 
-            log_debug \
-                "check_storage(): failed reason=unexpected_system_device_check_result"
+            log_debug  "check_storage(): failed reason=unexpected_system_device_check_result"
 
             return 1
             ;;
