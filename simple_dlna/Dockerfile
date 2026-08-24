@@ -5,7 +5,8 @@ ARG BUILD_ARCH
 ARG BUILD_VERSION
 
 ENV S6_VERBOSITY=1 \
-    WORKDIR=/usr/local/simple_dlna
+    WORKDIR=/usr/local/simple_dlna \
+    S6_USER_BUNDLES=/etc/s6-overlay/user-bundles.d
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -33,7 +34,6 @@ RUN apk add --no-cache \
     minidlna \
     ntfs-3g \
     exfatprogs \
-    util-linux \
     e2fsprogs
 
 RUN python3 -m pip install --no-cache-dir \
@@ -45,11 +45,11 @@ RUN python3 -m pip install --no-cache-dir \
 
 
 RUN chmod +x \
-    /etc/s6-overlay/s6-rc.d/00-init/up \
-    /etc/s6-overlay/s6-rc.d/01-service/run \
-    /etc/s6-overlay/s6-rc.d/01-service/finish \
-    /etc/s6-overlay/s6-rc.d/02-watcher/run \
-    /etc/s6-overlay/s6-rc.d/03-manager/run \
+    ${S6_USER_BUNDLES}/00-init/up \
+    ${S6_USER_BUNDLES}/01-service/run \
+    ${S6_USER_BUNDLES}/01-service/finish \
+    ${S6_USER_BUNDLES}/02-watcher/run \
+    ${S6_USER_BUNDLES}/03-manager/run \
     /usr/bin/simple_dlna_init.sh \
     /usr/bin/simple_dlna_service.sh \
     && find /usr/local/simple_dlna -type f -name "*.sh" -exec chmod +x {} \;
