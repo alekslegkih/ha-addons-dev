@@ -92,44 +92,74 @@ is_system_device() {
     local data_disk
     local device_disk
 
-    log_debug "is_system_device(): device=${device}"
+    log_debug "is_system_device(): start"
+    log_debug "Input device=${device}"
 
     # ----------------------------------------------------------
     # Find Home Assistant data partition
     # ----------------------------------------------------------
 
-    data_partition="$(
-        lsblk -rpn -o NAME,PARTLABEL 2>/dev/null \
-            | awk '$2 == "hassos-data" { print $1; exit }'
-    )"
+    data_partition="/dev/disk/by-label/hassos-data"
 
-    log_debug "Home Assistant data partition=${data_partition:-none}"
+    log_debug "Expected Home Assistant data symlink=${data_partition}"
 
-    if [ -z "${data_partition}" ]; then
-        log_debug "Unable to determine Home Assistant data partition"
+    if [ ! -e "${data_partition}" ]; then
+        log_debug "Home Assistant data symlink does not exist"
         return 2
     fi
+
+    if [ ! -b "${data_partition}" ]; then
+        log_debug "Home Assistant data path exists but is not a block device"
+        log_debug "Path=${data_partition}"
+        return 2
+    fi
+
+    log_debug "Home Assistant data symlink found"
+
+    data_partition="$(readlink -f "${data_partition}" 2>/dev/null || true)"
+
+    if [ -z "${data_partition}" ]; then
+        log_debug "Failed to resolve Home Assistant data symlink"
+        return 2
+    fi
+
+    log_debug "Resolved Home Assistant data partition=${data_partition}"
 
     # ----------------------------------------------------------
     # Resolve Home Assistant physical disk
     # ----------------------------------------------------------
 
+    log_debug "Resolving parent disk for Home Assistant data partition"
+
     data_disk="$(lsblk -no PKNAME "${data_partition}" 2>/dev/null || true)"
+
+    log_debug "Home Assistant data PKNAME=${data_disk:-none}"
 
     if [ -z "${data_disk}" ]; then
         log_debug "Unable to determine Home Assistant data disk"
         return 2
     fi
 
+    log_debug "Home Assistant physical disk=${data_disk}"
+
     # ----------------------------------------------------------
     # Resolve selected physical disk
     # ----------------------------------------------------------
 
+    log_debug "Resolving parent disk for selected device=${device}"
+
     device_disk="$(lsblk -no PKNAME "${device}" 2>/dev/null || true)"
+
+    log_debug "Selected device PKNAME=${device_disk:-none}"
 
     # If selected device is a whole disk, PKNAME is empty.
     if [ -z "${device_disk}" ]; then
-        device_disk="$(basename "$(readlink -f "${device}")")"
+
+        log_debug "PKNAME empty, assuming selected device may be a whole disk"
+
+        device_disk="$(basename "$(readlink -f "${device}" 2>/dev/null || true)")"
+
+        log_debug "Resolved selected device basename=${device_disk:-none}"
     fi
 
     if [ -z "${device_disk}" ]; then
@@ -145,16 +175,27 @@ is_system_device() {
     # ----------------------------------------------------------
 
     if [ "${device_disk}" = "${data_disk}" ]; then
+        log_debug "Selected device belongs to Home Assistant data disk"
+        log_debug "is_system_device(): result=SYSTEM"
         return 0
     fi
 
+    log_debug "Selected device does not belong to Home Assistant data disk"
+    log_debug "is_system_device(): result=NOT_SYSTEM"
+
     return 1
 }
+
+
 # ------------------------------------------------------------------
 # Storage validation
 # ------------------------------------------------------------------
 
 check_storage() {
+
+    local device
+    local system_check
+    local fstype
 
     log_debug "check_storage(): start"
     log_debug "Configured DEVICE=${DEVICE:-none}"
@@ -162,45 +203,114 @@ check_storage() {
     bashio::log.cyan "Connecting to configured device..."
 
     if [ -z "${DEVICE}" ]; then
+        log_debug "DEVICE is empty"
+
         bashio::log.red "No device configured"
         emit storage_failed '{"reason":"no_device_configured"}'
+
+        log_debug "check_storage(): failed reason=no_device_configured"
         return 1
     fi
 
-    local device
+    log_debug "Resolving configured device=${DEVICE}"
+
     device="$(resolve_device "${DEVICE}")" || {
+        log_debug "resolve_device() failed for input=${DEVICE}"
+
         bashio::log.red "Device ${DEVICE} not found or not a block device"
         emit storage_failed '{"reason":"not_block_device"}'
+
+        log_debug "check_storage(): failed reason=not_block_device"
         return 1
     }
 
     log_debug "Resolved device=${device}"
 
-    if is_system_device "${device}"; then
-        bashio::log.red "Refusing to use Home Assistant data disk: ${device}"
-        emit storage_failed '{"reason":"system_device_blocked"}'
-        return 1
-    elif [ "$?" -eq 2 ]; then
-        bashio::log.red "Unable to determine Home Assistant data disk"
-        emit storage_failed '{"reason":"system_device_check_failed"}'
-        return 1
-    fi
+    # ----------------------------------------------------------
+    # Check whether device belongs to Home Assistant data disk
+    # ----------------------------------------------------------
 
-    log_debug "Detecting filesystem via lsblk"
+    log_debug "Running system device check for ${device}"
 
-    local fstype
+    is_system_device "${device}"
+    system_check=$?
+
+    log_debug "is_system_device() returned code=${system_check}"
+
+    case "${system_check}" in
+
+        0)
+            log_debug "Selected device is part of Home Assistant data disk"
+
+            bashio::log.red \
+                "Refusing to use Home Assistant data disk: ${device}"
+
+            emit storage_failed '{"reason":"system_device_blocked"}'
+
+            log_debug "check_storage(): failed reason=system_device_blocked"
+            return 1
+            ;;
+
+        1)
+            log_debug "Selected device passed system disk check"
+            ;;
+
+        2)
+            log_debug "System disk detection failed"
+
+            bashio::log.red \
+                "Unable to determine Home Assistant data disk"
+
+            emit storage_failed '{"reason":"system_device_check_failed"}'
+
+            log_debug "check_storage(): failed reason=system_device_check_failed"
+            return 1
+            ;;
+
+        *)
+            log_debug \
+                "Unexpected return code from is_system_device(): ${system_check}"
+
+            bashio::log.red \
+                "Unable to determine Home Assistant data disk"
+
+            emit storage_failed '{"reason":"system_device_check_failed"}'
+
+            log_debug \
+                "check_storage(): failed reason=unexpected_system_device_check_result"
+
+            return 1
+            ;;
+    esac
+
+    # ----------------------------------------------------------
+    # Detect filesystem
+    # ----------------------------------------------------------
+
+    log_debug "Detecting filesystem for device=${device}"
+
     fstype="$(lsblk -no FSTYPE "${device}" 2>/dev/null || true)"
 
     log_debug "Detected fstype=${fstype:-none}"
 
     if [ -z "${fstype}" ]; then
+        log_debug "Filesystem detection failed for ${device}"
+
         bashio::log.red "Filesystem not detected on ${device}"
         emit storage_failed '{"reason":"no_filesystem"}'
+
+        log_debug "check_storage(): failed reason=no_filesystem"
         return 1
     fi
 
+    log_debug "Filesystem validation passed"
+    log_debug "Device=${device}"
+    log_debug "Filesystem=${fstype}"
+
     bashio::log.green "Connection successful."
+
     log_debug "check_storage(): success"
+
     return 0
 }
 
