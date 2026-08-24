@@ -41,12 +41,24 @@ detect_devices() {
 
     printf '+-------+--------+--------------------------------------+--------+----------+\n'
 
+    local first_disk=true
+
     while IFS= read -r line; do
 
         eval "${line}"
 
         case "${TYPE}" in
-            disk|part)
+            disk)
+
+                case "${NAME}" in
+                    zram*)
+                        continue
+                        ;;
+                esac
+
+                if [ "${first_disk}" = false ]; then
+                    printf '+-------+--------+--------------------------------------+--------+----------+\n'
+                fi
 
                 print_table_row \
                     "${NAME}" \
@@ -55,6 +67,23 @@ detect_devices() {
                     "${SIZE}" \
                     "${FSTYPE}"
 
+                first_disk=false
+                ;;
+
+            part)
+
+                case "${NAME}" in
+                    zram*)
+                        continue
+                        ;;
+                esac
+
+                print_table_row \
+                    "${NAME}" \
+                    "${LABEL}" \
+                    "${UUID}" \
+                    "${SIZE}" \
+                    "${FSTYPE}"
                 ;;
         esac
 
