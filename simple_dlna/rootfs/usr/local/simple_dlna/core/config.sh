@@ -88,7 +88,7 @@ load_config() {
     log_debug "  DLNA_DIR=${DLNA_DIR}"
     log_debug "  DEBUG_FLAG=${DEBUG_FLAG}"
 
-    bashio::log.green "Configuration loaded\n"
+    bashio::log.green "Configuration loaded"
     log_debug "load_config(): completed"
 }
 

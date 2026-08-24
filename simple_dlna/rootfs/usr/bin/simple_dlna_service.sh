@@ -109,7 +109,8 @@ if ! check_storage; then
 
     bashio::log.cyan "Please set parameter: device"
     bashio::log.yellow "Note: Home Assistant system and data disks cannot be used"
-    bashio::log.yellow "Example: device: sdb1 | label | UUID\n"
+    bashio::log.yellow "Example: device: sdb1 | label | UUID"
+    bashio::log
 
     fail_and_stop
 fi

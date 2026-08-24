@@ -243,7 +243,7 @@ check_storage() {
             log_debug "Selected device is part of Home Assistant data disk"
 
             bashio::log.red "Home Assistant system disk cannot be used: ${device}"
-            bashio::log.yellow "Please select another disk for media storage\n"
+            bashio::log.yellow "Please select another disk for media storage"
 
             emit storage_failed '{"reason":"system_device_blocked"}'
 
