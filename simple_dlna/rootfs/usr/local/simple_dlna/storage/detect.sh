@@ -15,51 +15,43 @@ detect_devices() {
 
     log_debug "Running lsblk (formatted view)"
 
-    lsblk -rno NAME,LABEL,UUID,SIZE,FSTYPE,TYPE \
-        --output-separator '|' \
-        | awk -F'|' '
-            $6=="part" {
-                print $1, $2, $3, $4, $5
-            }
-        ' \
-        | column -t
+    lsblk -o NAME,LABEL,UUID,SIZE,FSTYPE
 
     echo
 
     log_debug "Scanning raw lsblk output"
 
-    while IFS='|' read -r name type fstype size label uuid; do
+    while read -r line; do
+
+        eval "${line}"
 
         log_debug \
-            "RAW: name=${name} type=${type} fstype=${fstype:-none} size=${size:-none} label=${label:-none} uuid=${uuid:-none}"
+            "RAW: name=${NAME} type=${TYPE} fstype=${FSTYPE:-none} size=${SIZE:-none} label=${LABEL:-none} uuid=${UUID:-none}"
 
-        [ "${type}" != "part" ] && continue
+        [ "${TYPE}" != "part" ] && continue
 
-        base_name="$(basename "${name}")"
+        base_name="$(basename "${NAME}")"
 
-        if [ -z "${label}" ]; then
+        if [ -z "${LABEL}" ]; then
             log_debug "Label missing for ${base_name}, using blkid fallback"
 
-            label="$(blkid -o value -s LABEL "${name}" 2>/dev/null || true)"
+            LABEL="$(blkid -o value -s LABEL "${NAME}" 2>/dev/null || true)"
 
-            log_debug "blkid fallback label=${label:-none}"
+            log_debug "blkid fallback label=${LABEL:-none}"
         fi
 
-        if [ -z "${uuid}" ]; then
+        if [ -z "${UUID}" ]; then
             log_debug "UUID missing for ${base_name}, using blkid fallback"
 
-            uuid="$(blkid -o value -s UUID "${name}" 2>/dev/null || true)"
+            UUID="$(blkid -o value -s UUID "${NAME}" 2>/dev/null || true)"
 
-            log_debug "blkid fallback uuid=${uuid:-none}"
+            log_debug "blkid fallback uuid=${UUID:-none}"
         fi
 
-        log_debug \
-            "Detected device: ${base_name} fstype=${fstype:-none}"
+        log_debug "Detected device: ${base_name}"
 
     done < <(
-        lsblk -rpn \
-            -o NAME,TYPE,FSTYPE,SIZE,LABEL,UUID \
-            --output-separator '|'
+        lsblk -rpnP -o NAME,TYPE,FSTYPE,SIZE,LABEL,UUID
     )
 
     log_debug "detect_devices(): completed"
