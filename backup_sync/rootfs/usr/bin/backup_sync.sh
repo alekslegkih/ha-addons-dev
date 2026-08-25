@@ -7,8 +7,8 @@ set -euo pipefail
 # Static paths
 # ------------------------------------------------------------------
 
-BASE_DIR="/usr/local/backup_sync"
-export BASE_DIR
+APP_DIR="/usr/local/backup_sync"
+export APP_DIR
 
 # ------------------------------------------------------------------
 # Simple pretty logger for addon
@@ -27,21 +27,21 @@ _is_debug() {
 }
 
 log_debug "Script started"
-log_debug "BASE_DIR=${BASE_DIR}"
-log_debug "  DEBUG_FLAG=${DEBUG_FLAG}"
+log_debug "APP_DIR=${APP_DIR}"
+log_debug "DEBUG_FLAG=${DEBUG_FLAG}"
 
 # ------------------------------------------------------------------
 # Binaries
 # ------------------------------------------------------------------
 
-source "${BASE_DIR}/core/config.sh"
-source "${BASE_DIR}/storage/checks.sh"
-source "${BASE_DIR}/storage/detect.sh"
-source "${BASE_DIR}/storage/mount.sh"
+source "${APP_DIR}/core/config.sh"
+source "${APP_DIR}/storage/checks.sh"
+source "${APP_DIR}/storage/detect.sh"
+source "${APP_DIR}/storage/mount.sh"
 
-WATCHER_BIN="${BASE_DIR}/sync/watcher.py"
-SCANNER_BIN="${BASE_DIR}/sync/scanner.py"
-COPIER_BIN="${BASE_DIR}/sync/copier.sh"
+WATCHER_BIN="${APP_DIR}/sync/watcher.py"
+SCANNER_BIN="${APP_DIR}/sync/scanner.py"
+COPIER_BIN="${APP_DIR}/sync/copier.sh"
 
 
 # ------------------------------------------------------------------
@@ -51,7 +51,7 @@ COPIER_BIN="${BASE_DIR}/sync/copier.sh"
 emit() {
     log_debug "Emit called with args: $*"
 
-    python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || rc=$?
+    python3 "${APP_DIR}/ha/emit_cli.py" "$@" || rc=$?
 
     if [ "${rc:-0}" -ne 0 ]; then
         log_debug "Emit failed rc=${rc}"
@@ -93,7 +93,7 @@ write_runtime_env() {
     mkdir -p "${RUNTIME_DIR}"
     : > "${TMP_FILE}"
 
-    printf 'BASE_DIR=%q\n' "$BASE_DIR" >> "$TMP_FILE"
+    printf 'APP_DIR=%q\n' "$APP_DIR" >> "$TMP_FILE"
     printf 'DEVICE=%q\n' "$DEVICE" >> "$TMP_FILE"
     printf 'SOURCE_DIR=%q\n' "/$SOURCE_DIR" >> "$TMP_FILE"
     printf 'TARGET_ROOT=%q\n' "$TARGET_ROOT" >> "$TMP_FILE"

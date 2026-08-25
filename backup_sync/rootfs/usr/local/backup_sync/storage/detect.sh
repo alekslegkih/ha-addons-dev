@@ -5,10 +5,18 @@ set -euo pipefail
 
 
 # ------------------------------------------------------------------
-# Constants
+# Table helper
 # ------------------------------------------------------------------
 
-SYSTEM_DISKS_REGEX="^(sda|mmcblk0|zram)"
+print_table_row() {
+
+    printf '| %-9.9s | %-16.16s | %-36.36s | %-6.6s | %-10.10s |\n' \
+        "$1" \
+        "$2" \
+        "$3" \
+        "$4" \
+        "$5"
+}
 
 
 # ------------------------------------------------------------------
@@ -18,58 +26,90 @@ SYSTEM_DISKS_REGEX="^(sda|mmcblk0|zram)"
 detect_devices() {
 
     log_debug "detect_devices(): start"
-    log_debug "System disk regex=${SYSTEM_DISKS_REGEX}"
 
     bashio::log "Available Disks for mounting:"
-
-    log_debug "Running lsblk (formatted view)"
-
-    lsblk -o NAME,LABEL,UUID,SIZE,FSTYPE,TYPE \
-        | awk -v regex="${SYSTEM_DISKS_REGEX}" '
-            NR==1 { print $1, $2, $3, $4, $5; next }
-            $6=="part" && $5!="" && $1 !~ regex {
-                print $1, $2, $3, $4, $5
-            }
-        ' \
-        | column -t
-
     echo
 
-    log_debug "Scanning raw lsblk output"
+    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
 
-    while read -r name type fstype size label uuid; do
+    print_table_row \
+        "NAME" \
+        "LABEL" \
+        "UUID" \
+        "SIZE" \
+        "FSTYPE"
 
-        log_debug "RAW: name=${name} type=${type} fstype=${fstype:-none} size=${size:-none} label=${label:-none} uuid=${uuid:-none}"
+    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
 
-        [ "${type}" != "part" ] && continue
+    local first_disk=true
 
-        base_name="$(basename "${name}")"
+    log_debug "Running lsblk device scan"
 
-        if [[ "${base_name}" =~ ${SYSTEM_DISKS_REGEX} ]]; then
-            log_debug "Skipping system device ${base_name}"
-            continue
-        fi
+    while IFS= read -r line; do
 
-        if [ -z "${fstype}" ]; then
-            log_debug "Skipping ${base_name} (no filesystem)"
-            continue
-        fi
+        log_debug "lsblk raw: ${line}"
 
-        if [ -z "${label}" ]; then
-            log_debug "Label missing for ${base_name}, using blkid fallback"
-            label="$(blkid -o value -s LABEL "${name}" 2>/dev/null || true)"
-            log_debug "blkid fallback label=${label:-none}"
-        fi
+        eval "${line}"
 
-        if [ -z "${uuid}" ]; then
-            log_debug "UUID missing for ${base_name}, using blkid fallback"
-            uuid="$(blkid -o value -s UUID "${name}" 2>/dev/null || true)"
-            log_debug "blkid fallback uuid=${uuid:-none}"
-        fi
+        log_debug "Parsed: NAME=${NAME:-none} TYPE=${TYPE:-none} LABEL=${LABEL:-none} UUID=${UUID:-none} SIZE=${SIZE:-none} FSTYPE=${FSTYPE:-none}"
 
-        log_debug "Valid device detected: ${base_name}"
+        case "${TYPE}" in
+            disk)
 
-    done < <(lsblk -rpn -o NAME,TYPE,FSTYPE,SIZE,LABEL,UUID)
+                case "${NAME}" in
+                    zram*)
+                        log_debug "Skipping zram device: ${NAME}"
+                        continue
+                        ;;
+                esac
+
+                if [ "${first_disk}" = false ]; then
+                    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
+                fi
+
+                log_debug "Printing disk: ${NAME}"
+
+                print_table_row \
+                    "${NAME}" \
+                    "${LABEL}" \
+                    "${UUID}" \
+                    "${SIZE}" \
+                    "${FSTYPE}"
+
+                first_disk=false
+                ;;
+
+            part)
+
+                case "${NAME}" in
+                    zram*)
+                        log_debug "Skipping zram partition: ${NAME}"
+                        continue
+                        ;;
+                esac
+
+                log_debug "Printing partition: ${NAME}"
+
+                print_table_row \
+                    "${NAME}" \
+                    "${LABEL}" \
+                    "${UUID}" \
+                    "${SIZE}" \
+                    "${FSTYPE}"
+                ;;
+
+            *)
+                log_debug "Skipping unsupported device type: ${TYPE:-none} (${NAME:-unknown})"
+                ;;
+        esac
+
+    done < <(
+        lsblk -P -n -o NAME,LABEL,UUID,SIZE,FSTYPE,TYPE
+    )
+
+    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
+
+    echo
 
     log_debug "detect_devices(): completed"
 }

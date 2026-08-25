@@ -15,7 +15,7 @@ source "$RUNTIME_ENV"
 set +a
 
 emit() {
-    python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || true
+    python3 "${APP_DIR}/ha/emit_cli.py" "$@" || true
 }
 
 # ---------------------------------------------------------
