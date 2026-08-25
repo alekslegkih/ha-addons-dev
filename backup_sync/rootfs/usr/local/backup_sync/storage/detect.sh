@@ -8,9 +8,11 @@ set -euo pipefail
 # Table helper
 # ------------------------------------------------------------------
 
-print_table_row() {
+CYAN='\033[36m'
+RESET='\033[0m'
 
-    printf '| %-9.9s | %-16.16s | %-36.36s | %-6.6s | %-10.10s |\n' \
+print_table_row() {
+    printf "${CYAN}| %-9.9s | %-12.12s | %-36.36s | %-6.6s | %-8.8s |${RESET}\n" \
         "$1" \
         "$2" \
         "$3" \
@@ -18,6 +20,9 @@ print_table_row() {
         "$5"
 }
 
+print_table_separator() {
+    printf "${CYAN}+-----------+--------------+--------------------------------------+--------+----------+${RESET}\n"
+}
 
 # ------------------------------------------------------------------
 # Device detection
@@ -27,10 +32,10 @@ detect_devices() {
 
     log_debug "detect_devices(): start"
 
-    bashio::log "Available Disks for mounting:"
+    bashio::log.cyan "Available Disks for mounting:"
     echo
 
-    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
+    print_table_separator
 
     print_table_row \
         "NAME" \
@@ -39,7 +44,7 @@ detect_devices() {
         "SIZE" \
         "FSTYPE"
 
-    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
+    print_table_separator
 
     local first_disk=true
 
@@ -64,7 +69,7 @@ detect_devices() {
                 esac
 
                 if [ "${first_disk}" = false ]; then
-                    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
+                    print_table_separator
                 fi
 
                 log_debug "Printing disk: ${NAME}"
@@ -107,9 +112,14 @@ detect_devices() {
         lsblk -P -n -o NAME,LABEL,UUID,SIZE,FSTYPE,TYPE
     )
 
-    printf '+-----------+------------------+--------------------------------------+--------+------------+\n'
+    print_table_separator
 
     echo
 
     log_debug "detect_devices(): completed"
+
+    bashio::log.cyan "Please set parameter: device"
+    bashio::log.yellow "Note: Home Assistant system and data disks cannot be used"
+    bashio::log.yellow "Example: device: sdb1 | label | UUID"
+
 }

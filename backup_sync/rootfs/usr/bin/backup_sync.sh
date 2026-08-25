@@ -147,10 +147,11 @@ log_debug "Running check_storage"
 
 if ! check_storage; then
     log_debug "check_storage failed — running detect_devices"
+    
     detect_devices
 
-    bashio::log.cyan "Please set parameter: device"
-    bashio::log.yellow "Example: device: sdb1 | label | UUID"
+    # bashio::log.cyan "Please set parameter: device"
+    # bashio::log.yellow "Example: device: sdb1 | label | UUID"
 
     fail_and_stop
 fi
