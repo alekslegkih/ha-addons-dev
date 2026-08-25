@@ -3,8 +3,6 @@
 
 exit_code="$1"
 
-APP_DIR="/usr/local/backup_sync"
-
 emit() {
     python3 "${APP_DIR}/ha/emit_cli.py" "$@" || true
 }

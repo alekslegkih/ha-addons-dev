@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
+import os
 import sys
 from pathlib import Path
 
 BASE = Path(__file__).resolve().parent.parent
 sys.path.append(str(BASE))
-
-# ---------------------------------------------------------
-#
-# ---------------------------------------------------------
 
 import time
 from watchdog.observers import Observer
@@ -23,8 +20,7 @@ from core.logger import (
 )
 
 env = {}
-
-env_path = Path("/run/backup_sync/runtime.env")
+env_path = Path(os.environ["RUNTIME_DIR"]) / "runtime.env"
 
 if not env_path.exists():
     log_red(f"runtime.env missing", flush=True)

@@ -18,8 +18,7 @@ from core.logger import (
 from ha.events import emit
 
 env = {}
-
-env_path = Path("/run/backup_sync/runtime.env")
+env_path = Path(os.environ["RUNTIME_DIR"]) / "runtime.env"
 
 if not env_path.exists():
     log_red(f"runtime.env missing", flush=True)

@@ -3,7 +3,7 @@
 
 set -uo pipefail
 
-RUNTIME_ENV="/run/backup_sync/runtime.env"
+RUNTIME_ENV="${RUNTIME_DIR}/runtime.env"
 
 if [ ! -f "$RUNTIME_ENV" ]; then
     echo "runtime.env not found"

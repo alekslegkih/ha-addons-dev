@@ -10,13 +10,6 @@ set -euo pipefail
 bashio::log.info "Backup Sync to USB addon starting"
 
 # ------------------------------------------------------------------
-# Static paths
-# ------------------------------------------------------------------
-
-# APP_DIR="/usr/local/backup_sync"
-# export APP_DIR
-
-# ------------------------------------------------------------------
 # Simple pretty logger for addon
 # User-friendly by default, debug via /config/debug.flag
 # ------------------------------------------------------------------
@@ -92,9 +85,8 @@ fail_and_stop() {
 # ---------------------------------------------------------
 write_runtime_env() {
 
-    local RUNTIME_DIR="/run/backup_sync"
-    local ENV_FILE="${RUNTIME_DIR}/runtime.env"
-    local TMP_FILE="${ENV_FILE}.tmp"
+    local RUNTIME_ENV="${RUNTIME_DIR}/runtime.env"
+    local TMP_FILE="${RUNTIME_ENV}.tmp"
 
     mkdir -p "${RUNTIME_DIR}"
     : > "${TMP_FILE}"
@@ -111,9 +103,9 @@ write_runtime_env() {
     printf 'TARGET_PATH=%q\n' "$TARGET_PATH" >> "$TMP_FILE"
 
     chmod 600 "$TMP_FILE"
-    mv "$TMP_FILE" "$ENV_FILE"
+    mv "$TMP_FILE" "$RUNTIME_ENV"
 
-    bashio::log.green "Runtime env write"
+    bashio::log.green "Runtime ENV write"
 }
 
 # ------------------------------------------------------------------
@@ -175,7 +167,7 @@ bashio::log.green "Mount and target checks completed"
 # ------------------------------------------------------------------
 # Flag barier
 # ------------------------------------------------------------------
-touch "/tmp/service.ready"
+touch "${READY_FILE}"
 
 # ------------------------------------------------------------------
 # Sync layer

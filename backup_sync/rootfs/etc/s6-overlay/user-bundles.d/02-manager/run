@@ -1,9 +1,8 @@
 #!/usr/bin/with-contenv bashio
 set -euo pipefail
 
-RUNTIME_ENV="/run/backup_sync/runtime.env"
-WEB_APP="/usr/local/backup_sync/web/filemanager.py"
-READY_FILE="/tmp/service.ready"
+RUNTIME_ENV="${RUNTIME_DIR}/runtime.env"
+WEB_APP="${APP_DIR}/web/filemanager.py"
 
 while [ ! -f "$READY_FILE" ]; do
     sleep 1
