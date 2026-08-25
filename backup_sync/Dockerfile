@@ -4,7 +4,11 @@ FROM ${BUILD_FROM}
 ARG BUILD_ARCH
 ARG BUILD_VERSION
 
-ENV S6_VERBOSITY=1
+ENV S6_VERBOSITY=1 \
+    APP_DIR="/usr/local/backup_sync" \
+    S6_USER_BUNDLES="/etc/s6-overlay" \
+    READY_FILE="/tmp/service.ready"
+
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -42,9 +46,8 @@ RUN python3 -m pip install --no-cache-dir \
 
 # Права на скрипты
 RUN chmod +x \
-    /etc/s6-overlay/s6-rc.d/01-service/run \
-    /etc/s6-overlay/s6-rc.d/02-manager/run \
-    /usr/bin/backup_sync.sh \
-    /usr/local/backup_sync/core/*.sh \
-    /usr/local/backup_sync/storage/*.sh \
-    /usr/local/backup_sync/sync/*.sh
+    "${S6_USER_BUNDLES}/user-bundles.d/01-service/run" \
+    "${S6_USER_BUNDLES}/user-bundles.d/02-manager/run" \
+    && find "${APP_DIR}" -type f -name "*.sh" -exec chmod +x {} \;
+
+    #    /usr/bin/backup_sync.sh

@@ -13,8 +13,8 @@ bashio::log.info "Backup Sync to USB addon starting"
 # Static paths
 # ------------------------------------------------------------------
 
-APP_DIR="/usr/local/backup_sync"
-export APP_DIR
+# APP_DIR="/usr/local/backup_sync"
+# export APP_DIR
 
 # ------------------------------------------------------------------
 # Simple pretty logger for addon
