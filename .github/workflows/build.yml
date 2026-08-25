@@ -1,5 +1,7 @@
 name: CI
 
+run-name: ${{ inputs.workflow_name || 'CI' }}
+
 on:
   push:
     branches: [main]
@@ -14,6 +16,11 @@ on:
 
       addon:
         description: "Addon name (optional)"
+        required: false
+        default: ""
+
+      workflow_name:
+        description: "Workflow name (optional)"
         required: false
         default: ""
 
