@@ -1,6 +1,6 @@
 name: "Backup Sync to USB"
 description: "Automatically copies Home Assistant backups to connected USB storage"
-version: "0.6.9"
+version: "0.6.2"
 slug: "backup_sync"
 url: "https://github.com/alekslegkih/ha-addons/tree/main/backup_sync"
 arch:
@@ -14,32 +14,55 @@ privileged:
   - SYS_ADMIN
   - DAC_READ_SEARCH
 devices:
+  - /dev/sda
+  - /dev/sda1
+  - /dev/sda2
+  - /dev/sda3
+  - /dev/sda4
+  - /dev/sda5
+  - /dev/sda6
+  - /dev/sda7
+  - /dev/sda8
+  - /dev/sdb
   - /dev/sdb1
-  - /dev/sdc1
-  - /dev/sdd1
-  - /dev/sde1
-  - /dev/sdf1
   - /dev/sdb2
-  - /dev/sdc2
-  - /dev/sdd2
-  - /dev/sde2
-  - /dev/sdf2
   - /dev/sdb3
-  - /dev/sdc3
-  - /dev/sdd1
-  - /dev/sde3
-  - /dev/sdf3
   - /dev/sdb4
+  - /dev/sdb5
+  - /dev/sdb6
+  - /dev/sdc
+  - /dev/sdc1
+  - /dev/sdc2
+  - /dev/sdc3
   - /dev/sdc4
+  - /dev/sdd
+  - /dev/sdd1
+  - /dev/sdd2
+  - /dev/sdd3
   - /dev/sdd4
-  - /dev/sde4
-  - /dev/sdf4
-  - /dev/nvme0
-  - /dev/nvme1
-  - /dev/nvme2
+  - /dev/sde
+  - /dev/sde1
+  - /dev/sde2
+  - /dev/nvme0n1
+  - /dev/nvme0n1p1
+  - /dev/nvme0n1p2
+  - /dev/nvme0n1p3
+  - /dev/nvme1n1
+  - /dev/nvme1n1p1
+  - /dev/nvme1n1p2
+  - /dev/nvme1n1p3
+  - /dev/nvme2n1
+  - /dev/nvme2n1p1
+  - /dev/nvme2n1p2
+  - /dev/nvme2n1p3
   - /dev/mmcblk0
+  - /dev/mmcblk0p1
+  - /dev/mmcblk0p2
+  - /dev/mmcblk0p3
   - /dev/mmcblk1
-  - /dev/fuse
+  - /dev/mmcblk1p1
+  - /dev/mmcblk1p2
+  - /dev/mmcblk1p3
 hassio_api: true
 homeassistant_api: true
 hassio_role: homeassistant

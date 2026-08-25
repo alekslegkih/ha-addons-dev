@@ -10,6 +10,12 @@ set -euo pipefail
 bashio::log.info "Backup Sync to USB addon starting"
 
 # ------------------------------------------------------------------
+# Remove temp flag
+# ------------------------------------------------------------------
+
+rm -f "${READY_FILE}"
+
+# ------------------------------------------------------------------
 # Simple pretty logger for addon
 # User-friendly by default, debug via /config/debug.flag
 # ------------------------------------------------------------------
@@ -132,8 +138,6 @@ load_config || {
     fail_and_stop
 }
 
-log_debug "ENV DEVICE=$DEVICE TARGET_DIR=$TARGET_DIR SOURCE_DIR=$SOURCE_DIR"
-
 write_runtime_env
 
 # ------------------------------------------------------------------
@@ -147,9 +151,6 @@ if ! check_storage; then
     log_debug "check_storage failed — running detect_devices"
 
     detect_devices
-
-    # bashio::log.cyan "Please set parameter: device"
-    # bashio::log.yellow "Example: device: sdb1 | label | UUID"
 
     fail_and_stop
 fi
@@ -167,11 +168,13 @@ bashio::log.green "Mount and target checks completed"
 # ------------------------------------------------------------------
 # Flag barier
 # ------------------------------------------------------------------
+
 touch "${READY_FILE}"
 
 # ------------------------------------------------------------------
 # Sync layer
 # ------------------------------------------------------------------
+
 bashio::log.blue " === Sync layer ==="
 
 log_debug "Ready state emitted"

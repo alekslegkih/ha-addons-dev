@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.6.2
+
+- Changed: Updated s6-overlay user bundle configuration.
+- Improved: Updated service lifecycle configuration and code structure.
+
 ## v0.6.1
 
 - Changed: Updated Bashio API calls.

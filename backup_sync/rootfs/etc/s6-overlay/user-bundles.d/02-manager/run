@@ -1,15 +1,17 @@
-#!/usr/bin/with-contenv bashio
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
 set -euo pipefail
 
 RUNTIME_ENV="${RUNTIME_DIR}/runtime.env"
 WEB_APP="${APP_DIR}/web/filemanager.py"
 
-while [ ! -f "$READY_FILE" ]; do
+while [ ! -f "${READY_FILE}" ]; do
     sleep 1
 done
 
 set -a
-source "$RUNTIME_ENV"
+source "${RUNTIME_ENV}"
 set +a
 
-exec python3 "$WEB_APP"
+exec python3 "${WEB_APP}"
