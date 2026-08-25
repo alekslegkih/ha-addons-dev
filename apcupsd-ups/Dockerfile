@@ -4,7 +4,8 @@ FROM ${BUILD_FROM}
 ARG BUILD_ARCH
 ARG BUILD_VERSION
 
-ENV S6_VERBOSITY=1
+ENV S6_VERBOSITY=1 \
+    S6_USER_BUNDLES=/etc/s6-overlay
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -25,9 +26,10 @@ RUN apk add --no-cache \
 
 # Права на скрипты
 RUN chmod +x \
-    /etc/s6-overlay/s6-rc.d/00-init/up \
-    /etc/s6-overlay/s6-rc.d/10-apcupsd/run \
-    /etc/s6-overlay/s6-rc.d/10-apcupsd/finish \
-    /usr/bin/apcupsd_init \
-    /usr/bin/apcupsd_run \
-    /etc/apcupsd/doshutdown
+    "${S6_USER_BUNDLES}/user-bundles.d/00-init/up" \
+    "${S6_USER_BUNDLES}/user-bundles.d/10-apcupsd/run" \
+    "${S6_USER_BUNDLES}/user-bundles.d/10-apcupsd/finish" \
+    "/etc/apcupsd/doshutdown"
+#     \
+#    "/usr/bin/apcupsd_init" \
+#    "/usr/bin/apcupsd_run"

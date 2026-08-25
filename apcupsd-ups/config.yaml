@@ -1,12 +1,12 @@
 name: apcupsd (APC UPS)
-version: "0.2.0"
+version: "0.2.1"
 slug: apcupsd-ups
 description: apcupsd-based service for monitoring APC UPS devices
 url: "https://github.com/alekslegkih/ha-addons/tree/main/apcupsd-ups"
 arch:
   - amd64
   - aarch64
-image: ghcr.io/alekslegkih/apcupsd-ups
+image: ghcr.io/alekslegkih/apcupsd-ups-dev
 startup: system
 boot: auto
 init: false

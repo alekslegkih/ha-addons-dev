@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.2.1
+
+- Changed: Updated s6-overlay user bundle configuration.
+- Improved: Updated service lifecycle configuration and code structure.
+
 ## v0.2.0
 
 - Changed: Updated base image to 21.0.2.
