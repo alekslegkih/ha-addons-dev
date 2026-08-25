@@ -7,8 +7,8 @@ set -euo pipefail
 # Static paths
 # ------------------------------------------------------------------
 
-BASE_DIR="/usr/local/simple_dlna"
-export BASE_DIR
+APP_DIR="/usr/local/simple_dlna"
+export APP_DIR
 
 # ------------------------------------------------------------------
 # Start
@@ -31,7 +31,7 @@ log_debug() {
 }
 
 log_debug "Script started"
-log_debug "BASE_DIR=${BASE_DIR}"
+log_debug "APP_DIR=${APP_DIR}"
 
 # ------------------------------------------------------------------
 # Load modules
@@ -39,9 +39,9 @@ log_debug "BASE_DIR=${BASE_DIR}"
 
 log_debug "Loading modules..."
 
-source "${BASE_DIR}/core/config.sh"
+source "${APP_DIR}/core/config.sh"
 
-log_debug "Modules ${BASE_DIR} loaded"
+log_debug "Modules ${APP_DIR} loaded"
 
 # ------------------------------------------------------------------
 # Helpers
@@ -49,7 +49,7 @@ log_debug "Modules ${BASE_DIR} loaded"
 
 emit() {
     log_debug "Emit called with args: $*"
-    python3 "${BASE_DIR}/ha/emit_cli.py" "$@" || {
+    python3 "${APP_DIR}/ha/emit_cli.py" "$@" || {
         log_debug "Emit failed (ignored)"
         true
     }
