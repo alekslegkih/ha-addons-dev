@@ -88,8 +88,6 @@ check_free_space() {
 
 copy_one() {
 
-    TARGET_PATH="${TARGET_ROOT}/${DEVICE}/${TARGET_DIR}"
-
     local src="$1"
     local name tmp size size_mb
     local wait_start wait_end wait_sec

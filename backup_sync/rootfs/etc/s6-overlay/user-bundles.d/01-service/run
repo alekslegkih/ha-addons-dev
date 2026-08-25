@@ -105,7 +105,7 @@ write_runtime_env() {
     chmod 600 "$TMP_FILE"
     mv "$TMP_FILE" "$RUNTIME_ENV"
 
-    bashio::log.green "Runtime ENV write"
+    bashio::log.green "Runtime env write"
 }
 
 # ------------------------------------------------------------------
