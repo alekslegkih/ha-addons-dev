@@ -118,8 +118,4 @@ detect_devices() {
 
     log_debug "detect_devices(): completed"
 
-    bashio::log.cyan "Please set parameter: device"
-    bashio::log.yellow "Note: Home Assistant system and data disks cannot be used"
-    bashio::log.yellow "Example: device: sdb1 | label | UUID"
-
 }

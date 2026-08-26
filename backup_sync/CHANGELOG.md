@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.6.3
+
+- Fixed: Configuration and media watcher issues.
+
 ## v0.6.2
 
 - Changed: Updated s6-overlay user bundle configuration.
