@@ -1208,7 +1208,9 @@ document.getElementById("confirmDeleteBtn")
 
     if (!deleteTarget) return;
 
-    fetch("delete/" + encodePath(deleteTarget))
+    fetch("delete/" + encodePath(deleteTarget), {
+        method: "POST"
+    })
     .then(res => res.json())
     .then(data => {
 
@@ -1216,9 +1218,13 @@ document.getElementById("confirmDeleteBtn")
             closeDeleteModal();
             refreshFileList();
         } else {
-            alert("Delete failed");
+            alert(data.message || "Delete failed");
         }
 
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Delete failed");
     });
 
 });
