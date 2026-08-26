@@ -2,7 +2,7 @@
 
 ## v0.6.3
 
-- Fixed: Configuration and media watcher issues.
+- Fixed: Various File Manager issues.
 
 ## v0.6.2
 
