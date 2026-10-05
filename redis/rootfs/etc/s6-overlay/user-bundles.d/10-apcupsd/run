@@ -1,0 +1,28 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+
+set -eEuo pipefail
+
+# Пути
+CONFIG_FILE="/config/redis.conf"
+DATA_DIR="/data"
+
+# Проверка наличия конфига
+# Это защита от некорректного запуска без init
+if [ ! -f "${CONFIG_FILE}" ]; then
+    bashio::log.red "Config not found: ${CONFIG_FILE}"
+    exit 1
+fi
+
+# Проверка директории данных
+if [ ! -d "${DATA_DIR}" ]; then
+    bashio::log.red "Data directory not found: ${DATA_DIR}"
+    exit 1
+fi
+
+# Logging
+bashio::log "Starting Redis..."
+
+# Запуск сервера
+# exec — Redis становится главным процессом, S6 следит за ним напрямую
+exec redis-server "${CONFIG_FILE}"

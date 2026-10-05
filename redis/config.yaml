@@ -1,0 +1,28 @@
+name: Redis Server
+version: "0.0.1"
+slug: redis-server
+description: Redis DB Server
+url: "https://github.com/alekslegkih/ha-addons/tree/main/redis"
+image: ghcr.io/alekslegkih/redis-server-dev
+
+arch:
+  - amd64
+  - aarch64
+startup: initialize
+boot: auto
+init: false
+
+map:
+  - app_config:rw
+
+options:
+  maxmemory: "128mb"
+  maxmemory_policy: "allkeys-lru"
+schema:
+  maxmemory: str
+  maxmemory_policy: list(noeviction|allkeys-lru|allkeys-lfu|allkeys-random|volatile-lru|volatile-lfu|volatile-random|volatile-ttl)
+
+ports:
+  6379/tcp: null
+ports_description:
+  6379/tcp: Server
