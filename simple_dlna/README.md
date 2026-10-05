@@ -1,28 +1,28 @@
 # Simple DLNA
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/README_RU.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/README.md)
 
-This add-on is a wrapper around the lightweight ReadyMedia (minidlna) server, designed for
-quick deployment of a DLNA server in the Home Assistant OS environment.
+Этот аддон — обёртка над лёгким сервером ReadyMedia (minidlna), предназначенная для
+быстрого развёртывания DLNA-сервера в среде Home Assistant OS.
 
-The add-on provides a basic DLNA server for streaming video, audio, and images
-from connected USB storage devices.
+Аддон предоставляет базовый DLNA-сервер для трансляции видео, аудио и изображений
+с подключённых USB-накопителей.
 
 > [!WARNING]  
-> This add-on does not modify the behavior of ReadyMedia (minidlna), does not add custom APIs,
-> and does not manage internal DLNA mechanisms.  
-> The server behavior fully follows the standard ReadyMedia implementation.
+> Аддон не изменяет логику работы minidlna, не добавляет собственных API
+> и не управляет внутренними механизмами DLNA.
+> Поведение сервера полностью соответствует стандартному ReadyMedia.
 
-## Documentation
+## Документация
 
-See [documentation:](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS.md)
+[Документация](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS_RU.md)
 
-## Licensing
+## Лицензирование
 
 [![Addon License: MIT](https://img.shields.io/badge/Addon%20License-MIT-green.svg)](https://github.com/alekslegkih/ha-addons/blob/main/LICENSE)
 [![ReadyMedia License: GPL--2.0](https://img.shields.io/badge/ReadyMedia%20License-GPL--2.0-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html)
 
-## Acknowledgements
+## Благодарности
 
-Thanks to the **ReadyMedia (minidlna)** project for providing a simple and reliable DLNA server.  
-The project is distributed under the  [GNU General Public License v2](https://sourceforge.net/projects/minidlna/)
+Спасибо проекту ReadyMedia (minidlna) за простой и надёжный DLNA-сервер.  
+Проект распространяется под лицензией [GNU General Public License v2](https://sourceforge.net/projects/minidlna/)

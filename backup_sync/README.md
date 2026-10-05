@@ -1,19 +1,20 @@
 # Backup Sync
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/README_RU.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/README.md)
 
-Addon for **Home Assistant** designed for automatic synchronization of backups to an external USB drive.
+Аддон для **Home Assistant**, предназначенный для автоматической синхронизации резервных копий на внешний USB-накопитель.
 
-Runs in the background and integrates with Home Assistant via events.
+Работает в фоновом режиме и интегрируется с Home Assistant через события.
 
-## Features
+## Возможности
 
-- Detects newly created backups
-- Optionally synchronizes existing files on startup
-- Supports limiting the number of stored backups
-- Automatically removes old files when the limit is exceeded
+- Отслеживает появление новых резервных копий
+- Опционально синхронизирует существующие файлы при запуске
+- Поддерживает ограничение количества хранимых копий
+- Автоматически удаляет старые файлы при превышении лимита
+- Работает автономно
 
-## License
+## Лицензия
 
 [![Addon License: MIT](https://img.shields.io/badge/Addon%20License-MIT-green.svg)](
 https://github.com/alekslegkih/ha-addons/blob/main/LICENSE)

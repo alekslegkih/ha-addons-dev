@@ -1,54 +1,58 @@
 # apcupsd (APC UPS)
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/apcupsd-ups/README_RU.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/apcupsd-ups/README.md)
 
-Addon for **Home Assistant** providing an apcupsd-based service for monitoring APC UPS devices.
+Аддон для **Home Assistant**, предоставляющий сервис на основе apcupsd для мониторинга ИБП APC.
 
-Runs in the background and integrates with Home Assistant to provide UPS data and perform safe system shutdown.
+Работает в фоновом режиме и интегрируется с Home Assistant для получения данных ИБП и корректного завершения работы системы.
 
-## Features
+## Возможности
 
-- Supports only APC UPS devices via USB (apcupsd)
-- Performs safe system shutdown on critical battery level
-- Minimal configuration and easy setup
+- Поддерживаются только ИБП APC через USB (apcupsd)
+- Корректное завершение работы системы при критическом уровне заряда
+- Минимальная настройка и лёгкий запуск
 
 > [!NOTE]  
-> The available sensors and diagnostic data may vary depending on the UPS model.  
-> This depends on the capabilities of the device and the data provided by apcupsd.
+> Набор доступных сенсоров и диагностических данных может отличаться в зависимости от модели ИБП.  
+> Это зависит от возможностей конкретного устройства и данных, которые предоставляет apcupsd.
 
-## Configuration
+## Настройки
 
-### Shutdown host (`shutdown_host`)
+### Отключение хоста (`shutdown_host`)
 
-If enabled, the system will be safely shut down  
-when the UPS reaches a critical battery level.
+Если включено, при достижении критического уровня заряда ИБП  
+будет выполнено корректное завершение работы системы.
 
-### Battery level (`shutdown_battery_level`)
+### Уровень заряда батареи (`shutdown_battery_level`)
 
-Battery charge percentage at which system shutdown will be triggered.
+Процент заряда батареи, при котором будет инициировано завершение работы системы.
 
-Example: `10`
+Пример: `10`
 
-### Runtime remaining (`shutdown_runtime`)
+> Если не задано, используется значение по умолчанию.
 
-Remaining runtime (in minutes) at which system shutdown will be triggered.
+### Оставшееся время работы (`shutdown_runtime`)
 
-Example: `5`
+Время работы от батареи (в минутах), при котором будет инициировано завершение системы.
 
-## How it works
+Пример: `5`
 
-The addon uses `apcupsd` to communicate with the UPS via USB.
+> Если не задано, используется значение по умолчанию.
 
-- Reads UPS status data
-- Provides data to Home Assistant
-- Initiates safe shutdown when critical conditions are met
+## Как это работает
 
-## Common issues
+Аддон использует `apcupsd` для взаимодействия с ИБП через USB.
 
-### UPS not detected
+- Получает данные о состоянии ИБП
+- Передаёт их в Home Assistant
+- При наступлении критических условий инициирует корректное завершение работы
 
-- Make sure the UPS is connected via USB  
+## Частые проблемы
 
-## License
+### UPS не определяется
+
+- Проверьте, что ИБП подключён по USB  
+
+## Лицензия
 
 [![Addon License: MIT](https://img.shields.io/badge/Addon%20License-MIT-green.svg)](https://github.com/alekslegkih/ha-addons/blob/main/LICENSE)

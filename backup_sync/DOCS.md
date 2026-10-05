@@ -1,57 +1,59 @@
-## Configuration
+## Настройки
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/DOCS_RU.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/DOCS.md)
 
-### USB device (`usb_device`)
+### USB-устройство (`usb_device`)
 
-The partition of the USB drive that will be used by the add-on.  
-Example: `sdb1`.
+Раздел USB-накопителя, который будет использоваться аддоном.  
+Пример: `sdb1`.
 
-> [!WARNING]
-> Specify the disk partition (e.g., sdb1),  
-> not the entire disk name (`sdb`).
+> [!WARNING]  
+> Указывайте именно раздел диска (например, `sdb1`),  
+> а не имя всего диска (`sdb`).
 
-### Maximum number of copies (`max_copies`)
+### Максимальное количество копий (`max_copies`)
 
-The number of backups to store on the USB drive.  
-When the limit is exceeded, old files are automatically deleted.
+Количество резервных копий, которые будут храниться на USB-накопителе.  
+При превышении лимита старые файлы автоматически удаляются.
 
-### Sync on startup (`sync_exist_start`)
+### Синхронизация при запуске (`sync_exist_start`)
 
-If enabled, existing files in /backup will be checked when the add-on starts  
-and copied to the USB drive if necessary.
+Если параметр включён, при старте аддона существующие файлы из `/backup` будут проверены  
+и при необходимости скопированы на USB-накопитель.
 
-## File Browser
+## Файловый браузер
 
-- Create folders
-- Rename folders and files
-- Delete folders and files
-- Download files
+Для работы с сохраненными резервными копиями в аддоне присутствует файловый браузер, который может:  
 
-> [!TIP]  
-> To keep a specific backup, move the file into any created folder.  
-> After that, the script will no longer "see" the file.  
-> This allows you to preserve important copies without downloading them —  
-> they won't be deleted when the max_copies limit is exceeded.  
-> Automatic cleanup will only work for backups in the root directory.  
+- Создавать папки
+- Переименовывать папки и файлы
+- Удалять папки и файлы
+- Скачивать файлы
+
+> [!TIP]
+> Для сохранения нужной резервной копии можно переместить файл в любую созданную папку.  
+> После этого скрипт "перестанет видеть" файл.  
+> Это позволит сохранить необходимые копии без скачивания —  
+> они не будут удалены при превышении лимита max_copies.  
+> Автоматическая очистка будет работать только для резервных копий в корне.  
 > [!NOTE]  
-> The file browser only works within the backup directory and has no access to the system or other add-ons.
+> Файловый браузер работает только в каталоге сохраненных резервных копий и не имеет доступа к системе и сторонним аддонам.
 
-## Home Assistant Events
+## События Home Assistant
 
-The add-on publishes events that can be used in automations.
-Main event types:
+Аддон публикует события, которые можно использовать в автоматизациях.  
+Основной список событий:  
 
-- Service state: service_state
-- Critical disk errors: storage_failed
-- Copy service: copy_service
+Статус сервиса: service_state  
+Критичные ошибки диска: storage_failed  
+Копирование: copy_service
 
-To see all events, filter by the domain ***backup_sync***
+Что бы увидеть все события отфильтруйте по ***backup_sync***
 
-### Automation example
+### Примеры автоматизацй
 
 ```yaml
-alias: Disk unavailable
+alias: Диск недоступен
 triggers:
   - trigger: event
     event_type: backup_sync.storage_failed
@@ -61,13 +63,14 @@ conditions: []
 actions:
   - action: notify.telegram_info
     data:
-      title: ❌ Disk Error
+      title: ❌ Ошибка диска
       message: >-
-        *Error:* {{ trigger.event.data.error }}
+        *Ошибка:* {{ trigger.event.data.error }}
 mode: single
 ```
+
 ```yaml
-alias: Copy completed
+alias: Копирование завершено
 triggers:
   - trigger: event
     event_type: backup_sync.copy_service
@@ -77,37 +80,37 @@ conditions: []
 actions:
   - action: notify.telegram_info
     data:
-      title: ✅ *Copy completed*
+      title: ✅ *Копирование завершено*
       message: >-        
-        *File:* `{{ trigger.event.data.filename }}`
-        *Size:* {{ (trigger.event.data.size_bytes | int / 1024 / 1024 / 1024) | round(2) }} GB
-        *Time:* {{ trigger.event.data.seconds }} s
-        *Speed:* {{ (trigger.event.data.speed_bps | int / 1024 / 1024) | round(1) }} MB/s
+        *Файл:* `{{ trigger.event.data.filename }}`
+        *Размер:* {{ (trigger.event.data.size_bytes | int / 1024 / 1024 / 1024) | round(2) }} GB
+        *Время:* {{ trigger.event.data.seconds }} c
+        *Скорость:* {{ (trigger.event.data.speed_bps | int / 1024 / 1024) | round(1) }} MB/s
 mode: single
 ```
 
-## Debug mode
+## Debug-режим
 
-If the add-on won't start and diagnostics are needed, you can enable debug mode.
+Если аддон не запускается и требуется диагностика, можно включить режим отладки.
 
-- Create the file:
+- Создайте файл:
 
 ```bash
-/ config/debug.flag
+/config/debug.flag
 ```
 
-- Restart the add-on.
+- Перезапустите аддон.
 
-In debug mode, logs will show extended information.  
-The add-on will freeze in a running state even on critical errors (for diagnostic collection).
+В отладочном режиме будут выведены логи с расширенной информацией  
+Аддон  замрет в состоянии работы даже при критических ошибках (для сбора диагностики)
 
 > [!TIP]  
-> After diagnostics, delete the file and restart the add-on to return to normal mode.
+> После завершения диагностики удалите файл и перезапустите аддон для запуска в обычном режиме.
 
-## Common issues
+## Частые проблемы
 
 ### No USB device configured
 
-- Check that the  `usb_device` parameter is set correctly
-- Make sure the drive is connected
-- Verify that you specified the partition name, not the entire device
+- Проверьте, что параметр `usb_device` указан корректно  
+- Убедитесь, что диск подключён  
+- Проверьте, что указано имя раздела, а не всего устройства  

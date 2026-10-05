@@ -1,48 +1,45 @@
-# Simple DLNA Documentation
+# Документация Simple DLNA
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS_RU.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS.md)
 
-## How it works
+## Как это работает
 
-On the first start the add-on:
+При первом запуске аддон:
 
-- creates the configuration file minidlna.conf
-- initializes the media database
-- starts the DLNA server in foreground mode
+- создаёт конфигурационный файл minidlna.conf
+- инициализирует базу данных медиатеки
+- запускает DLNA-сервер в режиме foreground
 
-On subsequent starts:
+При последующих запусках:
 
-- the existing media database is reused
-- the saved configuration is reused
-- the server automatically monitors filesystem changes
+- используется существующая база данных
+- используется сохранённая конфигурация
+- сервер автоматически отслеживает изменения файловой системы
 
-ReadyMedia uses the inotify mechanism, so new files automatically appear
-in the media library without restarting the server.
+ReadyMedia использует механизм inotify, поэтому новые файлы автоматически
+появляются в медиатеке без перезапуска сервера.
 
-The media library directory is created on the selected USB storage device.
+Каталог медиатеки создаётся на выбранном USB-накопителе.
 
-The add-on configuration defines the storage parameters:
+В конфигурации аддона указываются параметры хранения медиатеки6
 
 ```bash
-device — disk where the media library will be stored
-media_dir — name of the media library directory on that disk
+device — диск, на котором будет храниться медиатека
+media_dir — имя папки медиатеки на этом диске
 ```
 
-> [!TIP]  
-> If the media library directory does not exist, the add-on will create it automatically.
+> [!TIP]
+> Если папка медиатеки не существует, аддон создаст её автоматически.
 
-You can also configure the server name and the minidlna log level.
+Также в конфигурации можно указать имя сервера и уровень логирования minidlna.
 
-## How to select a USB disk
+## Как выбрать USB-диск
 
-The add-on works only with external disks connected to the system.
+Аддон работает только с внешними дисками, подключёнными к системе.
 
-If the device parameter is not specified, the add-on will print a list
-of available disks during startup.
-
-The list of available disks can be found in the add-on logs.
-
-Example:
+Если параметр device не указан, при запуске аддон выводит список доступных дисков.  
+Список доступных дисков можно увидеть в логах аддона.  
+Пример:
 
 ```bash
 NAME      LABEL      UUID                                   SIZE   FSTYPE
@@ -50,23 +47,22 @@ sdb1      MEDIA      5b60a136-0d03-4c26-aba5-2bd5b97ece35    6T     ext4
 sdc1      BACKUP     2A34-19F0                               2T     exfat
 ```
 
-A disk can be specified in three different ways:
+Диск можно указать одним из трёх способов:
 
-- By device name  
+- По имени устройства
   - device: sdb1
-- By disk label  
+- По метке диска
   - device: MEDIA
-- By filesystem UUID  
+- По UUID файловой системы
   - device: 5b60a136-0d03-4c26-aba5-2bd5b97ece35
 
-## Configuration
+## Конфигурация
 
-The minidlna.conf file is created automatically. It contains two sections
-and is stored in the add-on directory.
+Файл minidlna.conf создаётся автоматически, состоит из двух секций и хранится в каталоге аддона.
 
-### Managed section
+### Управляемая секция
 
-This section is generated automatically from the add-on configuration.
+Эта секция создаётся автоматически из параметров конфигурации аддона.
 
 ```conf
 ***<<< SIMPLE_DLNA-MANAGED-START >>>***
@@ -78,12 +74,12 @@ log_level=general=${LOG_LEVEL}
 ***<<< SIMPLE_DLNA-MANAGED-END >>>***
 ```
 
-This part of the configuration is rewritten on every add-on start
-and should not be edited manually.
+Эта часть конфигурации перезаписывается при каждом запуске аддона  
+и не предназначена для ручного редактирования.
 
-### User section
+### Пользовательская секция
 
-Below is the user configuration section of ReadyMedia.
+Ниже располагается пользовательская часть конфигурации ReadyMedia.
 
 ```conf
 ***--- USER CONFIGURATION AREA ---***
@@ -93,54 +89,48 @@ strict_dlna=no
 album_art_names=Cover.jpg/cover.jpg/AlbumArtSmall.jpg/albumartsmall.jpg/AlbumArt.jpg/albumart.jpg/Album.jpg/album.jpg/Folder.jpg/folder.jpg/Thumb.jpg/thumb.jpg
 ```
 
-This section can be edited manually. Changes will be applied after restarting the add-on.  
+Эту секцию пользователь может изменять вручную. После перезапуска аддона изменения будут применены.  
 
-Any valid ReadyMedia configuration option can be added here.  
-Refer to the official ReadyMedia documentation for the complete list of supported parameters.
+В этот раздел можно добавить любые параметры, поддерживаемые ReadyMedia.  
+Полный список доступных параметров приведен в официальной документации ReadyMedia.
 
-## Network and access
+## Сеть и доступ
 
-DLNA uses the SSDP broadcast protocol,
-so the add-on runs in host_network mode.
+DLNA использует широковещательный протокол SSDP,
+поэтому аддон работает в режиме host_network.
 
-Support for media formats depends on the DLNA client
-(TV, media player, or application).
+Поддержка форматов зависит от DLNA-клиента (телевизор, медиаплеер или приложение).
 
-A standard ReadyMedia statistics web interface is also available,
-which shows:
+Дополнительно доступен стандартный веб-интерфейс статистики ReadyMedia, где видно
 
-- connected clients
-- number of files in the media library
-- server status
+- список подключённых клиентов
+- количество файлов в медиатеке
+- состояние сервера
+  
+Порт сервера статистики: 8200
 
-Statistics web interface port: 8200
+## Файловый браузер
 
-## File browser
+Аддон содержит встроенный файловый браузер для управления медиатекой, который позволяет:.
 
-The add-on includes a built-in file browser for managing the media library.
+- загружать файлы
+- удалять файлы
+- переименовывать файлы
+- перемещать файлы между папками
+- создавать каталоги
 
-It allows you to:
+Файловый браузер работает только внутри каталога медиатеки  
+и не имеет доступа к другим каталогам Home Assistant.
 
-- upload files
-- delete files
-- rename files
-- move files between folders
-- create directories
+## Поддерживаемые форматы
 
-The file browser works only inside the media library directory
-and does not provide access to other Home Assistant directories.
+ReadyMedia не выполняет перекодирование медиафайлов.  
+Поддержка форматов зависит от DLNA-клиента телевизор, медиаплеер или приложение.
 
-## Supported formats
+## Особенности и ограничения
 
-ReadyMedia does not perform media transcoding.
-
-Supported formats depend on the DLNA client
-(TV, media player, or application).
-
-## Features and limitations
-
-- The add-on is intended for use in a local network
-- Authentication is not supported
-- Encryption is not used
-- Media transcoding is not performed
-- Supported formats depend on the DLNA client
+- Аддон предназначен для использования в локальной сети
+- Аутентификация не поддерживается
+- Шифрование не используется
+- Перекодирование медиа не выполняется
+- Поддержка форматов зависит от DLNA-клиента

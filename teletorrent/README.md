@@ -1,88 +1,82 @@
 # TeleTorrent
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/teletorrent/README_RU.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/teletorrent/README.md)
 
-An add-on for **Home Assistant** that allows sending `.torrent` files and magnet links from Telegram directly to Transmission.
+Аддон для **Home Assistant**, позволяющий отправлять `.torrent` файлы и magnet-ссылки из Telegram напрямую в Transmission.
 
-Runs in the background and automatically processes incoming messages from authorized users.
+Работает в фоновом режиме и автоматически обрабатывает входящие сообщения от разрешённых пользователей.
 
-## Features
+## Возможности
 
-- Add `.torrent` files via Telegram
-- Access control based on allowed users
-- Proxy support (socks / http)
-- Integration with Home Assistant via events
-- Automatic saving of `.torrent` files to a watch folder
-- Magnet link support
+- Добавление `.torrent` файлов через Telegram
+- Ограничение доступа по списку пользователей
+- Поддержка прокси (socks / http)
+- Интеграция с Home Assistant через события
+- Автоматическое сохранение`.torrent` файлов в watch-папку
+- Поддержка magnet-ссылок
 
-## How it works
+## Как это работает
 
-- The bot receives messages from Telegram
-- Verifies the user
-- Processes:
-  - `.torrent` → saves to folder
-  - `magnet` → sends to Transmission
-- Sends a response back to the user in Telegram
-- Generates an event in Home Assistant
+- Бот получает сообщения из Telegram
+- Проверяет пользователя
+- Обрабатывает:
+  - `.torrent` → сохраняет в папку
+  - `magnet` → отправляет в Transmission
+- Возращает уведомление в Telegram ппользователю
+- Генерирует событие в Home Assistant
 
-## Configuration
+## Настройки
 
 ### Telegram
 
-- **token** — Telegram bot token (@BotFather)
-- **user_ids** — list of allowed users  
-  - **user_name** — friendly name  
-  - **user_id** — Telegram user ID  
+- **token** — токен Telegram-бота (@BotFather)
+- **user_ids** — список разрешённых пользователей  
+  - **user_name** — имя для удобства  
+  - **user_id** — Telegram ID пользователя  
 
-### Proxy (optional)
+### Proxy (опционально)
 
-Used when Telegram is not directly accessible.
+Используется, если Telegram недоступен напрямую.
 
-- **enabled** — enable proxy  
-- **type** — proxy type (`socks` or `http`)  
-- **host** — proxy address  
-- **port** — proxy port  
-- **username / password** — authentication credentials (if required)  
+- **enabled** — включить прокси  
+- **type** — тип прокси (`socks` или `http`)  
+- **host** — адрес прокси  
+- **port** — порт прокси  
+- **username / password** — данные для авторизации (если требуется)  
 
 ### Transmission
 
-- **host** — IP address or service name of Transmission  
-- **port** — RPC port (default: `9091`)  
-- **username / password** — if authentication is enabled  
-- **watch_folder** — folder for `.torrent` files (default: `/share/watch`)  
+- **host** — IP-адрес или имя сервиса Transmission  
+- **port** — порт RPC (по умолчанию `9091`)  
+- **username / password** — если включена авторизация  
+- **watch_folder** — папка для `.torrent` файлов (по умолчанию `/share/watch`)  
 
-## Common issues
+## Частые проблемы
 
-### Telegram not working
+### Telegram не работает
 
-- Make sure the bot token is correct
-- Check if Telegram is accessible from your network
-- If using a proxy — verify its configuration
+- Убедитесь, что токен бота корректный
+- Проверьте, доступен ли Telegram из сети
+- Если используется прокси — проверьте настройкии
 
----
+### Нет реакции на сообщения
 
-### No response to messages
+- Проверьте, что ваш `user_id` добавлен в `user_ids`
+- Убедитесь, что бот получает сообщения (не заблокирован)
 
-- Check that your `user_id` is included in `user_ids`
-- Make sure the bot is not blocked and can receive messages
+### Torrent или Magnet не добавляется
 
----
+- Проверьте соединение с Transmission
+- Проверьте настройки (`host`, `port`)
+- Убедитесь, что путь RPC доступен
+- Проверьте авторизацию (если включена)
 
-### Torrent or magnet not added
+### Ошибка прокси
 
-- Check connection to Transmission
-- Verify settings (`host`, `port`)
-- Make sure the RPC endpoint is accessible
-- Check authentication (if enabled)
+- Проверьте правильность типа прокси (`socks` или `http`)
+- Убедитесь, что указаны корректные адрес и порт прокси сервера
+- При наличии авторизации, проверьте имя пользователе и пароль
 
----
-
-### Proxy error
-
-- Verify proxy type (`socks` or `http`)
-- Make sure proxy host and port are correct
-- If authentication is used, check username and password
-
-## License
+## Лицензия
 
 [![Addon License: MIT](https://img.shields.io/badge/Addon%20License-MIT-green.svg)](https://github.com/alekslegkih/ha-addons/blob/main/LICENSE)
