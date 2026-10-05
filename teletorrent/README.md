@@ -1,6 +1,6 @@
 # TeleTorrent
 
-[English version](https://github.com/alekslegkih/ha-addons/blob/main/teletorrent/README.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/teletorrent/README_EN.md)
 
 Аддон для **Home Assistant**, позволяющий отправлять `.torrent` файлы и magnet-ссылки из Telegram напрямую в Transmission.
 

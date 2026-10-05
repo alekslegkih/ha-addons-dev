@@ -1,6 +1,6 @@
 # Redis Server
 
-[English version](https://github.com/alekslegkih/ha-addons/blob/main/redis-server/README.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/redis-server/README_EN.md)
 
 Аддон для **Home Assistant**, предоставляющий сервер Redis для использования в качестве кэша.
 

@@ -1,6 +1,6 @@
 # Simple DLNA Documentation
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS_RU.md)
+[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS.md)
 
 ## How it works
 

@@ -1,6 +1,6 @@
 ## Configuration
 
-[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/DOCS_RU.md)
+[Русская версия](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/DOCS.md)
 
 ### USB device (`usb_device`)
 

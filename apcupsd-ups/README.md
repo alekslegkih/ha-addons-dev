@@ -1,6 +1,6 @@
 # apcupsd (APC UPS)
 
-[English version](https://github.com/alekslegkih/ha-addons/blob/main/apcupsd-ups/README.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/apcupsd-ups/README_EN.md)
 
 Аддон для **Home Assistant**, предоставляющий сервис на основе apcupsd для мониторинга ИБП APC.
 

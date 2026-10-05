@@ -1,6 +1,6 @@
 # Simple DLNA
 
-[English version](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/README.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/README_EN.md)
 
 Этот аддон — обёртка над лёгким сервером ReadyMedia (minidlna), предназначенная для
 быстрого развёртывания DLNA-сервера в среде Home Assistant OS.

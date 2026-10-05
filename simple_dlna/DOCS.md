@@ -1,6 +1,6 @@
 # Документация Simple DLNA
 
-[English version](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/simple_dlna/DOCS_EN.md)
 
 ## Как это работает
 

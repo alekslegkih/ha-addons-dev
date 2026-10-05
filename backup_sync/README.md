@@ -1,6 +1,6 @@
 # Backup Sync
 
-[English version](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/README.md)
+[English version](https://github.com/alekslegkih/ha-addons/blob/main/backup_sync/README_EN.md)
 
 Аддон для **Home Assistant**, предназначенный для автоматической синхронизации резервных копий на внешний USB-накопитель.
 
