@@ -9,4 +9,3 @@
 > Add-ons in this repository may be unstable or non-functional and may break your system.
 
 Please use the [main repository](https://github.com/alekslegkih/ha-addons) for installation.
-
