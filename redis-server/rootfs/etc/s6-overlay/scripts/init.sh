@@ -11,6 +11,8 @@ TMP_FILE="${CONFIG_FILE}.tmp"
 DATA_DIR="/data"
 LOG_DIR="/var/log/redis"
 
+bashio::log "============================================="
+
 # Информация об аддоне
 ADDON_VERSION="$(bashio::app.version)"
 ADDON_NAME="$(bashio::app.name)"
