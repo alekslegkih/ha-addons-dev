@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.6
+
+- Add: Interface.
+
 ## v0.0.5
 
 - Change: Path BUILD_FROM.

@@ -54,9 +54,22 @@ mkdir -p "${LOG_DIR}"
 chmod 755 "${DATA_DIR}"
 chmod 755 "${LOG_DIR}"
 
+
+# Получаем IP eth0 контейнера
+REDIS_IP="$(ip -4 -o addr show dev eth0 | awk '{print $4}' | cut -d/ -f1)"
+
+if [[ -z "${REDIS_IP}" ]]; then
+    bashio::log.error "Failed to determine Redis container IP address"
+    exit 1
+fi
+
+bashio::log "Redis bind address: ${REDIS_IP}"
+
 # Генерация конфигурации
 # Если пользовательского конфига нет — создаём дефолтный
 bashio::log "Generating redis.conf..."
+
+bashio::log "Redis bind address: ${REDIS_IP}"
 
 {
     echo "# Redis configuration"
@@ -64,7 +77,7 @@ bashio::log "Generating redis.conf..."
     echo ""
 
     # Сеть
-    echo "bind 0.0.0.0"
+    echo "bind ${REDIS_IP}"
     echo "port 6379"
     echo "protected-mode no"
     echo ""
