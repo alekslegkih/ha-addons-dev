@@ -1,5 +1,9 @@
 # Changelog
 
+## v0.0.4
+
+- Fixed: Path Dockerfile.
+
 ## v0.0.3
 
 - Fixed: Path S6.
