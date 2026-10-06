@@ -27,4 +27,5 @@ RUN apk add --no-cache \
 RUN chmod +x \
     "${S6_USER_BUNDLES}/00-init/up" \
     "${S6_USER_BUNDLES}/10-redis/run" \
-    "${S6_USER_BUNDLES}/10-redis/finish"
+    "${S6_USER_BUNDLES}/10-redis/finish" \
+    "/etc/s6-overlay/scripts/init.sh"
