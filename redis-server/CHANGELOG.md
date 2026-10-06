@@ -1,28 +1,8 @@
 # Changelog
 
-## v0.0.6
+## v0.1.0
 
-- Add: Interface.
-
-## v0.0.5
-
-- Change: Path BUILD_FROM.
-
-## v0.0.5
-
-- Fixed: Path S6.
-
-## v0.0.4
-
-- Fixed: Path Dockerfile.
-
-## v0.0.3
-
-- Fixed: Path S6.
-
-## v0.0.2
-
-- Fixed: Init script.
+- Add: work version
 
 ## v0.0.1
 

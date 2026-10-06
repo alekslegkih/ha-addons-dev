@@ -1,5 +1,5 @@
 name: Redis Server
-version: "0.0.7"
+version: "0.0.8"
 slug: redis-server
 description: Redis DB Server
 url: "https://github.com/alekslegkih/ha-addons/tree/main/redis"
