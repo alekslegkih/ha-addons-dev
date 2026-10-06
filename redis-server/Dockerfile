@@ -5,7 +5,7 @@ ARG BUILD_ARCH
 ARG BUILD_VERSION
 
 ENV S6_VERBOSITY=1 \
-    S6_USER_BUNDLES=/etc/s6-overlay/user-bundles.d
+    S6_USER_BUNDLES=/etc/s6-overlay
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -25,7 +25,7 @@ RUN apk add --no-cache \
 
 # Права на скрипты
 RUN chmod +x \
-    "${S6_USER_BUNDLES}/00-init/up" \
-    "${S6_USER_BUNDLES}/10-redis/run" \
-    "${S6_USER_BUNDLES}/10-redis/finish" \
-    "/etc/s6-overlay/scripts/init.sh"
+    "${S6_USER_BUNDLES}/s6-rc.d/00-init/up" \
+    "${S6_USER_BUNDLES}/s6-rc.d/10-redis/run" \
+    "${S6_USER_BUNDLES}/s6-rc.d/10-redis/finish" \
+    "${S6_USER_BUNDLES}/scripts/init.sh"

@@ -1,5 +1,5 @@
 name: Redis Server
-version: "0.0.4"
+version: "0.0.5"
 slug: redis-server
 description: Redis DB Server
 url: "https://github.com/alekslegkih/ha-addons/tree/main/redis"
@@ -8,7 +8,7 @@ image: ghcr.io/alekslegkih/redis-server-dev
 arch:
   - amd64
   - aarch64
-startup: initialize
+startup: services
 boot: auto
 init: false
 
