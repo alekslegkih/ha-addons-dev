@@ -1,9 +1,14 @@
 # Changelog
 
-## v0.0.1
 
-- Add: initial alpha release
+## v0.0.3
+
+- Fixed: Path S6.
 
 ## v0.0.2
 
 - Fixed: Init script.
+
+## v0.0.1
+
+- Add: initial alpha release

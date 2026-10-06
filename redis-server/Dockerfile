@@ -5,7 +5,7 @@ ARG BUILD_ARCH
 ARG BUILD_VERSION
 
 ENV S6_VERBOSITY=1 \
-    S6_USER_BUNDLES=/etc/s6-overlay/user-bundles.d
+    S6_USER_BUNDLES=/etc/s6-overlay
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
