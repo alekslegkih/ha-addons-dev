@@ -2,6 +2,10 @@
 
 ## v0.0.5
 
+- Change: Path BUILD_FROM.
+
+## v0.0.5
+
 - Fixed: Path S6.
 
 ## v0.0.4
