@@ -68,10 +68,7 @@ To connect another add-on or service, use the **slug of this add-on** as the hos
 
 ### Another add-on cannot connect
 
- - Make sure the client is configured with the slug of this add-on, not localhost
-
-
-
+- Make sure the client is configured with the slug of this add-on, not localhost
 
 ## License
 
