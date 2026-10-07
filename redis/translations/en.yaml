@@ -1,0 +1,13 @@
+configuration:
+
+  maxmemory:
+    name: Maximum Memory
+    description: >
+      The maximum amount of memory Redis is allowed to use.
+      For example: 128mb, 256mb, 1gb.
+
+  maxmemory_policy:
+    name: Memory Eviction Policy
+    description: >
+      The policy Redis uses when the configured memory limit is reached.
+      For example: allkeys-lru or noeviction.

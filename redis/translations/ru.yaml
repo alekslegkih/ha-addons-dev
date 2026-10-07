@@ -1,0 +1,13 @@
+configuration:
+
+  maxmemory:
+    name: Максимальный объём памяти
+    description: >
+      Максимальный объём памяти, который Redis может использовать.
+      Например: 128mb, 256mb, 1gb.
+
+  maxmemory_policy:
+    name: Политика управления памятью
+    description: >
+      Политика, которую Redis использует при достижении установленного
+      ограничения памяти. Например: allkeys-lru или noeviction.
