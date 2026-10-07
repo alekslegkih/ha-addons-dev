@@ -1,9 +1,10 @@
-name: Redis Server
-version: "0.0.8"
-slug: redis-server
-description: Redis DB Server
+name: Redis
+slug: redis
+description: Redis database server
+version: "0.1.0"
+
 url: "https://github.com/alekslegkih/ha-addons/tree/main/redis"
-image: ghcr.io/alekslegkih/redis-server-dev
+image: ghcr.io/alekslegkih/redis-dev
 
 arch:
   - amd64

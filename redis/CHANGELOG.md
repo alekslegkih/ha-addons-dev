@@ -2,7 +2,7 @@
 
 ## v0.1.0
 
-- Add: work version
+- Initial public release
 
 ## v0.0.1
 
