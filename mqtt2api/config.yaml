@@ -1,5 +1,5 @@
 name: MQTT2API
-version: "0.0.2"
+version: "0.0.3"
 slug: mqtt2api
 description: MQTT to WebAPI/WebSocket bridge for IoT devices
 url: "https://github.com/alekslegkih/ha-addons/tree/main/mqtt2api"
