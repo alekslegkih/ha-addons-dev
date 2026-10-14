@@ -15,7 +15,7 @@ LABEL \
 
 COPY rootfs /
 
-RUN apk add --no-cache ca-certificates && update-ca-certificates mc
+RUN apk add --no-cache ca-certificates && update-ca-certificates
 
 RUN pip3 install --no-cache-dir requests[socks]
 

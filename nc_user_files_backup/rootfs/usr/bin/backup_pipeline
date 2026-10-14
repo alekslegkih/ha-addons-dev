@@ -46,6 +46,7 @@ emit() {
 # Cleanup function to ensure proper unmounting and power off on script exit
 cleanup() {
     log_debug "Running cleanup"
+    # umount_and_poweroff || true
     umount_destination || true
 }
 

@@ -30,6 +30,3 @@ RUN chmod +x \
     "${S6_USER_BUNDLES}/user-bundles.d/10-apcupsd/run" \
     "${S6_USER_BUNDLES}/user-bundles.d/10-apcupsd/finish" \
     "/etc/apcupsd/doshutdown"
-#     \
-#    "/usr/bin/apcupsd_init" \
-#    "/usr/bin/apcupsd_run"

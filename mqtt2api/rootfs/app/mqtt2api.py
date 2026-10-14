@@ -85,9 +85,16 @@ async def fetch_mqtt_credentials():
                     raise RuntimeError(
                         f"Supervisor MQTT API returned {resp.status}"
                     )
-                data = await resp.json()
+                body = await resp.json()
     except aiohttp.ClientError as exc:
         raise RuntimeError(f"Cannot reach Supervisor MQTT API: {exc}") from exc
+
+    if not isinstance(body, dict) or body.get("result") != "ok":
+        raise RuntimeError(f"Supervisor MQTT API error: {body}")
+
+    data = body.get("data")
+    if not isinstance(data, dict):
+        raise RuntimeError(f"Supervisor MQTT API returned no data: {body}")
 
     host = data.get("host")
     port = data.get("port")

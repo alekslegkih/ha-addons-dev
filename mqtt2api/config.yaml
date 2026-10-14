@@ -1,5 +1,5 @@
 name: MQTT2API
-version: "0.0.1"
+version: "0.0.2"
 slug: mqtt2api
 description: MQTT to WebAPI/WebSocket bridge for IoT devices
 url: "https://github.com/alekslegkih/ha-addons/tree/main/mqtt2api"
@@ -28,7 +28,7 @@ schema:
     - str
   certfile: str
   keyfile: str
-  log_level: list(debug|info|warning|error)
+  log_level: list(off|fatal|error|warn|info|debug)
 ports:
   "52341/tcp": 52341
 ports_description:
