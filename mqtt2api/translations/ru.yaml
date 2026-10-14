@@ -1,0 +1,21 @@
+configuration:
+  api_secret:
+    name: API-секрет
+    description: >-
+      Bearer-токен для /api/state, /api/command и /ws.
+      Задайте длинную случайную строку.
+  modules:
+    name: Модули
+    description: >-
+      Белый список первых сегментов MQTT-топиков. Обрабатываются только
+      топики вида <module>/<device_id>/<data|state|warnings>.
+      Добавьте хотя бы один модуль.
+  certfile:
+    name: TLS-сертификат
+    description: Путь к TLS-сертификату (PEM) внутри контейнера.
+  keyfile:
+    name: TLS-ключ
+    description: Путь к приватному ключу TLS (PEM) внутри контейнера.
+  log_level:
+    name: Уровень логирования
+    description: Подробность логирования сервиса.

@@ -1,0 +1,21 @@
+configuration:
+  api_secret:
+    name: API secret
+    description: >-
+      Bearer token required for /api/state, /api/command and /ws.
+      Choose a long random string.
+  modules:
+    name: Modules
+    description: >-
+      Whitelist of top-level MQTT topic segments. Only topics matching
+      <module>/<device_id>/<data|state|warnings> are processed.
+      Add at least one module.
+  certfile:
+    name: TLS certificate
+    description: Path to the TLS certificate (PEM) inside the container.
+  keyfile:
+    name: TLS private key
+    description: Path to the TLS private key (PEM) inside the container.
+  log_level:
+    name: Log level
+    description: Logging verbosity of the service.
